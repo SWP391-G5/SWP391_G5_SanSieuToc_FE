@@ -1,0 +1,97 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient Definitions -->
+  <defs>
+    <linearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00E536;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00B82C;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FDE047;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FBBF24;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="glowGradient">
+      <stop offset="0%" style="stop-color:#00E536;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#00E536;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background Glow -->
+  <circle cx="120" cy="120" r="110" fill="url(#glowGradient)"/>
+  
+  <!-- Main Soccer Ball -->
+  <g transform="translate(120, 120)">
+    <!-- Outer Ring -->
+    <circle cx="0" cy="0" r="75" fill="url(#primaryGradient)" filter="drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.1))"/>
+    
+    <!-- Inner White Circle -->
+    <circle cx="0" cy="0" r="68" fill="white" opacity="0.95"/>
+    
+    <!-- Soccer Ball Pattern - Pentagon in Center -->
+    <g transform="rotate(-18)">
+      <path d="M 0,-28 L 26.6,-8.7 L 16.4,22.8 L -16.4,22.8 L -26.6,-8.7 Z" 
+            fill="url(#primaryGradient)" stroke="#166534" stroke-width="2.5" opacity="0.9"/>
+    </g>
+    
+    <!-- Hexagon Pattern Around Pentagon -->
+    <g opacity="0.7">
+      <!-- Top Hexagon -->
+      <path d="M -8,-28 L 8,-28 L 18,-13 L 8,2 L -8,2 L -18,-13 Z" 
+            fill="url(#primaryGradient)" stroke="white" stroke-width="1.5" transform="translate(0, -30)"/>
+      
+      <!-- Right Top Hexagon -->
+      <path d="M -8,-28 L 8,-28 L 18,-13 L 8,2 L -8,2 L -18,-13 Z" 
+            fill="url(#primaryGradient)" stroke="white" stroke-width="1.5" transform="translate(32, -15) rotate(60)"/>
+      
+      <!-- Right Bottom Hexagon -->
+      <path d="M -8,-28 L 8,-28 L 18,-13 L 8,2 L -8,2 L -18,-13 Z" 
+            fill="url(#primaryGradient)" stroke="white" stroke-width="1.5" transform="translate(32, 15) rotate(120)"/>
+      
+      <!-- Bottom Hexagon -->
+      <path d="M -8,-28 L 8,-28 L 18,-13 L 8,2 L -8,2 L -18,-13 Z" 
+            fill="url(#primaryGradient)" stroke="white" stroke-width="1.5" transform="translate(0, 30) rotate(180)"/>
+      
+      <!-- Left Bottom Hexagon -->
+      <path d="M -8,-28 L 8,-28 L 18,-13 L 8,2 L -8,2 L -18,-13 Z" 
+            fill="url(#primaryGradient)" stroke="white" stroke-width="1.5" transform="translate(-32, 15) rotate(240)"/>
+      
+      <!-- Left Top Hexagon -->
+      <path d="M -8,-28 L 8,-28 L 18,-13 L 8,2 L -8,2 L -18,-13 Z" 
+            fill="url(#primaryGradient)" stroke="white" stroke-width="1.5" transform="translate(-32, -15) rotate(300)"/>
+    </g>
+    
+    <!-- Lightning Bolt (Speed Symbol) -->
+    <g transform="translate(52, -8)">
+      <path d="M 0,-18 L -8,-4 L -2,-4 L -6,12 L 8,-4 L 2,-4 Z" 
+            fill="url(#accentGradient)" 
+            stroke="#166534" 
+            stroke-width="1.5"
+            filter="drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.15))"/>
+    </g>
+    
+    <!-- Speed Lines -->
+    <g opacity="0.6">
+      <path d="M -85,-15 L -65,-15" stroke="url(#accentGradient)" stroke-width="3" stroke-linecap="round"/>
+      <path d="M -88,0 L -68,0" stroke="url(#accentGradient)" stroke-width="3" stroke-linecap="round"/>
+      <path d="M -85,15 L -65,15" stroke="url(#accentGradient)" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    
+    <!-- Star Accents -->
+    <g fill="url(#accentGradient)">
+      <circle cx="-55" cy="-45" r="3.5" filter="drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.1))"/>
+      <circle cx="-50" cy="48" r="3" filter="drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.1))"/>
+      <circle cx="45" cy="50" r="3" filter="drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.1))"/>
+      
+      <!-- Small sparkles -->
+      <circle cx="-60" cy="-20" r="1.5" opacity="0.7"/>
+      <circle cx="-62" cy="25" r="1.5" opacity="0.7"/>
+      <circle cx="58" cy="25" r="1.5" opacity="0.7"/>
+    </g>
+    
+    <!-- Center Highlight -->
+    <circle cx="-15" cy="-15" r="8" fill="white" opacity="0.3"/>
+  </g>
+  
+  <!-- Outer Decorative Ring -->
+  <circle cx="120" cy="120" r="85" fill="none" stroke="#00E536" stroke-width="1" opacity="0.2"/>
+  <circle cx="120" cy="120" r="95" fill="none" stroke="#FDE047" stroke-width="1" opacity="0.15"/>
+</svg>

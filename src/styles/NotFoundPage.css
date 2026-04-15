@@ -1,0 +1,125 @@
+/* NotFoundPage.css - Styles for 404 Not Found Page */
+
+.notfound-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgb(249 250 251);
+}
+
+.dark .notfound-page {
+  background-color: rgb(17 24 39);
+}
+
+.notfound-container {
+  text-align: center;
+  padding: 2rem;
+}
+
+.notfound-icon {
+  margin-bottom: 0.5rem;
+}
+
+.notfound-icon .material-symbols-outlined {
+  font-size: 4rem;
+  color: #00E536;
+  opacity: 0.7;
+}
+
+.notfound-title {
+  font-size: 6rem;
+  font-weight: 700;
+  color: #00E536;
+  margin-bottom: 0.5rem;
+  line-height: 1;
+}
+
+@media (max-width: 640px) {
+  .notfound-title {
+    font-size: 4rem;
+  }
+}
+
+.notfound-message {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgb(17 24 39);
+  margin-bottom: 0.5rem;
+}
+
+.dark .notfound-message {
+  color: rgb(209 213 219);
+}
+
+.notfound-sub {
+  font-size: 0.9rem;
+  color: rgb(107 114 128);
+  margin-bottom: 2rem;
+}
+
+.dark .notfound-sub {
+  color: rgb(156 163 175);
+}
+
+.notfound-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.notfound-button-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.75rem 2rem;
+  background-color: transparent;
+  color: #00E536;
+  font-weight: 600;
+  font-size: 1rem;
+  border: 2px solid #00E536;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+}
+
+.notfound-button-back:hover {
+  background-color: #00E536;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.notfound-button-back .material-symbols-outlined {
+  font-size: 1.1rem;
+}
+
+.notfound-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.75rem 2rem;
+  background-color: #00E536;
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+  border-radius: 9999px;
+  transition: all 0.3s;
+  text-decoration: none;
+}
+
+.notfound-button:hover {
+  background-color: #00c430;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.notfound-button:active {
+  transform: translateY(0);
+}
+
+.notfound-button .material-symbols-outlined {
+  font-size: 1.1rem;
+}

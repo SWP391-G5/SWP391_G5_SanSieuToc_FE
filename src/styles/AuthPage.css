@@ -1,0 +1,1110 @@
+/* ============================================================================
+   AuthPage.css - Unified Authentication Interface Styles
+   
+   Combines Login, Register, and Forgot Password flows into a single 
+   tab-based interface with consistent styling and animations.
+   
+   Note: AuthPage is now inside MainLayout (with Header/Footer)
+   
+   Features:
+   - Tab-based navigation between auth modes
+   - Role selection for login (Customer/Manager)
+   - Responsive design (mobile-first approach)
+   - Dark mode support
+   - Form validation styling
+   - Decorative background elements
+   - Loading states and animations
+   ============================================================================ */
+
+/* ============================================================================
+   BASE PAGE STYLES
+   ============================================================================ */
+
+/* Page Container - Normal section height (not full viewport) */
+.auth-page {
+  min-height: calc(100vh - 80px - 400px); /* Subtract header & footer approximate height */
+  display: flex;
+  flex-direction: column;
+  background-color: transparent; /* Use MainLayout background */
+  position: relative;
+  overflow: hidden;
+  padding: 2rem 0;
+}
+
+/* Main Content Area - Centered vertically */
+.auth-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  position: relative;
+  z-index: 10;
+}
+
+/* ============================================================================
+   CONTAINER & LAYOUT
+   ============================================================================ */
+
+/* Main Container - Max width with centered content */
+.auth-container {
+  max-width: 42rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Auth Mode Tabs - Main navigation between Login/Register/Forgot Password */
+.auth-mode-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  background-color: white;
+  padding: 0.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dark .auth-mode-tabs {
+  background-color: rgb(22 30 22);
+}
+
+/* Individual Mode Tab Button */
+.auth-mode-tab {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(107 114 128);
+  background: transparent;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.dark .auth-mode-tab {
+  color: rgb(156 163 175);
+}
+
+/* Active tab state */
+.auth-mode-tab.active {
+  color: white;
+  background: linear-gradient(135deg, #00E536 0%, #166534 100%);
+  box-shadow: 0 4px 6px rgba(0, 229, 54, 0.2);
+}
+
+/* Manager tab — distinct amber/orange accent */
+.auth-mode-tab.manager-tab:hover:not(.active) {
+  color: #92400e;
+  background-color: #fffbeb;
+}
+
+.dark .auth-mode-tab.manager-tab:hover:not(.active) {
+  color: #fbbf24;
+  background-color: #451a03;
+}
+
+.auth-mode-tab.manager-tab-active {
+  background: linear-gradient(135deg, #f59e0b 0%, #92400e 100%) !important;
+  box-shadow: 0 4px 6px rgba(245, 158, 11, 0.25) !important;
+}
+
+.auth-mode-tab:hover:not(.active) {
+  color: rgb(22 101 52);
+  background-color: rgb(240 253 244);
+}
+
+.dark .auth-mode-tab:hover:not(.active) {
+  color: rgb(34 197 94);
+  background-color: rgb(20 83 45);
+}
+
+/* Mobile responsive tabs */
+@media (max-width: 640px) {
+  .auth-mode-tab {
+    padding: 0.625rem 0.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* ============================================================================
+   MANAGER LOGIN SPECIFIC STYLES
+   ============================================================================ */
+
+.manager-login-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3rem 0.875rem;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.dark .manager-login-badge {
+  background: linear-gradient(135deg, #451a03 0%, #78350f 100%);
+  color: #fbbf24;
+  border-color: #92400e;
+}
+
+.manager-login-badge .material-symbols-outlined {
+  font-size: 0.95rem;
+}
+
+.manager-submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3) !important;
+}
+
+.manager-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+}
+
+.manager-login-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+}
+
+.dark .manager-login-note {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
+.manager-login-note p {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.dark .manager-login-note p {
+  color: #9ca3af;
+}
+
+/* Spinner inside button */
+.auth-btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+/* ============================================================================
+   AUTH CARD - Main content card
+   ============================================================================ */
+
+.auth-card {
+  background-color: white;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  border: 1px solid rgb(229 231 235);
+}
+
+.dark .auth-card {
+  background-color: rgb(22 30 22);
+  border-color: rgb(31 41 55);
+}
+
+@media (min-width: 768px) {
+  .auth-card {
+    padding: 3rem;
+  }
+}
+
+/* ============================================================================
+   FORM WRAPPER & HEADER
+   ============================================================================ */
+
+.auth-form-wrapper {
+  width: 100%;
+}
+
+/* Header Section - Title and subtitle */
+.auth-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.auth-title {
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: rgb(22 101 52);
+  margin-bottom: 0.75rem;
+  line-height: 1.2;
+}
+
+.dark .auth-title {
+  color: #00E536;
+}
+
+.auth-subtitle {
+  font-size: 0.95rem;
+  color: rgb(107 114 128);
+  line-height: 1.6;
+  max-width: 28rem;
+  margin: 0 auto;
+}
+
+.dark .auth-subtitle {
+  color: rgb(156 163 175);
+}
+
+/* ============================================================================
+   ROLE TABS - Customer/Manager selection for Login
+   ============================================================================ */
+
+.role-tabs-wrapper {
+  margin-bottom: 1.5rem;
+}
+
+.role-tabs {
+  display: flex;
+  gap: 0.75rem;
+  background-color: rgb(243 244 246);
+  padding: 0.375rem;
+  border-radius: 0.75rem;
+}
+
+.dark .role-tabs {
+  background-color: rgb(31 41 55);
+}
+
+.role-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(107 114 128);
+  background: transparent;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dark .role-tab {
+  color: rgb(156 163 175);
+}
+
+.role-tab.active {
+  color: white;
+  background: linear-gradient(135deg, #00E536 0%, #166534 100%);
+  box-shadow: 0 4px 6px rgba(0, 229, 54, 0.15);
+}
+
+.role-tab:hover:not(.active) {
+  color: rgb(22 101 52);
+  background-color: white;
+}
+
+.dark .role-tab:hover:not(.active) {
+  color: rgb(34 197 94);
+  background-color: rgb(55 65 81);
+}
+
+.role-tab .material-icons-outlined {
+  font-size: 1.25rem;
+}
+
+/* ============================================================================
+   FORM ELEMENTS
+   ============================================================================ */
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Form Row - Side-by-side fields on desktop */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .form-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Form Field Container */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Form Label */
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(55 65 81);
+}
+
+.dark .form-label {
+  color: rgb(209 213 219);
+}
+
+.form-label .material-icons-outlined {
+  font-size: 1.125rem;
+  color: rgb(34 197 94);
+}
+
+.dark .form-label .material-icons-outlined {
+  color: #00E536;
+}
+
+/* Form Input Wrapper */
+.form-input-wrapper {
+  position: relative;
+}
+
+/* Form Input Field */
+.form-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  font-size: 0.95rem;
+  color: rgb(31 41 55);
+  background-color: rgb(249 250 251);
+  border: 2px solid rgb(229 231 235);
+  border-radius: 0.625rem;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.dark .form-input {
+  color: rgb(243 244 246);
+  background-color: rgb(31 41 55);
+  border-color: rgb(55 65 81);
+}
+
+.form-input:focus {
+  border-color: #00E536;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(0, 229, 54, 0.1);
+}
+
+.dark .form-input:focus {
+  background-color: rgb(55 65 81);
+  border-color: #00E536;
+}
+
+.form-input::placeholder {
+  color: rgb(156 163 175);
+}
+
+/* Password Field Container */
+.password-input-container,
+.password-field {
+  position: relative;
+}
+
+.password-input {
+  padding-right: 3rem;
+}
+
+/* Toggle Password Button */
+.toggle-password-btn {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: rgb(107 114 128);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+}
+
+.dark .toggle-password-btn {
+  color: rgb(156 163 175);
+}
+
+.toggle-password-btn:hover {
+  color: rgb(22 101 52);
+  background-color: rgb(243 244 246);
+}
+
+.dark .toggle-password-btn:hover {
+  color: #00E536;
+  background-color: rgb(55 65 81);
+}
+
+.toggle-password-btn .material-icons-outlined {
+  font-size: 1.25rem;
+}
+
+/* ============================================================================
+   ERROR & SUCCESS MESSAGES
+   ============================================================================ */
+
+/* Error Alert */
+.error-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem;
+  background-color: rgb(254 242 242);
+  border: 1px solid rgb(252 165 165);
+  border-radius: 0.625rem;
+  color: rgb(185 28 28);
+  font-size: 0.875rem;
+}
+
+.dark .error-alert {
+  background-color: rgb(127 29 29);
+  border-color: rgb(153 27 27);
+  color: rgb(252 165 165);
+}
+
+.error-alert .material-icons-outlined {
+  font-size: 1.25rem;
+}
+
+/* Field-level Error Text */
+.error-text {
+  font-size: 0.8125rem;
+  color: rgb(220 38 38);
+  margin-top: 0.25rem;
+}
+
+.dark .error-text {
+  color: rgb(252 165 165);
+}
+
+/* ============================================================================
+   TERMS & CONDITIONS
+   ============================================================================ */
+
+.terms-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  margin-top: 0.5rem;
+}
+
+.terms-checkbox {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-top: 0.125rem;
+  cursor: pointer;
+  accent-color: #00E536;
+}
+
+.terms-label {
+  font-size: 0.875rem;
+  color: rgb(107 114 128);
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.dark .terms-label {
+  color: rgb(156 163 175);
+}
+
+.terms-link {
+  color: rgb(22 101 52);
+  font-weight: 600;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.dark .terms-link {
+  color: #00E536;
+}
+
+.terms-link:hover {
+  color: #00E536;
+}
+
+.dark .terms-link:hover {
+  color: rgb(134 239 172);
+}
+
+/* ============================================================================
+   BUTTONS
+   ============================================================================ */
+
+/* Primary Submit Button */
+.auth-submit-btn {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #00E536 0%, #166534 100%);
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 6px rgba(0, 229, 54, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.auth-submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 229, 54, 0.3);
+}
+
+.auth-submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Spinning animation for loading states */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================================
+   FOOTER LINKS & NAVIGATION
+   ============================================================================ */
+
+/* Form Footer Link (e.g., Forgot Password in Login) */
+.form-footer-link {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -0.5rem;
+}
+
+.forgot-password-link {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(22 101 52);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.dark .forgot-password-link {
+  color: #00E536;
+}
+
+.forgot-password-link:hover {
+  color: #00E536;
+}
+
+.dark .forgot-password-link:hover {
+  color: rgb(134 239 172);
+}
+
+/* Auth Switch Section */
+.auth-switch {
+  text-align: center;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgb(229 231 235);
+}
+
+.dark .auth-switch {
+  border-color: rgb(55 65 81);
+}
+
+.auth-switch-text {
+  font-size: 0.95rem;
+  color: rgb(107 114 128);
+}
+
+.dark .auth-switch-text {
+  color: rgb(156 163 175);
+}
+
+.auth-switch-link {
+  font-weight: 700;
+  color: rgb(22 101 52);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.dark .auth-switch-link {
+  color: #00E536;
+}
+
+.auth-switch-link:hover {
+  color: #00E536;
+}
+
+.dark .auth-switch-link:hover {
+  color: rgb(134 239 172);
+}
+
+/* ============================================================================
+   FORGOT PASSWORD SPECIFIC STYLES
+   ============================================================================ */
+
+/* Forgot Password Header with Icon */
+.forgot-password-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.forgot-password-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  background: linear-gradient(135deg, rgba(0, 229, 54, 0.1) 0%, rgba(22, 101, 52, 0.1) 100%);
+  border-radius: 50%;
+}
+
+.forgot-password-icon {
+  font-size: 2rem;
+  color: rgb(22 101 52);
+}
+
+.dark .forgot-password-icon {
+  color: #00E536;
+}
+
+/* Auth Footer (Back to login, Support links) */
+.auth-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgb(229 231 235);
+}
+
+.dark .auth-footer {
+  border-color: rgb(55 65 81);
+}
+
+.auth-back-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(22 101 52);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 0;
+}
+
+.dark .auth-back-link {
+  color: #00E536;
+}
+
+.auth-back-link:hover {
+  color: #00E536;
+}
+
+.dark .auth-back-link:hover {
+  color: rgb(134 239 172);
+}
+
+.auth-back-link .material-icons-outlined {
+  font-size: 1.125rem;
+}
+
+.auth-support-text {
+  font-size: 0.875rem;
+  color: rgb(107 114 128);
+  text-align: center;
+}
+
+.dark .auth-support-text {
+  color: rgb(156 163 175);
+}
+
+.auth-support-link {
+  font-weight: 600;
+  color: rgb(22 101 52);
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.dark .auth-support-link {
+  color: #00E536;
+}
+
+.auth-support-link:hover {
+  color: #00E536;
+}
+
+.dark .auth-support-link:hover {
+  color: rgb(134 239 172);
+}
+
+/* ============================================================================
+   FORGOT PASSWORD SUCCESS STATE
+   ============================================================================ */
+
+.forgot-password-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 0;
+}
+
+/* Success Icon */
+.success-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 5rem;
+  height: 5rem;
+  background: linear-gradient(135deg, rgba(0, 229, 54, 0.1) 0%, rgba(22, 101, 52, 0.1) 100%);
+  border-radius: 50%;
+  margin-bottom: 1.5rem;
+  animation: successPulse 2s ease-in-out infinite;
+}
+
+@keyframes successPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(0, 229, 54, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 20px rgba(0, 229, 54, 0);
+  }
+}
+
+.success-icon {
+  font-size: 2.5rem;
+  color: rgb(22 101 52);
+}
+
+.dark .success-icon {
+  color: #00E536;
+}
+
+/* Success Text */
+.success-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: rgb(22 101 52);
+  margin-bottom: 1rem;
+}
+
+.dark .success-title {
+  color: #00E536;
+}
+
+.success-text {
+  font-size: 0.95rem;
+  color: rgb(107 114 128);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  max-width: 28rem;
+}
+
+.dark .success-text {
+  color: rgb(156 163 175);
+}
+
+.email-highlight {
+  color: rgb(22 101 52);
+  font-weight: 700;
+}
+
+.dark .email-highlight {
+  color: #00E536;
+}
+
+/* Info Box */
+.info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: rgb(239 246 255);
+  border: 1px solid rgb(191 219 254);
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  color: rgb(30 64 175);
+  text-align: left;
+  margin-bottom: 2rem;
+}
+
+.dark .info-box {
+  background-color: rgb(30 58 138);
+  border-color: rgb(59 130 246);
+  color: rgb(191 219 254);
+}
+
+.info-box .material-icons-outlined {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+/* Success Action Buttons */
+.success-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 20rem;
+}
+
+@media (min-width: 640px) {
+  .success-actions {
+    flex-direction: row;
+  }
+}
+
+.success-btn-primary {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #00E536 0%, #166534 100%);
+  border: none;
+  border-radius: 0.625rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px rgba(0, 229, 54, 0.2);
+}
+
+.success-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 229, 54, 0.3);
+}
+
+.success-btn-secondary {
+  flex: 1;
+  padding: 0.875rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgb(22 101 52);
+  background-color: transparent;
+  border: 2px solid rgb(22 101 52);
+  border-radius: 0.625rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dark .success-btn-secondary {
+  color: #00E536;
+  border-color: #00E536;
+}
+
+.success-btn-secondary:hover {
+  background-color: rgb(22 101 52);
+  color: white;
+}
+
+.dark .success-btn-secondary:hover {
+  background-color: #00E536;
+  color: rgb(22 101 52);
+}
+
+/* ============================================================================
+   DECORATIVE BACKGROUND ELEMENTS
+   ============================================================================ */
+
+.auth-decorative-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Decorative Circle 1 - Top Right */
+.auth-decorative-circle-1 {
+  position: absolute;
+  top: -5%;
+  right: -5%;
+  width: 20rem;
+  height: 20rem;
+  background: radial-gradient(circle, rgba(0, 229, 54, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(40px);
+  animation: float 20s ease-in-out infinite;
+}
+
+.dark .auth-decorative-circle-1 {
+  background: radial-gradient(circle, rgba(0, 229, 54, 0.05) 0%, transparent 70%);
+}
+
+/* Decorative Circle 2 - Bottom Left */
+.auth-decorative-circle-2 {
+  position: absolute;
+  bottom: -5%;
+  left: -5%;
+  width: 18rem;
+  height: 18rem;
+  background: radial-gradient(circle, rgba(22, 101, 52, 0.06) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(40px);
+  animation: float 15s ease-in-out infinite reverse;
+}
+
+.dark .auth-decorative-circle-2 {
+  background: radial-gradient(circle, rgba(22, 101, 52, 0.04) 0%, transparent 70%);
+}
+
+/* Float Animation */
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN ADJUSTMENTS
+   ============================================================================ */
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .auth-card {
+    padding: 1.5rem;
+  }
+  
+  .auth-title {
+    font-size: 1.5rem;
+  }
+  
+  .auth-subtitle {
+    font-size: 0.875rem;
+  }
+  
+  .form-input {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.875rem;
+  }
+  
+  .auth-submit-btn {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Tablet and up */
+@media (min-width: 768px) {
+  .auth-main {
+    padding: 3rem 1.5rem;
+  }
+}
+/* Manager Specific Forgot Password Styles */
+.manager-forgot-password-icon-wrapper {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(146, 64, 14, 0.15) 100%) !important;
+}
+
+.manager-forgot-password-icon {
+  color: #d97706 !important;
+}
+
+.dark .manager-forgot-password-icon {
+  color: #fbbf24 !important;
+}
+
+.manager-success-icon-wrapper {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(146, 64, 14, 0.1) 100%) !important;
+}
+
+.manager-success-icon {
+  color: #f59e0b !important;
+}
+
+.manager-success-btn-primary {
+  background: linear-gradient(135deg, #f59e0b 0%, #92400e 100%) !important;
+  box-shadow: 0 4px 6px rgba(245, 158, 11, 0.25) !important;
+}
+
+.manager-success-btn-primary:hover {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+}
+
+.manager-auth-form .auth-title {
+  color: #92400e;
+}
+
+.dark .manager-auth-form .auth-title {
+  color: #f59e0b;
+}
+
+.manager-auth-form .form-label .material-icons-outlined {
+  color: #f59e0b;
+}
+
+.manager-auth-form .form-input:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+.manager-auth-form .auth-back-link {
+  color: #d97706;
+}
+
+.manager-auth-form .auth-back-link:hover {
+  color: #f59e0b;
+}
+
+.dark .manager-auth-form .auth-back-link {
+  color: #fbbf24;
+}

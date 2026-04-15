@@ -1,0 +1,363 @@
+/* ============================================================================
+   QR Payment Modal Styles
+   ============================================================================ */
+
+.qr-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  padding: 1rem;
+  animation: qrModalFadeIn 0.2s ease;
+}
+
+@keyframes qrModalFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.qr-modal-content {
+  background: var(--bg-primary, #fff);
+  border-radius: 1rem;
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: qrModalSlideUp 0.3s ease;
+}
+
+@keyframes qrModalSlideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0);   opacity: 1; }
+}
+
+/* Header */
+.qr-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.qr-modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.qr-modal-icon {
+  font-size: 1.75rem;
+  color: var(--primary-color, #2563eb);
+}
+
+.qr-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary, #111827);
+  margin: 0;
+}
+
+.qr-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: var(--bg-secondary, #f3f4f6);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s;
+  color: var(--text-secondary, #6b7280);
+}
+
+.qr-modal-close:hover {
+  background: var(--hover-bg, #e5e7eb);
+  color: var(--text-primary, #111827);
+}
+
+/* Booking reference */
+.qr-modal-ref {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  background: var(--bg-secondary, #f9fafb);
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.qr-modal-field-name {
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+  font-size: 0.875rem;
+}
+
+.qr-modal-booking-id {
+  font-size: 0.8125rem;
+  color: var(--text-muted, #9ca3af);
+  font-family: monospace;
+}
+
+/* Price section */
+.qr-modal-price-section {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.qr-modal-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.375rem 0;
+  font-size: 0.9375rem;
+  color: var(--text-secondary, #4b5563);
+}
+
+.qr-modal-price-value {
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+}
+
+.qr-modal-price-row.deposit {
+  margin-top: 0.25rem;
+  padding-top: 0.625rem;
+  border-top: 1px dashed var(--border-color, #e5e7eb);
+}
+
+.qr-modal-deposit-value {
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: var(--primary-color, #2563eb);
+}
+
+/* QR Code section */
+.qr-modal-qr-section {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.qr-modal-qr-image {
+  width: 260px;
+  height: 260px;
+  object-fit: contain;
+  border-radius: 0.75rem;
+  border: 2px solid var(--border-color, #e5e7eb);
+  background: #fff;
+  padding: 0.5rem;
+}
+
+.qr-modal-no-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  color: var(--text-muted, #9ca3af);
+  text-align: center;
+}
+
+.qr-modal-no-qr .material-symbols-outlined {
+  font-size: 3rem;
+  opacity: 0.5;
+}
+
+.qr-modal-no-qr p {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.qr-modal-no-qr-hint {
+  font-size: 0.8125rem !important;
+  opacity: 0.7;
+}
+
+/* Manager section */
+.qr-modal-manager-section {
+  padding: 0 1.5rem 1rem;
+}
+
+.qr-modal-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+  margin: 0 0 0.625rem;
+}
+
+.qr-modal-section-title .material-symbols-outlined {
+  font-size: 1.25rem;
+  color: var(--primary-color, #2563eb);
+}
+
+.qr-modal-manager-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary, #f9fafb);
+  border-radius: 0.625rem;
+}
+
+.qr-modal-manager-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 0.9375rem;
+  color: var(--text-secondary, #4b5563);
+}
+
+.qr-modal-manager-row .material-symbols-outlined {
+  font-size: 1.125rem;
+  color: var(--text-muted, #9ca3af);
+}
+
+.qr-modal-phone-link {
+  color: var(--primary-color, #2563eb);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.qr-modal-phone-link:hover {
+  text-decoration: underline;
+}
+
+/* Instructions */
+.qr-modal-instructions {
+  padding: 0 1.5rem 1rem;
+}
+
+.qr-modal-steps {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.qr-modal-steps li {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #4b5563);
+  line-height: 1.5;
+}
+
+.qr-modal-steps li strong {
+  color: var(--text-primary, #111827);
+}
+
+/* Warning */
+.qr-modal-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  margin: 0 1.5rem 1rem;
+  padding: 0.75rem 1rem;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 0.625rem;
+  font-size: 0.8125rem;
+  color: #92400e;
+}
+
+.qr-modal-warning .material-symbols-outlined {
+  font-size: 1.25rem;
+  color: #d97706;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.qr-modal-warning p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Footer */
+.qr-modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.qr-modal-btn-close {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.625rem;
+  background: var(--primary-color, #2563eb);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.qr-modal-btn-close:hover {
+  background: var(--primary-hover, #1d4ed8);
+}
+
+.qr-modal-btn-close:active {
+  transform: scale(0.98);
+}
+
+/* ============================================================================
+   Dark mode support
+   ============================================================================ */
+
+[data-theme="dark"] .qr-modal-warning {
+  background: #422006;
+  border-color: #78350f;
+  color: #fbbf24;
+}
+
+[data-theme="dark"] .qr-modal-warning .material-symbols-outlined {
+  color: #fbbf24;
+}
+
+[data-theme="dark"] .qr-modal-qr-image {
+  background: #fff;
+}
+
+/* ============================================================================
+   Responsive
+   ============================================================================ */
+
+@media (max-width: 480px) {
+  .qr-modal-content {
+    max-height: 95vh;
+    border-radius: 0.75rem;
+  }
+
+  .qr-modal-header,
+  .qr-modal-price-section,
+  .qr-modal-manager-section,
+  .qr-modal-instructions,
+  .qr-modal-footer {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .qr-modal-warning {
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
+
+  .qr-modal-qr-image {
+    width: 220px;
+    height: 220px;
+  }
+
+  .qr-modal-ref {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}

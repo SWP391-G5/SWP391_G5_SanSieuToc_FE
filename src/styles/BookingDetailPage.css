@@ -1,0 +1,814 @@
+﻿/* ============================
+   Booking History Page Styles
+   ============================ */
+
+/* Page Layout */
+.booking-history-page {
+  padding: 1.25rem 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .booking-history-page {
+    padding: 1.25rem 2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .booking-history-page {
+    padding: 1.25rem 10rem;
+  }
+}
+
+.booking-history-container {
+  max-width: 1200px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ============================
+   Breadcrumbs
+   ============================ */
+.bh-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.bh-breadcrumb-link {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.2s;
+}
+
+.bh-breadcrumb-link:hover {
+  color: #00E536;
+}
+
+.bh-breadcrumb-sep {
+  font-size: 0.75rem;
+}
+
+.bh-breadcrumb-current {
+  color: #111827;
+  font-weight: 500;
+}
+
+.dark .bh-breadcrumbs {
+  color: #9ca3af;
+}
+
+.dark .bh-breadcrumb-current {
+  color: #ffffff;
+}
+
+/* ============================
+   Status Banner
+   ============================ */
+.bh-status-banner {
+  background-color: #16a34a;
+  color: #ffffff;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+@media (min-width: 768px) {
+  .bh-status-banner {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.bh-status-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.bh-status-icon-wrapper {
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 0.75rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bh-status-icon {
+  font-size: 1.875rem;
+}
+
+.bh-status-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.bh-status-meta {
+  color: #f0fdf4;
+  opacity: 0.9;
+  font-size: 0.875rem;
+}
+
+.bh-code {
+  font-family: monospace;
+}
+
+.bh-status-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.bh-btn-download {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #ffffff;
+  color: #15803d;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.bh-btn-download:hover {
+  background-color: #f0fdf4;
+}
+
+.bh-btn-download .material-symbols-outlined {
+  font-size: 0.875rem;
+}
+
+/* ============================
+   Main Grid
+   ============================ */
+.bh-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .bh-grid {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.bh-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.bh-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ============================
+   Field Info Card
+   ============================ */
+.bh-field-card {
+  background-color: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.dark .bh-field-card {
+  background-color: #14532d;
+  border-color: #166534;
+}
+
+.bh-field-image {
+  height: 16rem;
+  background-size: cover;
+  background-position: center;
+  background-color: #f3f4f6;
+}
+
+.bh-field-info {
+  padding: 1.5rem;
+}
+
+.bh-field-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #111811;
+}
+
+.dark .bh-field-name {
+  color: #ffffff;
+}
+
+.bh-field-address {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  color: #4b5563;
+  margin-bottom: 1rem;
+}
+
+.bh-field-address .material-symbols-outlined {
+  color: #00E536;
+  margin-top: 0.125rem;
+}
+
+.dark .bh-field-address {
+  color: #9ca3af;
+}
+
+.bh-field-contact {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+@media (min-width: 640px) {
+  .bh-field-contact {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.dark .bh-field-contact {
+  border-top-color: #166534;
+}
+
+.bh-contact-phone {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.bh-contact-phone .material-symbols-outlined {
+  color: #9ca3af;
+}
+
+.bh-contact-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.bh-contact-value {
+  font-weight: 500;
+  color: #111811;
+}
+
+.dark .bh-contact-value {
+  color: #ffffff;
+}
+
+.bh-btn-directions {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid #00E536;
+  color: #00E536;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  background: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.bh-btn-directions:hover {
+  background-color: rgba(0, 229, 54, 0.05);
+}
+
+.bh-btn-directions .material-symbols-outlined {
+  font-size: 18px;
+}
+
+/* ============================
+   Amenities & Rules Grid
+   ============================ */
+.bh-details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .bh-details-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.bh-detail-card {
+  background-color: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  padding: 1.5rem;
+}
+
+.dark .bh-detail-card {
+  background-color: #14532d;
+  border-color: #166534;
+}
+
+.bh-detail-title {
+  font-weight: 700;
+  font-size: 1.125rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #111811;
+}
+
+.bh-detail-title .material-symbols-outlined {
+  color: #00E536;
+}
+
+.dark .bh-detail-title {
+  color: #ffffff;
+}
+
+/* Amenities */
+.bh-amenities-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bh-amenity-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #374151;
+}
+
+.dark .bh-amenity-item {
+  color: #d1d5db;
+}
+
+.bh-check-icon {
+  color: #22c55e;
+  font-size: 20px;
+}
+
+/* Rules */
+.bh-rules-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bh-rule-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.dark .bh-rule-item {
+  color: #9ca3af;
+}
+
+.bh-rule-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background-color: #9ca3af;
+  margin-top: 0.375rem;
+  flex-shrink: 0;
+}
+
+/* ============================
+   Summary Card (Right Sidebar)
+   ============================ */
+.bh-summary-card {
+  background-color: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  padding: 1.5rem;
+}
+
+.dark .bh-summary-card {
+  background-color: #14532d;
+  border-color: #166534;
+}
+
+.bh-summary-title {
+  font-weight: 700;
+  font-size: 1.125rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+  color: #111811;
+}
+
+.dark .bh-summary-title {
+  color: #ffffff;
+  border-bottom-color: #166534;
+}
+
+.bh-summary-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.bh-summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.dark .bh-summary-row {
+  color: #9ca3af;
+}
+
+.bh-summary-value {
+  font-weight: 700;
+  color: #111811;
+}
+
+.dark .bh-summary-value {
+  color: #ffffff;
+}
+
+/* Price Section */
+.bh-price-section {
+  padding-top: 1.5rem;
+  border-top: 1px dashed #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dark .bh-price-section {
+  border-top-color: #166534;
+}
+
+.bh-price-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.dark .bh-price-row {
+  color: #9ca3af;
+}
+
+.bh-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+}
+
+.bh-total-row > span:first-child {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #111811;
+}
+
+.dark .bh-total-row > span:first-child {
+  color: #ffffff;
+}
+
+.bh-total-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0fb60f;
+}
+
+.bh-payment-note {
+  font-size: 0.6875rem;
+  text-align: center;
+  color: #9ca3af;
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+/* Cancel Section */
+.bh-cancel-section {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bh-btn-cancel {
+  width: 100%;
+  background-color: #fef2f2;
+  color: #dc2626;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border: 1px solid #fecaca;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.bh-btn-cancel:hover {
+  background-color: #fee2e2;
+}
+
+.dark .bh-btn-cancel {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.dark .bh-btn-cancel:hover {
+  background-color: rgba(239, 68, 68, 0.15);
+}
+
+.bh-cancel-note {
+  font-size: 0.625rem;
+  color: #9ca3af;
+  text-align: center;
+  padding: 0 1rem;
+}
+
+/* ============================
+   Support Card
+   ============================ */
+.bh-support-card {
+  background-color: rgba(0, 229, 54, 0.05);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 229, 54, 0.1);
+  padding: 1.25rem;
+}
+
+.bh-support-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.bh-support-header .material-symbols-outlined {
+  color: #00E536;
+}
+
+.bh-support-title {
+  font-weight: 700;
+  color: #111811;
+}
+
+.dark .bh-support-title {
+  color: #ffffff;
+}
+
+.bh-support-text {
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.dark .bh-support-text {
+  color: #9ca3af;
+}
+
+.bh-support-phone {
+  color: #0fb60f;
+  font-weight: 700;
+  font-size: 1.125rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.bh-support-phone .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.bh-support-phone:hover {
+  color: #00E536;
+}
+
+/* ============================
+   Status Banner Variants
+   ============================ */
+.bh-status-banner.confirmed {
+  background-color: #16a34a;
+}
+
+.bh-status-banner.completed {
+  background-color: #4b5563;
+}
+
+.bh-status-banner.cancelled {
+  background-color: #dc2626;
+}
+
+.bh-status-banner.pending {
+  background-color: #d97706;
+}
+
+/* ============================
+   Not Found State
+   ============================ */
+.bh-not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6rem 2rem;
+  text-align: center;
+  gap: 1rem;
+}
+
+.bh-not-found-icon {
+  font-size: 4rem;
+  color: #d1d5db;
+}
+
+.dark .bh-not-found-icon {
+  color: #4b5563;
+}
+
+.bh-not-found h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.dark .bh-not-found h2 {
+  color: #ffffff;
+}
+
+.bh-not-found p {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.dark .bh-not-found p {
+  color: #9ca3af;
+}
+
+.bh-btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background-color: #00E536;
+  color: #111811;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.bh-btn-back:hover {
+  background-color: #00c92e;
+}
+
+/* ============================
+   Clickable Field Name
+   ============================ */
+.bh-field-name.clickable {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.bh-field-name.clickable:hover {
+  color: #00E536;
+}
+
+/* ============================
+   Rebook Button
+   ============================ */
+.bh-btn-rebook {
+  width: 100%;
+  padding: 0.875rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border: 2px solid #00E536;
+  background-color: transparent;
+  color: #00E536;
+  transition: all 0.2s;
+}
+
+.bh-btn-rebook:hover {
+  background-color: #00E536;
+  color: #111811;
+}
+
+.dark .bh-btn-rebook {
+  border-color: #00E536;
+  color: #86efac;
+}
+
+.dark .bh-btn-rebook:hover {
+  background-color: #00E536;
+  color: #111811;
+}
+
+/* ============================
+   Feedback per Slot — BookingDetailPage
+   ============================ */
+.bd-feedback-write-btn {
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  padding: 0.35rem 0.75rem; border-radius: 6px; border: 1px dashed var(--border-color, #d1d5db);
+  background: transparent; color: var(--text-muted, #6b7280); font-size: 0.8rem; cursor: pointer;
+  transition: all 0.2s; margin-top: 0.25rem;
+}
+.bd-feedback-write-btn:hover { border-color: var(--primary-color, #00E536); color: var(--primary-color, #00E536); background: rgba(0,229,54,0.05); }
+.bd-feedback-write-btn .material-symbols-outlined { font-size: 1rem; }
+
+.bd-feedback-existing {
+  padding: 0.625rem 0.75rem; background: var(--bg-secondary, #f9fafb);
+  border-radius: 8px; border: 1px solid var(--border-color, #e5e7eb); margin-top: 0.25rem;
+}
+.dark .bd-feedback-existing { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); }
+
+.bd-feedback-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.375rem; }
+.bd-feedback-icon { font-size: 1rem !important; color: var(--primary-color, #00E536); }
+.bd-feedback-label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary, #374151); flex: 1; }
+.dark .bd-feedback-label { color: #d1d5db; }
+.bd-feedback-actions-small { display: flex; gap: 0.25rem; }
+.bd-feedback-btn-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 6px; border: none;
+  background: transparent; cursor: pointer; color: var(--text-muted, #6b7280); transition: all 0.15s;
+}
+.bd-feedback-btn-icon:hover { background-color: var(--bg-hover, #f3f4f6); color: #374151; }
+.bd-feedback-btn-icon.danger:hover { background-color: rgba(239,68,68,0.1); color: #dc2626; }
+.bd-feedback-btn-icon .material-symbols-outlined { font-size: 1rem; }
+
+.bd-feedback-comment { font-size: 0.825rem; color: var(--text-secondary, #374151); font-style: italic; margin: 0.25rem 0 0; }
+.dark .bd-feedback-comment { color: #9ca3af; }
+
+.bd-feedback-delete-confirm {
+  margin-top: 0.5rem; padding: 0.625rem 0.75rem;
+  background: rgba(239,68,68,0.06); border-radius: 6px; border: 1px solid rgba(239,68,68,0.2);
+  font-size: 0.8rem; color: #dc2626;
+}
+
+.bd-star-rating { display: flex; gap: 2px; }
+.bd-star { font-size: 1.1rem !important; color: #d1d5db; -webkit-user-select: none; user-select: none; transition: color 0.15s; }
+.bd-star.filled { color: #f59e0b; }
+.bd-star.interactive { cursor: pointer; }
+.bd-star.interactive:hover { color: #fbbf24; }
+
+.bd-feedback-form {
+  display: flex; flex-direction: column; gap: 0.5rem;
+  padding: 0.625rem 0.75rem; background: var(--bg-secondary, #f9fafb);
+  border-radius: 8px; border: 1px solid var(--border-color, #e5e7eb); margin-top: 0.25rem;
+}
+.dark .bd-feedback-form { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); }
+.bd-feedback-form-title { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary, #374151); margin: 0; }
+.dark .bd-feedback-form-title { color: #d1d5db; }
+.bd-feedback-textarea {
+  width: 100%; padding: 0.5rem 0.625rem; border-radius: 6px;
+  border: 1px solid var(--border-color, #d1d5db); background: var(--bg-primary, #fff);
+  color: var(--text-primary, #111827); font-size: 0.825rem; resize: vertical;
+  font-family: inherit; outline: none; transition: border-color 0.2s; box-sizing: border-box;
+}
+.bd-feedback-textarea:focus { border-color: var(--primary-color, #00E536); }
+.dark .bd-feedback-textarea { background: var(--bg-card, #1f2937); border-color: rgba(255,255,255,0.15); color: #f9fafb; }
+.bd-feedback-form-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+.bd-feedback-btn {
+  padding: 0.35rem 0.875rem; border-radius: 6px; font-size: 0.8rem; font-weight: 500; cursor: pointer;
+  border: 1px solid transparent; transition: all 0.15s;
+}
+.bd-feedback-btn.primary { background: var(--primary-color, #00E536); color: #111811; border-color: var(--primary-color, #00E536); }
+.bd-feedback-btn.primary:hover { opacity: 0.85; }
+.bd-feedback-btn.secondary { background: transparent; color: var(--text-muted, #6b7280); border-color: var(--border-color, #d1d5db); }
+.bd-feedback-btn.secondary:hover { background: var(--bg-hover, #f3f4f6); }
+.bd-feedback-btn.danger { background: #ef4444; color: #fff; border-color: #ef4444; }
+.bd-feedback-btn.danger:hover { background: #dc2626; }
+.bd-feedback-btn:disabled { opacity: 0.55; cursor: not-allowed; }

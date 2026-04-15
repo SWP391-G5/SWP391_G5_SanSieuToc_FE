@@ -1,0 +1,546 @@
+/* Common.css - Reusable utility classes across the application */
+
+/* ============================================
+   LAYOUT UTILITIES
+   ============================================ */
+
+/* Page Containers */
+.page-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: rgb(246 248 246);
+}
+
+.dark .page-container {
+  background-color: rgb(16 34 16);
+}
+
+.page-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+}
+
+.content-container {
+  max-width: 72rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.content-container-narrow {
+  max-width: 42rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Grid Layouts */
+.grid-2-cols {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .grid-2-cols {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================
+   CARD & SURFACE COMPONENTS
+   ============================================ */
+
+/* Card Base */
+.card {
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.dark .card {
+  background-color: rgb(20 83 45);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+.card-padded {
+  padding: 2rem;
+}
+
+.card-padded-lg {
+  padding: 3rem;
+}
+
+@media (max-width: 640px) {
+  .card-padded {
+    padding: 1.5rem;
+  }
+  
+  .card-padded-lg {
+    padding: 2rem;
+  }
+}
+
+/* ============================================
+   FORM ELEMENTS
+   ============================================ */
+
+/* Form Groups */
+.form-group {
+  margin: 1.5rem 0;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .form-row-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(55 65 81);
+  margin-bottom: 0.5rem;
+}
+
+.dark .form-label {
+  color: rgb(209 213 219);
+}
+
+/* Input Base Styles */
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1px solid rgb(209 213 219);
+  border-radius: 0.5rem;
+  background-color: white;
+  color: rgb(17 24 39);
+  transition: all 0.2s;
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: #00E536;
+  box-shadow: 0 0 0 2px rgba(0, 229, 54, 0.2);
+}
+
+.dark .form-input {
+  background-color: rgb(31 41 55);
+  border-color: rgb(75 85 99);
+  color: white;
+}
+
+.dark .form-input:focus {
+  border-color: #00E536;
+}
+
+.form-input::placeholder {
+  color: rgb(156 163 175);
+}
+
+.dark .form-input::placeholder {
+  color: rgb(107 114 128);
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+/* Primary Button */
+.btn-primary {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: #00E536;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  display: inline-block;
+}
+
+.btn-primary:hover {
+  background-color: #00c430;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Secondary Button */
+.btn-secondary {
+  padding: 0.75rem 1rem;
+  background-color: transparent;
+  color: #00E536;
+  font-size: 1rem;
+  font-weight: 600;
+  border: 2px solid #00E536;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  display: inline-block;
+}
+
+.btn-secondary:hover {
+  background-color: rgba(0, 229, 54, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Link Button */
+.btn-link {
+  background: transparent;
+  border: none;
+  color: #00E536;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: text-decoration 0.2s;
+}
+
+.btn-link:hover {
+  text-decoration: none;
+}
+
+.dark .btn-link {
+  color: #13ec13;
+}
+
+/* Rounded Button (Pills) */
+.btn-rounded {
+  border-radius: 9999px;
+}
+
+/* Icon Button */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  background-color: rgba(0, 229, 54, 0.1);
+  color: #00E536;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover {
+  background-color: rgba(0, 229, 54, 0.2);
+}
+
+/* ============================================
+   BADGES & TAGS
+   ============================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 9999px;
+}
+
+.badge-primary {
+  background-color: #00E536;
+  color: white;
+}
+
+.badge-secondary {
+  background-color: rgba(0, 229, 54, 0.1);
+  color: #00E536;
+}
+
+.dark .badge-secondary {
+  background-color: rgba(19, 236, 19, 0.1);
+  color: #13ec13;
+}
+
+/* ============================================
+   PLACEHOLDER PAGES
+   ============================================ */
+
+.placeholder-container {
+  padding: 2rem;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.dark .placeholder-container {
+  background-color: rgb(17 24 39);
+}
+
+.placeholder-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: rgb(17 24 39);
+  margin-bottom: 1rem;
+}
+
+.dark .placeholder-title {
+  color: white;
+}
+
+.placeholder-text {
+  margin-top: 1rem;
+  color: rgb(75 85 99);
+}
+
+.dark .placeholder-text {
+  color: rgb(156 163 175);
+}
+
+/* ============================================
+   TRANSITIONS & ANIMATIONS
+   ============================================ */
+
+.transition-all {
+  transition: all 0.3s;
+}
+
+.transition-fast {
+  transition: all 0.2s;
+}
+
+.transition-smooth {
+  transition: all 0.7s ease;
+}
+
+/* ============================================
+   BORDERS & RADIUS
+   ============================================ */
+
+.rounded-sm {
+  border-radius: 0.25rem;
+}
+
+.rounded {
+  border-radius: 0.5rem;
+}
+
+.rounded-lg {
+  border-radius: 0.75rem;
+}
+
+.rounded-xl {
+  border-radius: 1rem;
+}
+
+.rounded-full {
+  border-radius: 9999px;
+}
+
+/* ============================================
+   SHADOWS
+   ============================================ */
+
+.shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Focus Ring */
+.focus-ring {
+  outline: none;
+}
+
+.focus-ring:focus {
+  box-shadow: 0 0 0 2px rgba(0, 229, 54, 0.2);
+}
+
+/* ============================================
+   SPACING UTILITIES
+   ============================================ */
+
+.p-4 {
+  padding: 1rem;
+}
+
+.p-6 {
+  padding: 1.5rem;
+}
+
+.p-8 {
+  padding: 2rem;
+}
+
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.m-0 {
+  margin: 0;
+}
+
+.my-4 {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.my-6 {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ============================================
+   TEXT UTILITIES
+   ============================================ */
+
+.text-center {
+  text-align: center;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.text-base {
+  font-size: 1rem;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+/* ============================================
+   HERO SECTIONS (Common Pattern)
+   ============================================ */
+
+.hero-section {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .hero-section {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+}
+
+.hero-image-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/5;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.hero-image-wrapper:hover .hero-image {
+  transform: scale(1.05);
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.2) 50%, transparent 100%);
+  z-index: 10;
+}
+
+.hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.7s ease;
+}
+
+.hero-content {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 2.5rem;
+  right: 2.5rem;
+  z-index: 20;
+}
+
+/* ============================================
+   RESPONSIVE VISIBILITY
+   ============================================ */
+
+.hidden-mobile {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .hidden-mobile {
+    display: block;
+  }
+}
+
+.hidden-desktop {
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .hidden-desktop {
+    display: none;
+  }
+}

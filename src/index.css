@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&family=Manrope:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons+Outlined');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined');
+
+/* Import Common Utilities */
+@import './styles/common.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Color Variables - Matching home.html design */
+    --color-primary: #00E536;
+    --color-secondary: #166534;
+    --color-accent: #FDE047;
+    --color-background-light: #F0FDF4;
+    --color-background-dark: #052e16;
+    --color-surface-light: #FFFFFF;
+    --color-surface-dark: #14532d;
+    
+    /* Additional variables for Field pages */
+    --primary: #00E536;
+    --primary-hover: #00CC30;
+    --bg-primary: #F0FDF4;
+    --bg-primary-dark: #102210;
+    --text-primary: #111811;
+    --text-secondary: #618961;
+    --surface-light: #FFFFFF;
+    --surface-dark: #1a2e1a;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: 'Montserrat', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--color-background-light);
+    color: #1f2937;
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  body.dark {
+    background-color: var(--color-background-dark);
+    color: #f3f4f6;
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+}
+
+@layer utilities {
+  /* Glass effect utility */
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.7);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .dark .glass-effect {
+    background: rgba(20, 83, 45, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Logo text shadow */
+  .logo-text-shadow {
+    text-shadow: 2px 2px 0px #FDE047;
+  }
+
+  /* Neon shadow effect */
+  .shadow-neon {
+    box-shadow: 0 0 10px rgba(0, 229, 54, 0.5);
+  }
+}
