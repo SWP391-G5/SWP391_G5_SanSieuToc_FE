@@ -46,7 +46,7 @@ export default function ManagerLayout() {
       {/* SideNavBar */}
       <aside className="bg-[#121410] dark:bg-[#121410] h-screen w-64 fixed left-0 top-0 flex flex-col py-8 z-50">
         <div className="px-6 mb-12">
-          <h1 className="text-2xl font-black tracking-tight text-[#fdfdf6] font-headline">Kinetic Turf</h1>
+          <h1 className="text-2xl font-black tracking-tight text-[#fdfdf6] font-headline">San Sieu Toc HQ</h1>
           <p className="text-xs uppercase tracking-widest text-primary/60 font-bold mt-1">Platform Manager</p>
         </div>
 
@@ -85,7 +85,6 @@ export default function ManagerLayout() {
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-headline font-extrabold tracking-tight text-on-surface">Dashboard</h2>
             <div className="h-4 w-[1px] bg-outline-variant/30" />
-            <p className="text-sm text-on-surface-variant font-body">Sân Siêu Tốc HQ</p>
           </div>
 
           <div className="flex items-center gap-6">
