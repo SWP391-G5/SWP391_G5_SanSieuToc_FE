@@ -94,6 +94,11 @@ export default function MainLayout() {
 
   const isHome = location.pathname === '/';
 
+  const onProfile = () => {
+    setUserMenuOpen(false);
+    navigate('/profile');
+  };
+
   const onLogout = () => {
     setUserMenuOpen(false);
     auth.logout();
@@ -190,10 +195,23 @@ export default function MainLayout() {
                     <button
                       type="button"
                       role="menuitem"
-                      onClick={onLogout}
-                      className="w-full px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
+                      onClick={onProfile}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
                     >
-                      Logout
+                      <span className="material-symbols-outlined text-[18px] leading-none">account_circle</span>
+                      <span>Profile</span>
+                    </button>
+
+                    <div className="my-1 h-px bg-white/10" />
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={onLogout}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
+                    >
+                      <span className="material-symbols-outlined text-[18px] leading-none">logout</span>
+                      <span>Logout</span>
                     </button>
                   </div>
                 ) : null}
