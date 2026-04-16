@@ -3,13 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
-import {
-  changeMyPassword,
-  getMyProfile,
-  requestEmailChange,
-  updateMyProfile,
-  verifyEmailChange,
-} from '../services/profileApi';
+import profileService from '../services/profileService';
 
 import '../styles/UserProfilePage.css';
 
@@ -105,7 +99,7 @@ export default function UserProfilePage() {
     (async () => {
       setLoading(true);
       try {
-        const data = await getMyProfile();
+        const data = await profileService.getMyProfile();
         if (ignore) return;
 
         const u = data?.user || {};
@@ -183,7 +177,7 @@ export default function UserProfilePage() {
   const openEmailOtp = async (newEmail) => {
     setEmailOtpLoading(true);
     try {
-      await requestEmailChange(newEmail);
+      await profileService.requestEmailChange(newEmail);
       setEmailOtp('');
       setEmailOtpResendSeconds(60);
       setEmailOtpOpen(true);
@@ -211,7 +205,7 @@ export default function UserProfilePage() {
         address: form.address,
         image: form.image,
       };
-      const data = await updateMyProfile(payload);
+      const data = await profileService.updateMyProfile(payload);
       const u = data?.user || {};
       setForm((prev) => ({
         ...prev,
@@ -248,7 +242,7 @@ export default function UserProfilePage() {
 
     setChangingPassword(true);
     try {
-      const data = await changeMyPassword({
+      const data = await profileService.changeMyPassword({
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword,
       });
@@ -273,7 +267,7 @@ export default function UserProfilePage() {
 
     setEmailOtpLoading(true);
     try {
-      const data = await verifyEmailChange({ newEmail, code: String(emailOtp).trim() });
+      const data = await profileService.verifyEmailChange({ newEmail, code: String(emailOtp).trim() });
       notifySuccess(data?.message || 'Đổi email thành công.');
       const normalizedEmail = data?.user?.email || newEmail;
       setForm((p) => ({ ...p, email: normalizedEmail }));
@@ -295,7 +289,7 @@ export default function UserProfilePage() {
 
     setEmailOtpLoading(true);
     try {
-      await requestEmailChange(newEmail);
+      await profileService.requestEmailChange(newEmail);
       setEmailOtpResendSeconds(60);
       notifySuccess('Đã gửi lại OTP.');
     } catch (err) {

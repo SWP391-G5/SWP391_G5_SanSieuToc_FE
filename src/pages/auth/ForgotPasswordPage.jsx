@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { forgotPasswordAdmin, forgotPasswordUser } from '../services/authApi';
+import authService from '../../services/authService';
 import { useNotification } from '../../context/NotificationContext';
 
 function isAdminGroup(role) {
@@ -39,9 +39,9 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     try {
       if (isAdminGroup(role)) {
-        await forgotPasswordAdmin({ email });
+        await authService.forgotPasswordAdmin({ email });
       } else {
-        await forgotPasswordUser({ email });
+        await authService.forgotPasswordUser({ email });
       }
       notifySuccess('Nếu email tồn tại, mật khẩu mới đã được gửi.');
       navigate('/auth');
