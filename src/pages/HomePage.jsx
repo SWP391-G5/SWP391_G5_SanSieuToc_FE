@@ -170,6 +170,7 @@ export default function HomePage() {
             </div>
             <button
               type="button"
+              onClick={() => navigate('/fields')}
               className="flex items-center gap-2 font-label text-sm uppercase tracking-widest text-[#8eff71] transition-all hover:gap-4"
             >
               View all <span className="material-symbols-outlined">arrow_forward</span>

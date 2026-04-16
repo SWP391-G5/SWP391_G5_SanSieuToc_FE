@@ -10,14 +10,6 @@ export default function MainLayout() {
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const goHomeAndScroll = (id) => {
-    if (location.pathname !== '/') {
-      navigate('/', { state: { scrollTo: id } });
-      return;
-    }
-    scrollToId(id);
-  };
-
   const isHome = location.pathname === '/';
 
   return (
@@ -53,7 +45,10 @@ export default function MainLayout() {
             </button>
             <button
               type="button"
-              onClick={() => goHomeAndScroll('field')}
+              onClick={() => {
+                navigate('/fields');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               className="text-[#fdfdf6]/70 transition-colors duration-300 hover:text-[#8eff71]"
             >
               Field
@@ -111,7 +106,14 @@ export default function MainLayout() {
               <div className="mb-3 text-xs font-black uppercase tracking-widest text-[#fdfdf6]">Product</div>
               <ul className="space-y-2 text-sm text-[#abaca5]">
                 <li>
-                  <button type="button" className="hover:text-[#8eff71]" onClick={() => goHomeAndScroll('field')}>
+                  <button
+                    type="button"
+                    className="hover:text-[#8eff71]"
+                    onClick={() => {
+                      navigate('/fields');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
                     Fields
                   </button>
                 </li>
