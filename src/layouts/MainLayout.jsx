@@ -1,8 +1,82 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+
+import { useAuth } from '../context/AuthContext';
 
 export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const auth = useAuth();
+
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
+
+  const displayName = useMemo(() => {
+    const name = String(auth.user?.name || '').trim();
+    if (name) return name;
+    const username = String(auth.user?.username || '').trim();
+    return username || 'User';
+  }, [auth.user?.name, auth.user?.username]);
+
+  const avatarSrc = useMemo(() => {
+    const raw = String(auth.user?.image || '').trim();
+    if (!raw) return '';
+
+    // Allow common safe URL forms: absolute http(s), relative (/path), or data:image.
+    if (raw.startsWith('data:image/')) return raw;
+    if (raw.startsWith('/')) return raw;
+
+    try {
+      const u = new URL(raw);
+      if (u.protocol === 'http:' || u.protocol === 'https:') return raw;
+      return '';
+    } catch {
+      return '';
+    }
+  }, [auth.user?.image]);
+
+  const avatarFallback = useMemo(() => {
+    const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#1a2a22"/>
+      <stop offset="1" stop-color="#0b120e"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="20" fill="url(#g)"/>
+  <circle cx="64" cy="52" r="22" fill="#2a3c33"/>
+  <path d="M24 112c7-22 26-34 40-34s33 12 40 34" fill="#2a3c33"/>
+  <circle cx="64" cy="64" r="54" fill="none" stroke="#6dff9e" stroke-opacity="0.18" stroke-width="4"/>
+</svg>`;
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  }, []);
+
+  useEffect(() => {
+    if (!userMenuOpen) return undefined;
+
+    const onMouseDown = (e) => {
+      if (!userMenuRef.current) return;
+      if (userMenuRef.current.contains(e.target)) return;
+      setUserMenuOpen(false);
+    };
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setUserMenuOpen(false);
+    };
+
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [userMenuOpen]);
+
+  useEffect(() => {
+    setUserMenuOpen(false);
+  }, [location.pathname]);
 
   const scrollToId = (id) => {
     const el = document.getElementById(id);
@@ -11,6 +85,17 @@ export default function MainLayout() {
   };
 
   const isHome = location.pathname === '/';
+
+  const onProfile = () => {
+    setUserMenuOpen(false);
+    navigate('/profile');
+  };
+
+  const onLogout = () => {
+    setUserMenuOpen(false);
+    auth.logout();
+    navigate('/', { replace: true });
+  };
 
   return (
     <div className="min-h-screen bg-[#0d0f0b] text-[#fdfdf6] font-ui selection:bg-[#8eff71] selection:text-[#0d6100] flex flex-col">
@@ -77,13 +162,64 @@ export default function MainLayout() {
           </div>
 
           <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => navigate('/auth')}
-              className="scale-95 rounded-md bg-gradient-to-br from-[#8eff71] to-[#2ff801] px-6 py-2 font-bold text-[#0d6100] transition-transform duration-200 hover:scale-100"
-            >
-              Sign In
-            </button>
+            {auth.isAuthenticated ? (
+              <div ref={userMenuRef} className="relative flex items-center">
+                <button
+                  type="button"
+                  onClick={() => setUserMenuOpen((v) => !v)}
+                  className="flex items-center gap-3 rounded-full py-1 pl-1 pr-3 transition-colors hover:bg-white/5"
+                  aria-haspopup="menu"
+                  aria-expanded={userMenuOpen}
+                >
+                  <span className="h-10 w-10 overflow-hidden rounded-full ring-2 ring-[#8eff71]/30">
+                    <img
+                      src={avatarSrc || avatarFallback}
+                      alt="Avatar"
+                      className="h-full w-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  </span>
+                  <span className="max-w-44 truncate text-sm font-semibold text-[#fdfdf6]">{displayName}</span>
+                </button>
+
+                {userMenuOpen ? (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-full mt-2 w-44 overflow-hidden rounded-md border border-white/10 bg-[#0d0f0b]/95 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.35)]"
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={onProfile}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
+                    >
+                      <span className="material-symbols-outlined text-[18px] leading-none">account_circle</span>
+                      <span>Profile</span>
+                    </button>
+
+                    <div className="my-1 h-px bg-white/10" />
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={onLogout}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
+                    >
+                      <span className="material-symbols-outlined text-[18px] leading-none">logout</span>
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => navigate('/auth')}
+                className="scale-95 rounded-md bg-gradient-to-br from-[#8eff71] to-[#2ff801] px-6 py-2 font-bold text-[#0d6100] transition-transform duration-200 hover:scale-100"
+              >
+                Sign In
+              </button>
+            )}
           </div>
         </div>
       </nav>
