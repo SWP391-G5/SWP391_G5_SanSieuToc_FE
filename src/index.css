@@ -10,6 +10,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Global theme tokens for Manager dashboard (ported from stitch HTML).
+ * Using CSS variables keeps React components small and consistent.
+ */
+:root {
+  --sst-secondary: #e5e2e1;
+  --sst-tertiary: #88f6ff;
+  --sst-surface: #0d0f0b;
+  --sst-outline: #757670;
+  --sst-surface-container-high: #1e201b;
+  --sst-surface-container: #181a16;
+  --sst-surface-container-low: #121410;
+  --sst-surface-container-lowest: #000000;
+  --sst-surface-container-highest: #242721;
+  --sst-outline-variant: #474944;
+  --sst-on-surface: #fdfdf6;
+  --sst-on-surface-variant: #abaca5;
+  --sst-primary: #8eff71;
+  --sst-on-primary: #0d6100;
+  --sst-error: #ff7351;
+}
+
+body {
+  background: var(--sst-surface);
+}
+
 @layer base {
   :root {
     /* Color Variables - Matching home.html design */

@@ -7,6 +7,18 @@ import HomePage from './pages/HomePage';
 import NotFoundPage from './pages/NotFoundPage';
 import UserProfilePage from './pages/UserProfilePage';
 
+import ManagerLayout from './layouts/manager/ManagerLayout';
+import RequireManager from './components/manager/RequireManager';
+import {
+  ManagerBannersPage,
+  ManagerFeedbackPage,
+  ManagerPostsPage,
+  ManagerPrivacyPage,
+  ManagerSlidesPage,
+  ManagerStatisticsPage,
+  ManagerWalletPage,
+} from './pages/Manager';
+
 import { useAuth } from './context/AuthContext';
 
 function RequireAuth({ children }) {
@@ -33,6 +45,25 @@ function App() {
           />
           {/* 404 Not Found */}
           <Route path="*" element={<NotFoundPage />} />
+        </Route>
+
+        {/* Manager Area */}
+        <Route
+          path="/manager"
+          element={
+            <RequireManager>
+              <ManagerLayout />
+            </RequireManager>
+          }
+        >
+          <Route index element={<Navigate to="/manager/statistics" replace />} />
+          <Route path="statistics" element={<ManagerStatisticsPage />} />
+          <Route path="posts" element={<ManagerPostsPage />} />
+          <Route path="slides" element={<ManagerSlidesPage />} />
+          <Route path="banners" element={<ManagerBannersPage />} />
+          <Route path="wallet" element={<ManagerWalletPage />} />
+          <Route path="privacy" element={<ManagerPrivacyPage />} />
+          <Route path="feedback" element={<ManagerFeedbackPage />} />
         </Route>
       </Routes>
     </Router>
