@@ -1,101 +1,65 @@
 import { useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
-const FIELDS = [
-  {
-    id: 1,
-    name: 'Sân Cỏ Nhân Tạo Chu Văn An',
-    address: 'Bình Thạnh, TP.HCM',
-    city: 'TP.HCM',
-    rating: '4.9',
-    size: '5-A-SIDE',
-    sizeKey: '5',
-    sizeTone: 'primary',
-    price: '450.000đ',
-    utilities: ['parking', 'lighting', 'wifi', 'shower'],
-    image:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuBQPu1qODcCL9Nx77vyfiJ6IU3h-wv6bnvloALbFUAMfyW0IFeyBxk6wy0hWYmwGIgWT8YrxD5XNCqvnJB5WgHW76aPaBfGjjRzNZgf5Hox8C_aITQrj4DVzE-QYLcM7HMsWSEFIjQpXQA2eOadzvptXPnPGC6ICpgZ1KyvnLQnc_FdIWJQ5FdLyFeM_wEXoKpBevSrp1QphC734qRc7eRSo7NiHu6GOO3KV4HSL0Yl3KlvAB4calzLsKQ2ytoUaVaPnrUEYfdoMg',
-    imageAlt: 'Field image',
-  },
-  {
-    id: 2,
-    name: 'Sân Bóng Siêu Tốc D7',
-    address: 'District 7, TP.HCM',
-    city: 'TP.HCM',
-    rating: '4.7',
-    size: '7-A-SIDE',
-    sizeKey: '7',
-    sizeTone: 'tertiary',
-    price: '600.000đ',
-    utilities: ['parking', 'wifi'],
-    image:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuDeiKUV2Ne6pM6CW-9Ofl-6_2ZZohKE9QTz4wk9jJJg8O_Z5izh41rl6Irfq4Eiy1URP3GsyVeiJnD2FlvIx-W0_a4yvNUYsLHrAE7riZ3iFViB6uNQDvBS0V5qZGVWz_9dOm2rKdFRoTh0sYp4nvlIPQVbe-iYR-IqOAxJQULpAqasIZfaCTUn4MoLoCONN7L88BLCYgOihrKOEk7b3c17iY3F7VzgKM25N-BlE8q0gx7bs24t9ZLPMfJpbl-XIN02G-rbiOF-Xg',
-    imageAlt: 'Field image',
-  },
-  {
-    id: 3,
-    name: 'Sân Vận Động Hàng Đẫy',
-    address: 'Đống Đa, Ha Noi',
-    city: 'Ha Noi',
-    rating: '5.0',
-    size: '11-A-SIDE',
-    sizeKey: '11',
-    sizeTone: 'primary',
-    price: '1.200.000đ',
-    utilities: ['parking', 'lighting', 'wifi', 'shower'],
-    image:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuDHvta98H0XUddiYwr3Aehc9xRePmYD0tfzaL0dVTgmo4q6MhG42YZF5WmwQQ2BSRzARay4xV7AYBeoww_FD_iRKzCKjnIxUubFH__BhnIxJMVykZl9Rg7qEqW6sd-WjjYCBz7_iRlZ_17yO5eMnp5pe8joe0EPTWrnHxC4ADpgScDjyOftBPYiVLM38Xrurjg9F78RBLK9bDPHoSxG4lk0V0RZLUbUHrqRXGqHh_hErA1vcozy3apL_TFy4o1Ss3B_BuRv8MaI1g',
-    imageAlt: 'Field image',
-  },
-  {
-    id: 4,
-    name: 'Sân Mini Lê Duẩn',
-    address: 'Hai Bà Trưng, Ha Noi',
-    city: 'Ha Noi',
-    rating: '4.5',
-    size: '5-A-SIDE',
-    sizeKey: '5',
-    sizeTone: 'primary',
-    price: '350.000đ',
-    utilities: ['wifi', 'shower'],
-    image:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuDkifbmtylfbEPXz7hq_7Qt4SnqaHLqOGIBMFPdJNVH_dMeb11N-dYCF9AXnspjYcEVHaVnKNfHijICEnpItczf76mkwP_viYPVVqEatNhp4EkTahzxg6G_FiRvBdG_5C-YWj5IjFS8IdQt56mnaG1hoGsWrrDqZPoC8xkrTOXBXl7TS2ZdcE1hcjz7Qm_10K3XMkmy1ixQ3dX_IU0qlC5hMVn3hGODB4MVu3Im6FF0g74LOP_yv99I1HXeNjfIOHK97-hfgoIHww',
-    imageAlt: 'Field image',
-  },
-  {
-    id: 5,
-    name: 'Sân Bóng Đại Học Bách Khoa',
-    address: 'District 10, TP.HCM',
-    city: 'TP.HCM',
-    rating: '4.8',
-    size: '7-A-SIDE',
-    sizeKey: '7',
-    sizeTone: 'tertiary',
-    price: '550.000đ',
-    utilities: ['parking', 'lighting', 'wifi'],
-    image:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuDHvta98H0XUddiYwr3Aehc9xRePmYD0tfzaL0dVTgmo4q6MhG42YZF5WmwQQ2BSRzARay4xV7AYBeoww_FD_iRKzCKjnIxUubFH__BhnIxJMVykZl9Rg7qEqW6sd-WjjYCBz7_iRlZ_17yO5eMnp5pe8joe0EPTWrnHxC4ADpgScDjyOftBPYiVLM38Xrurjg9F78RBLK9bDPHoSxG4lk0V0RZLUbUHrqRXGqHh_hErA1vcozy3apL_TFy4o1Ss3B_BuRv8MaI1g',
-    imageAlt: 'Field image',
-  },
-  {
-    id: 6,
-    name: 'Sân Bóng Celadon City',
-    address: 'Tân Phú, TP.HCM',
-    city: 'TP.HCM',
-    rating: '4.6',
-    size: '5-A-SIDE',
-    sizeKey: '5',
-    sizeTone: 'primary',
-    price: '500.000đ',
-    utilities: ['parking', 'lighting'],
-    image:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuBQPu1qODcCL9Nx77vyfiJ6IU3h-wv6bnvloALbFUAMfyW0IFeyBxk6wy0hWYmwGIgWT8YrxD5XNCqvnJB5WgHW76aPaBfGjjRzNZgf5Hox8C_aITQrj4DVzE-QYLcM7HMsWSEFIjQpXQA2eOadzvptXPnPGC6ICpgZ1KyvnLQnc_FdIWJQ5FdLyFeM_wEXoKpBevSrp1QphC734qRc7eRSo7NiHu6GOO3KV4HSL0Yl3KlvAB4calzLsKQ2ytoUaVaPnrUEYfdoMg',
-    imageAlt: 'Field image',
-  },
-];
+import { FIELDS } from '../data/fields';
+
+const WISHLIST_KEY = 'sst_wishlist';
+
+function loadWishlist() {
+  try {
+    const raw = localStorage.getItem(WISHLIST_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((x) => x && typeof x.id === 'number');
+  } catch {
+    return [];
+  }
+}
+
+function saveWishlist(items) {
+  try {
+    localStorage.setItem(WISHLIST_KEY, JSON.stringify(items));
+  } catch {
+    // ignore
+  }
+}
+
+function toWishlistItem(f) {
+  return {
+    id: f.id,
+    name: f.name,
+    address: f.address,
+    city: f.city,
+    rating: f.rating,
+    size: f.size,
+    sizeKey: f.sizeKey,
+    sizeTone: f.sizeTone,
+    price: f.price,
+    utilities: f.utilities,
+    image: f.image,
+    imageAlt: f.imageAlt,
+  };
+}
 
 export default function FieldListPage() {
-  const [searchText, setSearchText] = useState('');
+  const location = useLocation();
+  const initialSearchText = typeof location.state?.searchText === 'string' ? location.state.searchText : '';
+
+  const [searchText, setSearchText] = useState(initialSearchText);
   const [sortBy, setSortBy] = useState('topRated');
+
+  const [wishlist, setWishlist] = useState(() => loadWishlist());
+  const wishlistIds = useMemo(() => new Set(wishlist.map((x) => x.id)), [wishlist]);
+
+  const toggleWishlist = (field) => {
+    setWishlist((prev) => {
+      const exists = prev.some((x) => x.id === field.id);
+      const next = exists ? prev.filter((x) => x.id !== field.id) : [...prev, toWishlistItem(field)];
+      saveWishlist(next);
+      return next;
+    });
+  };
 
   const [selectedCity, setSelectedCity] = useState('All');
   const [selectedSize, setSelectedSize] = useState(null);
@@ -439,74 +403,95 @@ export default function FieldListPage() {
                 <div className="mt-2 text-sm text-[#abaca5]">Try another keyword (partial search works).</div>
               </div>
             ) : (
-              displayFields.map((f) => (
-              <div
-                key={f.id}
-                className="group flex h-full flex-col overflow-hidden rounded-xl bg-[#181a16] shadow-[0_0_20px_rgba(0,0,0,0.3)] transition-all duration-300 hover:scale-[1.02]"
-              >
-                <div className="relative h-56 flex-shrink-0 overflow-hidden">
-                  <img
-                    alt={f.imageAlt}
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    src={f.image}
-                    loading="lazy"
-                  />
+              displayFields.map((f) => {
+                const wished = wishlistIds.has(f.id);
 
-                  <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-[#0d0f0b]/80 px-3 py-1 backdrop-blur-md">
-                    <span className="material-symbols-outlined fill-icon text-xs text-[#8eff71]">star</span>
-                    <span className="font-headline text-xs font-bold">{f.rating}</span>
-                  </div>
-
+                return (
                   <div
-                    className={
-                      f.sizeTone === 'tertiary'
-                        ? 'absolute bottom-4 right-4 rounded-lg bg-[#88f6ff] px-3 py-1'
-                        : 'absolute bottom-4 right-4 rounded-lg bg-[#8eff71] px-3 py-1'
-                    }
+                    key={f.id}
+                    className="group flex h-full flex-col overflow-hidden rounded-xl bg-[#181a16] shadow-[0_0_20px_rgba(0,0,0,0.3)] transition-all duration-300 hover:scale-[1.02]"
                   >
-                    <span
-                      className={
-                        f.sizeTone === 'tertiary'
-                          ? 'font-headline text-xs font-black text-[#003f43]'
-                          : 'font-headline text-xs font-black text-[#0d6100]'
-                      }
-                    >
-                      {f.size}
-                    </span>
-                  </div>
-                </div>
+                    <div className="relative h-56 flex-shrink-0 overflow-hidden">
+                      <img
+                        alt={f.imageAlt}
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        src={f.image}
+                        loading="lazy"
+                      />
 
-                <div className="flex flex-1 flex-col gap-4 p-5">
-                  <div className="h-16">
-                    <h3 className="line-clamp-2 font-headline text-xl font-extrabold transition-colors group-hover:text-[#8eff71]">
-                      {f.name}
-                    </h3>
-                    <div className="mt-1 flex items-center gap-1 text-[#abaca5]">
-                      <span className="material-symbols-outlined text-sm">location_on</span>
-                      <span className="line-clamp-1 text-xs font-medium">{f.address}</span>
+                      <button
+                        type="button"
+                        onClick={() => toggleWishlist(f)}
+                        aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'}
+                        aria-pressed={wished}
+                        className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#0d0f0b]/70 backdrop-blur-md transition-transform hover:scale-105"
+                      >
+                        <span
+                          className={`material-symbols-outlined text-[20px] leading-none ${
+                            wished ? 'fill-icon text-[#ff4d6d]' : 'text-[#fdfdf6]/90'
+                          }`}
+                        >
+                          favorite
+                        </span>
+                      </button>
+
+                      <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-[#0d0f0b]/80 px-3 py-1 backdrop-blur-md">
+                        <span className="material-symbols-outlined fill-icon text-xs text-[#8eff71]">star</span>
+                        <span className="font-headline text-xs font-bold">{f.rating}</span>
+                      </div>
+
+                      <div
+                        className={
+                          f.sizeTone === 'tertiary'
+                            ? 'absolute bottom-4 right-4 rounded-lg bg-[#88f6ff] px-3 py-1'
+                            : 'absolute bottom-4 right-4 rounded-lg bg-[#8eff71] px-3 py-1'
+                        }
+                      >
+                        <span
+                          className={
+                            f.sizeTone === 'tertiary'
+                              ? 'font-headline text-xs font-black text-[#003f43]'
+                              : 'font-headline text-xs font-black text-[#0d6100]'
+                          }
+                        >
+                          {f.size}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-1 flex-col gap-4 p-5">
+                      <div className="h-16">
+                        <h3 className="line-clamp-2 font-headline text-xl font-extrabold transition-colors group-hover:text-[#8eff71]">
+                          {f.name}
+                        </h3>
+                        <div className="mt-1 flex items-center gap-1 text-[#abaca5]">
+                          <span className="material-symbols-outlined text-sm">location_on</span>
+                          <span className="line-clamp-1 text-xs font-medium">{f.address}</span>
+                        </div>
+                      </div>
+
+                      <div className="mt-auto flex items-end justify-between">
+                        <div>
+                          <span className="font-headline block text-[10px] font-bold uppercase text-[#88f6ff]">
+                            Price per hour
+                          </span>
+                          <span className="font-headline text-2xl font-black tracking-tighter text-[#8eff71]">
+                            {f.price}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="font-headline rounded-lg bg-[#242721] px-4 py-2 text-xs font-bold transition-all hover:bg-[#8eff71] hover:text-[#0d6100]"
+                        >
+                          View Details
+                        </button>
+                      </div>
                     </div>
                   </div>
-
-                  <div className="mt-auto flex items-end justify-between">
-                    <div>
-                      <span className="font-headline block text-[10px] font-bold uppercase text-[#88f6ff]">
-                        Price per hour
-                      </span>
-                      <span className="font-headline text-2xl font-black tracking-tighter text-[#8eff71]">
-                        {f.price}
-                      </span>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="font-headline rounded-lg bg-[#242721] px-4 py-2 text-xs font-bold transition-all hover:bg-[#8eff71] hover:text-[#0d6100]"
-                    >
-                      View Details
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )))}
+                );
+              })
+            )}
           </div>
 
           {/* Pagination */}

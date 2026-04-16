@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import footballImg from '../assets/images/football.jpg';
-import basketballImg from '../assets/images/basketball.jpg';
-import tennisImg from '../assets/images/tennis.jpg';
 import volleyballImg from '../assets/images/volleyball.jpg';
+import { FIELDS } from '../data/fields';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -47,29 +46,105 @@ export default function HomePage() {
     setSelectedDate(v);
   };
 
+  const [heroSearch, setHeroSearch] = useState('');
+  const [heroSearchOpen, setHeroSearchOpen] = useState(false);
+  const heroSearchRef = useRef(null);
+
+  const normalizeText = (s) => {
+    const v = String(s ?? '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    return v;
+  };
+
+  const heroSuggestions = useMemo(() => {
+    const q = normalizeText(heroSearch);
+    if (!q) return [];
+
+    return [...FIELDS]
+      .filter((f) => normalizeText(`${f.name} ${f.address}`).includes(q))
+      .sort((a, b) => {
+        const ra = Number(a.rating) || 0;
+        const rb = Number(b.rating) || 0;
+        if (rb !== ra) return rb - ra;
+        return String(a.name).localeCompare(String(b.name));
+      })
+      .slice(0, 6);
+  }, [heroSearch]);
+
+  useEffect(() => {
+    if (!heroSearchOpen) return undefined;
+
+    const onMouseDown = (e) => {
+      if (!heroSearchRef.current) return;
+      if (heroSearchRef.current.contains(e.target)) return;
+      setHeroSearchOpen(false);
+    };
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setHeroSearchOpen(false);
+    };
+
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [heroSearchOpen]);
+
+  const goToFields = (q) => {
+    const value = String(q ?? '').trim();
+    navigate('/fields', value ? { state: { searchText: value } } : undefined);
+  };
+
+  const onHeroSubmit = (e) => {
+    e.preventDefault();
+    goToFields(heroSearch);
+  };
+
+  const topRatedFields = useMemo(() => {
+    const sorted = [...FIELDS].sort((a, b) => {
+      const ra = Number(a.rating) || 0;
+      const rb = Number(b.rating) || 0;
+      if (rb !== ra) return rb - ra;
+      return String(a.name).localeCompare(String(b.name));
+    });
+
+    return sorted.slice(0, 3);
+  }, []);
+
+  const [largeField, smallField1, smallField2] = topRatedFields;
+
   const featured = {
     large: {
-      tag: 'Pro Turf',
-      title: 'Hang Day Stadium',
-      address: 'Dong Da District, Ha Noi',
-      price: '600,000₫',
-      priceUnit: 'per hour',
-      image: footballImg,
-      alt: 'High angle view of a modern football pitch',
+      tag: largeField?.size || 'Top rated',
+      title: largeField?.name || '—',
+      address: largeField?.address || '',
+      price: largeField?.price || '',
+      priceUnit: 'Price per hour',
+      image: largeField?.image || footballImg,
+      alt: largeField?.imageAlt || 'Field image',
     },
     small1: {
-      title: 'Chu Van An Artificial Turf',
-      address: 'Tay Ho District, Ha Noi',
-      price: '450k/h',
-      image: basketballImg,
-      alt: 'Close-up of sports shoes and ball on turf',
+      title: smallField1?.name || '—',
+      address: smallField1?.address || '',
+      price: smallField1?.price || '',
+      image: smallField1?.image || footballImg,
+      alt: smallField1?.imageAlt || 'Field image',
     },
     small2: {
-      title: 'Futsal Arena Park',
-      address: 'District 7, Ho Chi Minh City',
-      price: '350k/h',
-      image: tennisImg,
-      alt: 'Clean indoor futsal court',
+      title: smallField2?.name || '—',
+      address: smallField2?.address || '',
+      price: smallField2?.price || '',
+      image: smallField2?.image || footballImg,
+      alt: smallField2?.imageAlt || 'Field image',
     },
     medium: {
       badge: 'New Arrival',
@@ -106,19 +181,105 @@ export default function HomePage() {
               LIGHT UP YOUR GAME!
             </h1>
 
-            {/* Search Bar (UI only) */}
+            {/* Search Bar */}
             <form
-              onSubmit={(e) => e.preventDefault()}
+              onSubmit={onHeroSubmit}
               className="flex max-w-3xl flex-col gap-2 rounded-xl bg-[#1e201b] p-2 shadow-[0_20px_50px_rgba(0,0,0,0.5)] md:flex-row"
             >
-              <div className="flex flex-1 items-center gap-3 rounded-lg bg-[#242721] px-4 py-3">
-                <span className="material-symbols-outlined text-[#8eff71]">location_on</span>
-                <input
-                  className="w-full border-none bg-transparent text-[#fdfdf6] placeholder:text-[#abaca5]/50 focus:outline-none"
-                  placeholder="Search by area or field name..."
-                  type="text"
-                />
+              <div ref={heroSearchRef} className="relative flex flex-1">
+                <div className="flex w-full items-center gap-3 rounded-lg bg-[#242721] px-4 py-3">
+                  <span className="material-symbols-outlined text-[#8eff71]">location_on</span>
+                  <input
+                    className="w-full border-none bg-transparent text-[#fdfdf6] placeholder:text-[#abaca5]/50 focus:outline-none"
+                    placeholder="Search by area or field name..."
+                    type="text"
+                    value={heroSearch}
+                    onChange={(e) => {
+                      setHeroSearch(e.target.value);
+                      setHeroSearchOpen(true);
+                    }}
+                    onFocus={() => setHeroSearchOpen(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') setHeroSearchOpen(false);
+                      if (e.key === 'Escape') setHeroSearchOpen(false);
+                    }}
+                    autoComplete="off"
+                  />
+
+                  {heroSearch ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHeroSearch('');
+                        setHeroSearchOpen(false);
+                      }}
+                      className="rounded-lg p-1 text-[#abaca5] transition-colors hover:bg-[#1e201b] hover:text-[#fdfdf6]"
+                      aria-label="Clear search"
+                    >
+                      <span className="material-symbols-outlined text-base">close</span>
+                    </button>
+                  ) : null}
+                </div>
+
+                {heroSearchOpen && heroSearch.trim() ? (
+                  <div
+                    role="listbox"
+                    className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-[#474944]/30 bg-[#121410] shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
+                  >
+                    {heroSuggestions.length === 0 ? (
+                      <div className="px-4 py-3 text-sm text-[#abaca5]">No fields found</div>
+                    ) : (
+                      heroSuggestions.map((f) => (
+                        <button
+                          key={f.id}
+                          type="button"
+                          role="option"
+                          className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-[#181a16]"
+                          onClick={() => {
+                            setHeroSearch(f.name);
+                            setHeroSearchOpen(false);
+                            goToFields(f.name);
+                          }}
+                        >
+                          <div className="min-w-0">
+                            <div className="truncate font-headline text-sm font-black text-[#fdfdf6]">
+                              {f.name}
+                            </div>
+                            <div className="mt-1 flex items-center gap-1 text-xs text-[#abaca5]">
+                              <span className="material-symbols-outlined text-sm">location_on</span>
+                              <span className="truncate">{f.address}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col items-end">
+                            <div className="font-headline text-sm font-black text-[#8eff71]">{f.price}</div>
+                            <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-[#abaca5]">
+                              <span className="material-symbols-outlined fill-icon text-xs text-[#8eff71]">
+                                star
+                              </span>
+                              <span>{f.rating}</span>
+                            </div>
+                          </div>
+                        </button>
+                      ))
+                    )}
+
+                    {heroSuggestions.length > 0 ? (
+                      <button
+                        type="button"
+                        className="w-full border-t border-[#474944]/30 bg-[#0d0f0b]/20 px-4 py-3 text-left text-xs font-black uppercase tracking-widest text-[#8eff71] hover:bg-[#181a16]"
+                        onClick={() => {
+                          setHeroSearchOpen(false);
+                          goToFields(heroSearch);
+                        }}
+                      >
+                        View all results
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
+
               <div className="flex flex-1 items-center gap-3 rounded-lg bg-[#242721] px-4 py-3">
                 <span className="material-symbols-outlined text-[#8eff71]">calendar_month</span>
                 <input

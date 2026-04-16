@@ -3,11 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext';
 
-export default function MainLayout() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const auth = useAuth();
-
+function UserMenu({ auth, navigate }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
 
@@ -74,18 +70,6 @@ export default function MainLayout() {
     };
   }, [userMenuOpen]);
 
-  useEffect(() => {
-    setUserMenuOpen(false);
-  }, [location.pathname]);
-
-  const scrollToId = (id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  const isHome = location.pathname === '/';
-
   const onProfile = () => {
     setUserMenuOpen(false);
     navigate('/profile');
@@ -96,6 +80,91 @@ export default function MainLayout() {
     auth.logout();
     navigate('/', { replace: true });
   };
+
+  if (!auth.isAuthenticated) {
+    return (
+      <button
+        type="button"
+        onClick={() => navigate('/auth')}
+        className="scale-95 rounded-md bg-gradient-to-br from-[#8eff71] to-[#2ff801] px-6 py-2 font-bold text-[#0d6100] transition-transform duration-200 hover:scale-100"
+      >
+        Sign In
+      </button>
+    );
+  }
+
+  return (
+    <div ref={userMenuRef} className="relative flex items-center">
+      <button
+        type="button"
+        onClick={() => setUserMenuOpen((v) => !v)}
+        className="flex items-center gap-3 rounded-full py-1 pl-1 pr-3 transition-colors hover:bg-white/5"
+        aria-haspopup="menu"
+        aria-expanded={userMenuOpen}
+      >
+        <span className="h-10 w-10 overflow-hidden rounded-full ring-2 ring-[#8eff71]/30">
+          <img
+            src={avatarSrc || avatarFallback}
+            alt="Avatar"
+            className="h-full w-full object-cover"
+            referrerPolicy="no-referrer"
+          />
+        </span>
+        <span className="max-w-44 truncate text-sm font-semibold text-[#fdfdf6]">{displayName}</span>
+      </button>
+
+      {userMenuOpen ? (
+        <div
+          role="menu"
+          className="absolute right-0 top-full mt-2 w-44 overflow-hidden rounded-md border border-white/10 bg-[#0d0f0b]/95 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.35)]"
+        >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={onProfile}
+            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
+          >
+            <span className="material-symbols-outlined text-[18px] leading-none">account_circle</span>
+            <span>Profile</span>
+          </button>
+
+          <div className="my-1 h-px bg-white/10" />
+
+          <button
+            type="button"
+            role="menuitem"
+            onClick={onLogout}
+            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
+          >
+            <span className="material-symbols-outlined text-[18px] leading-none">logout</span>
+            <span>Logout</span>
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export default function MainLayout() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const auth = useAuth();
+
+  const scrollToId = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const pathname = location.pathname;
+  const isHome = pathname === '/';
+  const isFields = pathname.startsWith('/fields');
+  const isWishlist = pathname.startsWith('/wishlist');
+
+  const navItemClass = (active) =>
+    active
+      ? 'border-b-2 border-[#8eff71] pb-1 text-[#8eff71] transition-colors duration-300'
+      : 'text-[#fdfdf6]/70 transition-colors duration-300 hover:text-[#8eff71]';
 
   return (
     <div className="min-h-screen bg-[#0d0f0b] text-[#fdfdf6] font-ui selection:bg-[#8eff71] selection:text-[#0d6100] flex flex-col">
@@ -120,11 +189,7 @@ export default function MainLayout() {
                 navigate('/');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className={
-                isHome
-                  ? 'border-b-2 border-[#8eff71] pb-1 text-[#8eff71] transition-colors duration-300'
-                  : 'text-[#fdfdf6]/70 transition-colors duration-300 hover:text-[#8eff71]'
-              }
+              className={navItemClass(isHome)}
             >
               Home
             </button>
@@ -134,7 +199,7 @@ export default function MainLayout() {
                 navigate('/fields');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="text-[#fdfdf6]/70 transition-colors duration-300 hover:text-[#8eff71]"
+              className={navItemClass(isFields)}
             >
               Field
             </button>
@@ -154,72 +219,15 @@ export default function MainLayout() {
             </button>
             <button
               type="button"
-              onClick={() => navigate('/auth')}
-              className="text-[#fdfdf6]/70 transition-colors duration-300 hover:text-[#8eff71]"
+              onClick={() => navigate('/wishlist')}
+              className={navItemClass(isWishlist)}
             >
               Wishlist
             </button>
           </div>
 
           <div className="flex items-center gap-4">
-            {auth.isAuthenticated ? (
-              <div ref={userMenuRef} className="relative flex items-center">
-                <button
-                  type="button"
-                  onClick={() => setUserMenuOpen((v) => !v)}
-                  className="flex items-center gap-3 rounded-full py-1 pl-1 pr-3 transition-colors hover:bg-white/5"
-                  aria-haspopup="menu"
-                  aria-expanded={userMenuOpen}
-                >
-                  <span className="h-10 w-10 overflow-hidden rounded-full ring-2 ring-[#8eff71]/30">
-                    <img
-                      src={avatarSrc || avatarFallback}
-                      alt="Avatar"
-                      className="h-full w-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  </span>
-                  <span className="max-w-44 truncate text-sm font-semibold text-[#fdfdf6]">{displayName}</span>
-                </button>
-
-                {userMenuOpen ? (
-                  <div
-                    role="menu"
-                    className="absolute right-0 top-full mt-2 w-44 overflow-hidden rounded-md border border-white/10 bg-[#0d0f0b]/95 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.35)]"
-                  >
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={onProfile}
-                      className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
-                    >
-                      <span className="material-symbols-outlined text-[18px] leading-none">account_circle</span>
-                      <span>Profile</span>
-                    </button>
-
-                    <div className="my-1 h-px bg-white/10" />
-
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={onLogout}
-                      className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
-                    >
-                      <span className="material-symbols-outlined text-[18px] leading-none">logout</span>
-                      <span>Logout</span>
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => navigate('/auth')}
-                className="scale-95 rounded-md bg-gradient-to-br from-[#8eff71] to-[#2ff801] px-6 py-2 font-bold text-[#0d6100] transition-transform duration-200 hover:scale-100"
-              >
-                Sign In
-              </button>
-            )}
+            <UserMenu key={location.pathname} auth={auth} navigate={navigate} />
           </div>
         </div>
       </nav>
