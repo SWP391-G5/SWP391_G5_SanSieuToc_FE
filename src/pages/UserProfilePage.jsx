@@ -308,8 +308,10 @@ export default function UserProfilePage() {
   };
 
   const onTopUp = () => {
-    notifyInfo('Top up sẽ làm sau.');
+    navigate('/top-up');
   };
+
+  
 
   if (loading) {
     return (
@@ -416,9 +418,13 @@ export default function UserProfilePage() {
                   <div className="profile-terminal-wallet-label">AVAILABLE BALANCE</div>
                   <div className="profile-terminal-wallet-balance">{formatVnd(walletBalance)}đ</div>
                 </div>
-                <button type="button" className="profile-terminal-btn" onClick={onTopUp}>
+                <button
+                  className="profile-terminal-btn"
+                  onClick={onTopUp}
+                >
                   TOP UP
                 </button>
+                
               </div>
             </section>
 

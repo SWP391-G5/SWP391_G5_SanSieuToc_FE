@@ -6,6 +6,8 @@ import MainLayout from './layouts/MainLayout';
 import HomePage from './pages/HomePage';
 import NotFoundPage from './pages/NotFoundPage';
 import UserProfilePage from './pages/UserProfilePage';
+import TopUpPage from './pages/TopUpPage';
+import CheckoutPage from './pages/CheckoutPage';
 
 import { useAuth } from './context/AuthContext';
 
@@ -28,6 +30,22 @@ function App() {
             element={
               <RequireAuth>
                 <UserProfilePage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="top-up"
+            element={
+              <RequireAuth>
+                <TopUpPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="checkout"
+            element={
+              <RequireAuth>
+                <CheckoutPage />
               </RequireAuth>
             }
           />
