@@ -70,8 +70,18 @@ export function AuthProvider({ children }) {
         setUser(data.user);
         return data;
       },
+      verifyEmailAdmin: async ({ email, code }) => {
+        const data = await authService.verifyEmailAdmin({ email, code });
+        setAccessToken(data.accessToken);
+        setUser(data.user);
+        return data;
+      },
       resendVerification: async ({ email }) => {
         const data = await authService.resendVerificationUser({ email });
+        return data;
+      },
+      resendVerificationAdmin: async ({ email }) => {
+        const data = await authService.resendVerificationAdmin({ email });
         return data;
       },
     }),

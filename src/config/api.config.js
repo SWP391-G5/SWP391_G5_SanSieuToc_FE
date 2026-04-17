@@ -2,6 +2,8 @@ export const API_CONFIG = {
   ENDPOINTS: {
     AUTH: {
       ADMIN_LOGIN: '/api/auth/admin/login',
+      ADMIN_VERIFY_EMAIL: '/api/auth/admin/verify-email',
+      ADMIN_RESEND_VERIFICATION: '/api/auth/admin/resend-verification',
       USER_LOGIN: '/api/auth/user/login',
       USER_REGISTER: '/api/auth/user/register',
       USER_VERIFY_EMAIL: '/api/auth/user/verify-email',

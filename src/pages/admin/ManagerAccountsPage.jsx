@@ -31,6 +31,8 @@ function StatusBadge({ status }) {
   const cls =
     s === 'Active'
       ? 'bg-[#8eff71]/15 text-[#8eff71]'
+      : s === 'Deleted'
+        ? 'bg-white/10 text-[#fdfdf6]/60'
       : s === 'Banned'
         ? 'bg-red-500/15 text-red-300'
         : 'bg-yellow-500/15 text-yellow-200';
@@ -94,7 +96,7 @@ export default function ManagerAccountsPage() {
   }, [form]);
 
   const availableStatuses = useMemo(() => {
-    const set = new Set(['Active', 'InActive']);
+    const set = new Set(['Active', 'InActive', 'Deleted']);
     for (const it of items || []) {
       const s = String(it.status || '').trim();
       if (s) set.add(s);
@@ -162,11 +164,11 @@ export default function ManagerAccountsPage() {
     }
   };
 
-  const onDeactivate = async (id) => {
+  const onDelete = async (id) => {
     if (!id) return;
     try {
-      await adminService.deactivateManager(id);
-      notifySuccess('Đã vô hiệu hóa tài khoản.');
+      await adminService.deleteManager(id);
+      notifySuccess('Đã xóa tài khoản (soft delete).');
       await load();
     } catch (e) {
       notifyError(e?.response?.data?.message || 'Thao tác thất bại.');
@@ -371,10 +373,10 @@ export default function ManagerAccountsPage() {
                       <td className="px-5 py-4 text-right">
                         <button
                           type="button"
-                          onClick={() => onDeactivate(it.id)}
-                          disabled={it.status !== 'Active'}
+                          onClick={() => onDelete(it.id)}
+                          disabled={it.status === 'Deleted'}
                           className={
-                            it.status !== 'Active'
+                            it.status === 'Deleted'
                               ? 'rounded-md bg-white/10 px-3 py-2 text-xs text-[#fdfdf6]/40'
                               : 'rounded-md bg-white/10 px-3 py-2 text-xs text-[#fdfdf6]/80 hover:text-[#8eff71]'
                           }

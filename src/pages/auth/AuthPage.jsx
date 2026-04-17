@@ -34,6 +34,7 @@ export default function AuthPage() {
   const [error, setError] = useState('');
 
   const [pendingEmail, setPendingEmail] = useState('');
+  const [pendingAccountType, setPendingAccountType] = useState('user');
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const [resendSeconds, setResendSeconds] = useState(0);
 
@@ -111,11 +112,12 @@ export default function AuthPage() {
       // If account is unverified, redirect to OTP verification screen
       if (status === 403 && msg === 'Tài khoản chưa được xác thực email.' && data?.email) {
         setPendingEmail(data.email);
+        setPendingAccountType(isAdminGroup(selectedRole) ? 'admin' : 'user');
         setOtpDigits(['', '', '', '', '', '']);
         setResendSeconds(0);
         setMode('verify');
         setError(msg);
-        notifyError('Tài khoản chưa được xác thực. Vui lòng nhập mã xác thực để trở thành Customer.');
+        notifyError('Tài khoản chưa được xác thực. Vui lòng nhập mã OTP được gửi về email.');
         return;
       }
 
@@ -174,6 +176,7 @@ export default function AuthPage() {
     try {
       const data = await auth.registerCustomer({ name, email, username, password });
       setPendingEmail(data?.email || email);
+      setPendingAccountType('user');
       setOtpDigits(['', '', '', '', '', '']);
       setResendSeconds(60);
       setMode('verify');
@@ -271,7 +274,11 @@ export default function AuthPage() {
 
     setLoading(true);
     try {
-      await auth.verifyEmail({ email, code });
+      if (pendingAccountType === 'admin') {
+        await auth.verifyEmailAdmin({ email, code });
+      } else {
+        await auth.verifyEmail({ email, code });
+      }
       notifySuccess('Xác thực tài khoản thành công.');
       setMode('login');
     } catch (err) {
@@ -299,7 +306,10 @@ export default function AuthPage() {
 
     setLoading(true);
     try {
-      const data = await auth.resendVerification({ email });
+      const data =
+        pendingAccountType === 'admin'
+          ? await auth.resendVerificationAdmin({ email })
+          : await auth.resendVerification({ email });
       setResendSeconds(60);
       notifySuccess(data?.message || 'Đã gửi lại mã xác thực.');
     } catch (err) {
