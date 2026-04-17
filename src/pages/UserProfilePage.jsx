@@ -4,6 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import profileService from '../services/profileService';
+import {
+  isValidAddress,
+  isValidEmail,
+  isValidName,
+  isValidPassword,
+  isValidPhone,
+  normalizePhone,
+} from '../utils/validators';
 
 import '../styles/UserProfilePage.css';
 
@@ -16,29 +24,20 @@ function formatVnd(amount) {
   }
 }
 
-async function uploadToCloudinary({ file, cloudName, uploadPreset }) {
-  const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', uploadPreset);
-
-  const res = await fetch(url, { method: 'POST', body: formData });
-  const data = await res.json().catch(() => null);
-
-  if (!res.ok) {
-    const msg = data?.error?.message || 'Upload ảnh thất bại.';
-    throw new Error(msg);
-  }
-
-  const secureUrl = data?.secure_url;
-  if (!secureUrl) throw new Error('Upload ảnh thất bại.');
-  return secureUrl;
-}
-
 export default function UserProfilePage() {
   const navigate = useNavigate();
   const auth = useAuth();
   const { notifyError, notifyInfo, notifySuccess } = useNotification();
+
+  const accountType = auth.user?.accountType;
+  const isAdminAccount = String(accountType || '').trim().toLowerCase() === 'admin';
+
+  const roleName = auth.user?.role;
+  const roleKey = String(roleName || '').trim().toLowerCase();
+  const isCustomer = roleKey === 'customer';
+  const isManager = roleKey === 'manager';
+
+  const canChangeEmail = !isAdminAccount || isManager;
 
   const fileInputRef = useRef(null);
 
@@ -99,7 +98,7 @@ export default function UserProfilePage() {
     (async () => {
       setLoading(true);
       try {
-        const data = await profileService.getMyProfile();
+        const data = await profileService.getMyProfile(accountType);
         if (ignore) return;
 
         const u = data?.user || {};
@@ -112,7 +111,7 @@ export default function UserProfilePage() {
           image: u.image || '',
         });
         setEmailOriginal(u.email || '');
-        setWalletBalance(Number(data?.wallet?.balance || 0));
+        setWalletBalance(isAdminAccount ? 0 : Number(data?.wallet?.balance || 0));
       } catch (err) {
         const msg = err?.response?.data?.message || err?.message || 'Không tải được hồ sơ.';
         notifyError(msg);
@@ -124,7 +123,7 @@ export default function UserProfilePage() {
     return () => {
       ignore = true;
     };
-  }, [auth.isAuthenticated, navigate, notifyError]);
+  }, [auth.isAuthenticated, accountType, isAdminAccount, navigate, notifyError]);
 
   const onPickAvatar = () => {
     if (fileInputRef.current) fileInputRef.current.click();
@@ -144,20 +143,24 @@ export default function UserProfilePage() {
       return;
     }
 
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-    if (!cloudName || !uploadPreset) {
-      notifyError('Chưa cấu hình Cloudinary (VITE_CLOUDINARY_CLOUD_NAME / VITE_CLOUDINARY_UPLOAD_PRESET).');
-      return;
-    }
-
     setUploading(true);
     try {
-      const url = await uploadToCloudinary({ file, cloudName, uploadPreset });
-      setForm((prev) => ({ ...prev, image: url }));
-      notifySuccess('Upload avatar thành công.');
+      const data = await profileService.uploadAvatar(file, accountType);
+      const imageUrl = data?.imageUrl;
+      if (!imageUrl) {
+        notifyError('Upload avatar thất bại.');
+        return;
+      }
+      setForm((prev) => ({ ...prev, image: imageUrl }));
+      if (data?.user) {
+        auth.updateUser(data.user);
+      } else {
+        auth.updateUser({ image: imageUrl });
+      }
+      notifySuccess('Đã cập nhật ảnh đại diện.');
     } catch (err) {
-      notifyError(err?.message || 'Upload avatar thất bại.');
+      const msg = err?.response?.data?.message || err?.message || 'Upload avatar thất bại.';
+      notifyError(msg);
     } finally {
       setUploading(false);
     }
@@ -177,7 +180,7 @@ export default function UserProfilePage() {
   const openEmailOtp = async (newEmail) => {
     setEmailOtpLoading(true);
     try {
-      await profileService.requestEmailChange(newEmail);
+      await profileService.requestEmailChange(newEmail, accountType);
       setEmailOtp('');
       setEmailOtpResendSeconds(60);
       setEmailOtpOpen(true);
@@ -193,19 +196,48 @@ export default function UserProfilePage() {
   };
 
   const onSaveProfile = async () => {
+
+    const name = String(form.name || '').trim().replace(/\s+/g, ' ');
+    const phone = normalizePhone(form.phone);
+    const address = String(form.address || '').trim();
+
+    if (!isValidName(name)) {
+      notifyError('Họ tên không hợp lệ.');
+      return;
+    }
+
+    // Phone is optional; validate when user enters something.
+    if (String(form.phone || '').trim().length > 0 && !isValidPhone(form.phone)) {
+      notifyError('Số điện thoại không hợp lệ (10 chữ số, bắt đầu bằng 0).');
+      return;
+    }
+
+    if (!isValidAddress(address)) {
+      notifyError('Địa chỉ không hợp lệ (tối đa 200 ký tự).');
+      return;
+    }
+
     const desiredEmail = String(form.email || '').trim();
     const emailChanged =
-      desiredEmail && emailOriginal && desiredEmail.toLowerCase() !== String(emailOriginal).trim().toLowerCase();
+      canChangeEmail &&
+      desiredEmail &&
+      emailOriginal &&
+      desiredEmail.toLowerCase() !== String(emailOriginal).trim().toLowerCase();
+
+    if (emailChanged && !isValidEmail(desiredEmail)) {
+      notifyError('Email không hợp lệ.');
+      return;
+    }
 
     setSaving(true);
     try {
       const payload = {
-        name: form.name,
-        phone: form.phone,
-        address: form.address,
+        name,
+        phone,
+        address,
         image: form.image,
       };
-      const data = await profileService.updateMyProfile(payload);
+      const data = await profileService.updateMyProfile(payload, accountType);
       const u = data?.user || {};
       setForm((prev) => ({
         ...prev,
@@ -214,6 +246,9 @@ export default function UserProfilePage() {
         address: u.address || '',
         image: u.image || '',
       }));
+      if (u && Object.keys(u).length > 0) {
+        auth.updateUser(u);
+      }
       notifySuccess('Đã lưu thông tin.');
 
       if (emailChanged) {
@@ -235,6 +270,11 @@ export default function UserProfilePage() {
       return;
     }
 
+    if (!isValidPassword(passwordForm.newPassword)) {
+      notifyError('Mật khẩu mới phải 6-128 ký tự và gồm chữ hoa, chữ thường, số, ký tự đặc biệt (không có khoảng trắng).');
+      return;
+    }
+
     if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
       notifyError('Mật khẩu xác nhận không khớp.');
       return;
@@ -242,10 +282,13 @@ export default function UserProfilePage() {
 
     setChangingPassword(true);
     try {
-      const data = await profileService.changeMyPassword({
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword,
-      });
+      const data = await profileService.changeMyPassword(
+        {
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+        },
+        accountType
+      );
       notifySuccess(data?.message || 'Đổi mật khẩu thành công.');
       setPasswordForm({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
     } catch (err) {
@@ -260,15 +303,18 @@ export default function UserProfilePage() {
     e.preventDefault();
 
     const newEmail = String(form.email || '').trim();
-    if (!newEmail || String(emailOtp || '').trim().length !== 6) {
-      notifyError('Vui lòng nhập đủ 6 số OTP.');
+    if (!newEmail || !isValidEmail(newEmail) || String(emailOtp || '').trim().length !== 6) {
+      notifyError('Vui lòng nhập email hợp lệ và đủ 6 số OTP.');
       return;
     }
 
     setEmailOtpLoading(true);
     try {
-      const data = await profileService.verifyEmailChange({ newEmail, code: String(emailOtp).trim() });
+      const data = await profileService.verifyEmailChange({ newEmail, code: String(emailOtp).trim() }, accountType);
       notifySuccess(data?.message || 'Đổi email thành công.');
+
+      if (data?.user) auth.updateUser(data.user);
+
       const normalizedEmail = data?.user?.email || newEmail;
       setForm((p) => ({ ...p, email: normalizedEmail }));
       setEmailOriginal(normalizedEmail);
@@ -289,7 +335,7 @@ export default function UserProfilePage() {
 
     setEmailOtpLoading(true);
     try {
-      await profileService.requestEmailChange(newEmail);
+      await profileService.requestEmailChange(newEmail, accountType);
       setEmailOtpResendSeconds(60);
       notifySuccess('Đã gửi lại OTP.');
     } catch (err) {
@@ -328,13 +374,15 @@ export default function UserProfilePage() {
           <button type="button" className="profile-terminal-tab active">
             PERSONAL INFORMATION
           </button>
-          <button
-            type="button"
-            className="profile-terminal-tab disabled"
-            onClick={() => notifyInfo('My bookings sẽ làm sau.')}
-          >
-            MY BOOKINGS
-          </button>
+          {isCustomer && (
+            <button
+              type="button"
+              className="profile-terminal-tab disabled"
+              onClick={() => notifyInfo('My bookings sẽ làm sau.')}
+            >
+              MY BOOKINGS
+            </button>
+          )}
         </div>
 
         <div className="profile-terminal-grid">
@@ -358,7 +406,7 @@ export default function UserProfilePage() {
                     value={form.email}
                     onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
                     placeholder="Email"
-                    disabled={emailOtpLoading}
+                    disabled={emailOtpLoading || !canChangeEmail}
                   />
                 </div>
 
@@ -405,22 +453,24 @@ export default function UserProfilePage() {
               </div>
             </section>
 
-            <section className="profile-terminal-card">
-              <div className="profile-terminal-card-title">
-                <span className="profile-terminal-card-icon">💳</span>
-                PITCH CREDIT WALLET
-              </div>
-
-              <div className="profile-terminal-wallet">
-                <div className="profile-terminal-wallet-left">
-                  <div className="profile-terminal-wallet-label">AVAILABLE BALANCE</div>
-                  <div className="profile-terminal-wallet-balance">{formatVnd(walletBalance)}đ</div>
+            {!isAdminAccount && (
+              <section className="profile-terminal-card">
+                <div className="profile-terminal-card-title">
+                  <span className="profile-terminal-card-icon">💳</span>
+                  PITCH CREDIT WALLET
                 </div>
-                <button type="button" className="profile-terminal-btn" onClick={onTopUp}>
-                  TOP UP
-                </button>
-              </div>
-            </section>
+
+                <div className="profile-terminal-wallet">
+                  <div className="profile-terminal-wallet-left">
+                    <div className="profile-terminal-wallet-label">AVAILABLE BALANCE</div>
+                    <div className="profile-terminal-wallet-balance">{formatVnd(walletBalance)}đ</div>
+                  </div>
+                  <button type="button" className="profile-terminal-btn" onClick={onTopUp}>
+                    TOP UP
+                  </button>
+                </div>
+              </section>
+            )}
 
             <section className="profile-terminal-card">
               <div className="profile-terminal-card-title">
