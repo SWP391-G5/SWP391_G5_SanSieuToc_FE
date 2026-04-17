@@ -67,7 +67,7 @@ export default function FieldListPage() {
       q: searchText.trim() || undefined,
       city: selectedCity === 'All' ? undefined : selectedCity,
       sizeKey: selectedSize || undefined,
-      priceMin: 200 * 1000,
+      priceMin: 0,
       priceMax: priceMaxK * 1000,
       utilities: selectedUtilities.length ? selectedUtilities.join(',') : undefined,
       sortBy,
@@ -150,14 +150,14 @@ export default function FieldListPage() {
               </label>
 
               <div className="flex items-center justify-between text-[10px] text-[#88f6ff]">
-                <span>200k</span>
+                <span>0k</span>
                 <span>{priceMaxK}k</span>
               </div>
 
               <input
                 className="w-full accent-[#8eff71]"
                 type="range"
-                min="200"
+                min="0"
                 max="5000"
                 step="50"
                 value={priceMaxK}
@@ -322,7 +322,7 @@ export default function FieldListPage() {
             </div>
 
             {/* Search Bar */}
-            <div className="group relative w-full max-w-2xl">
+            <div className="group relative w-full xl:max-w-2xl xl:flex-1">
               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#abaca5] transition-colors group-focus-within:text-[#8eff71]">search</span>
               <input
                 type="text"
@@ -331,7 +331,7 @@ export default function FieldListPage() {
                   setSearchText(e.target.value);
                   setPage(1);
                 }}
-                placeholder="Search fields (name / address)..."
+                placeholder=""
                 className="font-headline w-full rounded-xl border border-[#474944]/30 bg-[#121410] py-3 pl-12 pr-12 text-sm font-medium outline-none transition-all placeholder:text-[#abaca5]/50 focus:border-[#8eff71] focus:ring-2 focus:ring-[#8eff71]"
               />
               {searchText ? (
@@ -350,57 +350,59 @@ export default function FieldListPage() {
             </div>
 
             {/* Sort (Top Rated / Price) */}
-            <div className="flex w-full items-center justify-between gap-3 rounded-xl border border-[#474944]/30 bg-[#121410] p-1 md:w-auto md:justify-start">
-              <button
-                type="button"
-                onClick={() => {
-                  setSortBy('topRated');
-                  setPage(1);
-                }}
-                className={
-                  sortBy === 'topRated'
-                    ? 'font-headline flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#8eff71] px-3 py-2 text-xs font-black uppercase tracking-wider text-[#0d6100] md:flex-none'
-                    : 'font-headline flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-black uppercase tracking-wider text-[#abaca5] transition-colors hover:text-[#fdfdf6] md:flex-none'
-                }
-                aria-pressed={sortBy === 'topRated'}
-              >
-                <span className="material-symbols-outlined fill-icon text-base">star</span>
-                Top rated
-              </button>
+            <div className="w-full overflow-x-auto xl:w-auto xl:overflow-visible xl:shrink-0">
+              <div className="flex min-w-max items-center gap-2 xl:justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSortBy('topRated');
+                    setPage(1);
+                  }}
+                  className={
+                    sortBy === 'topRated'
+                      ? 'font-headline flex min-w-[8.25rem] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#8eff71] bg-[#8eff71] px-3 py-2 text-xs font-black uppercase tracking-wider text-[#0d6100]'
+                      : 'font-headline flex min-w-[8.25rem] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#474944]/30 bg-[#121410] px-3 py-2 text-xs font-black uppercase tracking-wider text-[#abaca5] transition-colors hover:text-[#fdfdf6]'
+                  }
+                  aria-pressed={sortBy === 'topRated'}
+                >
+                  <span className="material-symbols-outlined fill-icon text-base">star</span>
+                  Top rated
+                </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setSortBy('priceAsc');
-                  setPage(1);
-                }}
-                className={
-                  sortBy === 'priceAsc'
-                    ? 'font-headline flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#8eff71] px-3 py-2 text-xs font-black uppercase tracking-wider text-[#0d6100] md:flex-none'
-                    : 'font-headline flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-black uppercase tracking-wider text-[#abaca5] transition-colors hover:text-[#fdfdf6] md:flex-none'
-                }
-                aria-pressed={sortBy === 'priceAsc'}
-              >
-                <span className="material-symbols-outlined text-base">arrow_upward</span>
-                Price
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSortBy('priceAsc');
+                    setPage(1);
+                  }}
+                  className={
+                    sortBy === 'priceAsc'
+                      ? 'font-headline flex min-w-[8.25rem] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#8eff71] bg-[#8eff71] px-3 py-2 text-xs font-black uppercase tracking-wider text-[#0d6100]'
+                      : 'font-headline flex min-w-[8.25rem] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#474944]/30 bg-[#121410] px-3 py-2 text-xs font-black uppercase tracking-wider text-[#abaca5] transition-colors hover:text-[#fdfdf6]'
+                  }
+                  aria-pressed={sortBy === 'priceAsc'}
+                >
+                  <span className="material-symbols-outlined text-base">arrow_upward</span>
+                  Price up
+                </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setSortBy('priceDesc');
-                  setPage(1);
-                }}
-                className={
-                  sortBy === 'priceDesc'
-                    ? 'font-headline flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#8eff71] px-3 py-2 text-xs font-black uppercase tracking-wider text-[#0d6100] md:flex-none'
-                    : 'font-headline flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-black uppercase tracking-wider text-[#abaca5] transition-colors hover:text-[#fdfdf6] md:flex-none'
-                }
-                aria-pressed={sortBy === 'priceDesc'}
-              >
-                <span className="material-symbols-outlined text-base">arrow_downward</span>
-                Price
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSortBy('priceDesc');
+                    setPage(1);
+                  }}
+                  className={
+                    sortBy === 'priceDesc'
+                      ? 'font-headline flex min-w-[8.25rem] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#8eff71] bg-[#8eff71] px-3 py-2 text-xs font-black uppercase tracking-wider text-[#0d6100]'
+                      : 'font-headline flex min-w-[8.25rem] items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#474944]/30 bg-[#121410] px-3 py-2 text-xs font-black uppercase tracking-wider text-[#abaca5] transition-colors hover:text-[#fdfdf6]'
+                  }
+                  aria-pressed={sortBy === 'priceDesc'}
+                >
+                  <span className="material-symbols-outlined text-base">arrow_downward</span>
+                  Price down
+                </button>
+              </div>
             </div>
           </div>
 
