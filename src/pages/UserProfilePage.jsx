@@ -943,8 +943,12 @@ export default function UserProfilePage() {
                             </div>
                             <div className="bank-tx-desc">
                               {tx.description || (isCredit ? 'Tiền vào' : 'Tiền ra')}
-                              {tx.bookingType === 'field' && <span className="tx-badge tx-badge-field">Field</span>}
-                              {tx.bookingType === 'service' && <span className="tx-badge tx-badge-service">Service</span>}
+                              {isDebit && tx.bookingType && (
+                                <>
+                                  {tx.bookingType === 'field' && <span className="tx-badge tx-badge-field">Field</span>}
+                                  {tx.bookingType === 'service' && <span className="tx-badge tx-badge-service">Service</span>}
+                                </>
+                              )}
                             </div>
                             <div className="bank-tx-time">{dateStr} • {timeStr}</div>
                           </div>

@@ -264,6 +264,9 @@ export default function MainLayout() {
               <button type="button" onClick={() => navigate('/wishlist')} className={navItemClass(isWishlist)}>
                 Wishlist
               </button>
+              <button type="button" onClick={() => navigate('/services')} className={navItemClass(isService)}>
+                Service
+              </button>
             </div>
           ) : null}
 
