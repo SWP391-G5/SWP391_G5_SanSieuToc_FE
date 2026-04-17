@@ -7,6 +7,14 @@ import bookingService from '../services/bookingService';
 import profileService from '../services/profileService';
 import transactionService from '../services/transactionService';
 import { setAuthToken } from '../services/axios';
+import {
+  isValidAddress,
+  isValidEmail,
+  isValidName,
+  isValidPassword,
+  isValidPhone,
+  normalizePhone,
+} from '../utils/validators';
 
 import '../styles/UserProfilePage.css';
 
@@ -201,6 +209,15 @@ export default function UserProfilePage() {
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [transactions, setTransactions] = useState([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const accountType = auth.user?.accountType;
+  const isAdminAccount = String(accountType || '').trim().toLowerCase() === 'admin';
+
+  const roleName = auth.user?.role;
+  const roleKey = String(roleName || '').trim().toLowerCase();
+  const isCustomer = roleKey === 'customer';
+  const isManager = roleKey === 'manager';
+
+  const canChangeEmail = !isAdminAccount || isManager;
 
   const fileInputRef = useRef(null);
 
@@ -271,7 +288,7 @@ export default function UserProfilePage() {
     (async () => {
       setLoading(true);
       try {
-        const data = await profileService.getMyProfile();
+        const data = await profileService.getMyProfile(accountType);
         if (ignore) return;
 
         const u = data?.user || {};
@@ -284,7 +301,7 @@ export default function UserProfilePage() {
           image: u.image || '',
         });
         setEmailOriginal(u.email || '');
-        setWalletBalance(Number(data?.wallet?.balance || 0));
+        setWalletBalance(isAdminAccount ? 0 : Number(data?.wallet?.balance || 0));
 
         // Clear the refresh state after fetching to prevent re-fetching on unrelated re-renders
         if (location.state?.refreshWallet) {
@@ -302,7 +319,7 @@ export default function UserProfilePage() {
     return () => {
       ignore = true;
     };
-  }, [auth.isAuthenticated, navigate, notifyError, location.state?.refreshWallet]);
+  }, [auth.isAuthenticated, accountType, isAdminAccount, navigate, notifyError, location.state?.refreshWallet]);
 
 // Effect to fetch bookings when tab is active
   useEffect(() => {
@@ -400,20 +417,24 @@ export default function UserProfilePage() {
       return;
     }
 
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-    if (!cloudName || !uploadPreset) {
-      notifyError('Chưa cấu hình Cloudinary (VITE_CLOUDINARY_CLOUD_NAME / VITE_CLOUDINARY_UPLOAD_PRESET).');
-      return;
-    }
-
     setUploading(true);
     try {
-      const url = await uploadToCloudinary({ file, cloudName, uploadPreset });
-      setForm((prev) => ({ ...prev, image: url }));
-      notifySuccess('Upload avatar thành công.');
+      const data = await profileService.uploadAvatar(file, accountType);
+      const imageUrl = data?.imageUrl;
+      if (!imageUrl) {
+        notifyError('Upload avatar thất bại.');
+        return;
+      }
+      setForm((prev) => ({ ...prev, image: imageUrl }));
+      if (data?.user) {
+        auth.updateUser(data.user);
+      } else {
+        auth.updateUser({ image: imageUrl });
+      }
+      notifySuccess('Đã cập nhật ảnh đại diện.');
     } catch (err) {
-      notifyError(err?.message || 'Upload avatar thất bại.');
+      const msg = err?.response?.data?.message || err?.message || 'Upload avatar thất bại.';
+      notifyError(msg);
     } finally {
       setUploading(false);
     }
@@ -433,7 +454,7 @@ export default function UserProfilePage() {
   const openEmailOtp = async (newEmail) => {
     setEmailOtpLoading(true);
     try {
-      await profileService.requestEmailChange(newEmail);
+      await profileService.requestEmailChange(newEmail, accountType);
       setEmailOtp('');
       setEmailOtpResendSeconds(60);
       setEmailOtpOpen(true);
@@ -449,19 +470,48 @@ export default function UserProfilePage() {
   };
 
   const onSaveProfile = async () => {
+
+    const name = String(form.name || '').trim().replace(/\s+/g, ' ');
+    const phone = normalizePhone(form.phone);
+    const address = String(form.address || '').trim();
+
+    if (!isValidName(name)) {
+      notifyError('Họ tên không hợp lệ.');
+      return;
+    }
+
+    // Phone is optional; validate when user enters something.
+    if (String(form.phone || '').trim().length > 0 && !isValidPhone(form.phone)) {
+      notifyError('Số điện thoại không hợp lệ (10 chữ số, bắt đầu bằng 0).');
+      return;
+    }
+
+    if (!isValidAddress(address)) {
+      notifyError('Địa chỉ không hợp lệ (tối đa 200 ký tự).');
+      return;
+    }
+
     const desiredEmail = String(form.email || '').trim();
     const emailChanged =
-      desiredEmail && emailOriginal && desiredEmail.toLowerCase() !== String(emailOriginal).trim().toLowerCase();
+      canChangeEmail &&
+      desiredEmail &&
+      emailOriginal &&
+      desiredEmail.toLowerCase() !== String(emailOriginal).trim().toLowerCase();
+
+    if (emailChanged && !isValidEmail(desiredEmail)) {
+      notifyError('Email không hợp lệ.');
+      return;
+    }
 
     setSaving(true);
     try {
       const payload = {
-        name: form.name,
-        phone: form.phone,
-        address: form.address,
+        name,
+        phone,
+        address,
         image: form.image,
       };
-      const data = await profileService.updateMyProfile(payload);
+      const data = await profileService.updateMyProfile(payload, accountType);
       const u = data?.user || {};
       setForm((prev) => ({
         ...prev,
@@ -470,6 +520,9 @@ export default function UserProfilePage() {
         address: u.address || '',
         image: u.image || '',
       }));
+      if (u && Object.keys(u).length > 0) {
+        auth.updateUser(u);
+      }
       notifySuccess('Đã lưu thông tin.');
 
       if (emailChanged) {
@@ -491,6 +544,11 @@ export default function UserProfilePage() {
       return;
     }
 
+    if (!isValidPassword(passwordForm.newPassword)) {
+      notifyError('Mật khẩu mới phải 6-128 ký tự và gồm chữ hoa, chữ thường, số, ký tự đặc biệt (không có khoảng trắng).');
+      return;
+    }
+
     if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
       notifyError('Mật khẩu xác nhận không khớp.');
       return;
@@ -498,10 +556,13 @@ export default function UserProfilePage() {
 
     setChangingPassword(true);
     try {
-      const data = await profileService.changeMyPassword({
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword,
-      });
+      const data = await profileService.changeMyPassword(
+        {
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+        },
+        accountType
+      );
       notifySuccess(data?.message || 'Đổi mật khẩu thành công.');
       setPasswordForm({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
     } catch (err) {
@@ -516,15 +577,18 @@ export default function UserProfilePage() {
     e.preventDefault();
 
     const newEmail = String(form.email || '').trim();
-    if (!newEmail || String(emailOtp || '').trim().length !== 6) {
-      notifyError('Vui lòng nhập đủ 6 số OTP.');
+    if (!newEmail || !isValidEmail(newEmail) || String(emailOtp || '').trim().length !== 6) {
+      notifyError('Vui lòng nhập email hợp lệ và đủ 6 số OTP.');
       return;
     }
 
     setEmailOtpLoading(true);
     try {
-      const data = await profileService.verifyEmailChange({ newEmail, code: String(emailOtp).trim() });
+      const data = await profileService.verifyEmailChange({ newEmail, code: String(emailOtp).trim() }, accountType);
       notifySuccess(data?.message || 'Đổi email thành công.');
+
+      if (data?.user) auth.updateUser(data.user);
+
       const normalizedEmail = data?.user?.email || newEmail;
       setForm((p) => ({ ...p, email: normalizedEmail }));
       setEmailOriginal(normalizedEmail);
@@ -545,7 +609,7 @@ export default function UserProfilePage() {
 
     setEmailOtpLoading(true);
     try {
-      await profileService.requestEmailChange(newEmail);
+      await profileService.requestEmailChange(newEmail, accountType);
       setEmailOtpResendSeconds(60);
       notifySuccess('Đã gửi lại OTP.');
     } catch (err) {
@@ -590,13 +654,15 @@ export default function UserProfilePage() {
           >
             PERSONAL INFORMATION
           </button>
-          <button
-            type="button"
-            className={`profile-terminal-tab ${activeTab === 'bookings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('bookings')}
-          >
-            BOOKING HISTORY ▾
-          </button>
+          {isCustomer && (
+            <button
+              type="button"
+              className={`profile-terminal-tab ${activeTab === 'bookings' ? 'active' : ''}`}
+              onClick={() => setActiveTab('bookings')}
+            >
+              BOOKING HISTORY ▾
+            </button>
+          )}
           <button
             type="button"
             className={`profile-terminal-tab ${activeTab === 'transactions' ? 'active' : ''}`}
@@ -640,7 +706,7 @@ export default function UserProfilePage() {
                       value={form.email}
                       onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
                       placeholder="Email"
-                      disabled={emailOtpLoading}
+                      disabled={emailOtpLoading || !canChangeEmail}
                     />
                   </div>
 
@@ -687,70 +753,74 @@ export default function UserProfilePage() {
                 </div>
               </section>
 
-              <section className="profile-terminal-card">
-                <div className="profile-terminal-card-title">
-                  <span className="profile-terminal-card-icon">💳</span>
-                  PITCH CREDIT WALLET
-                </div>
+              {!isAdminAccount && (
+                <>
+                  <section className="profile-terminal-card">
+                    <div className="profile-terminal-card-title">
+                      <span className="profile-terminal-card-icon">💳</span>
+                      PITCH CREDIT WALLET
+                    </div>
 
-                <div className="profile-terminal-wallet">
-                  <div className="profile-terminal-wallet-left">
-                    <div className="profile-terminal-wallet-label">AVAILABLE BALANCE</div>
-                    <div className="profile-terminal-wallet-balance">{formatVnd(walletBalance)}đ</div>
-                  </div>
-                  <button className="profile-terminal-btn" onClick={onTopUp}>
-                    TOP UP
-                  </button>
-                </div>
-              </section>
+                    <div className="profile-terminal-wallet">
+                      <div className="profile-terminal-wallet-left">
+                        <div className="profile-terminal-wallet-label">AVAILABLE BALANCE</div>
+                        <div className="profile-terminal-wallet-balance">{formatVnd(walletBalance)}đ</div>
+                      </div>
+                      <button type="button" className="profile-terminal-btn" onClick={onTopUp}>
+                        TOP UP
+                      </button>
+                    </div>
+                  </section>
 
-              <section className="profile-terminal-card">
-                <div className="profile-terminal-card-title">
-                  <span className="profile-terminal-card-icon">🛡️</span>
-                  SECURITY PROTOCOL
-                </div>
+                  <section className="profile-terminal-card">
+                    <div className="profile-terminal-card-title">
+                      <span className="profile-terminal-card-icon">🛡️</span>
+                      SECURITY PROTOCOL
+                    </div>
 
-                <form className="profile-terminal-form" onSubmit={onChangePassword}>
-                  <div className="profile-terminal-field profile-terminal-field-wide">
-                    <label className="profile-terminal-label">CURRENT PASSWORD</label>
-                    <input
-                      className="profile-terminal-input"
-                      type="password"
-                      value={passwordForm.currentPassword}
-                      onChange={(e) => setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))}
-                      placeholder="••••••••"
-                    />
-                  </div>
+                    <form className="profile-terminal-form" onSubmit={onChangePassword}>
+                      <div className="profile-terminal-field profile-terminal-field-wide">
+                        <label className="profile-terminal-label">CURRENT PASSWORD</label>
+                        <input
+                          className="profile-terminal-input"
+                          type="password"
+                          value={passwordForm.currentPassword}
+                          onChange={(e) => setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))}
+                          placeholder="••••••••"
+                        />
+                      </div>
 
-                  <div className="profile-terminal-field">
-                    <label className="profile-terminal-label">NEW PASSWORD</label>
-                    <input
-                      className="profile-terminal-input"
-                      type="password"
-                      value={passwordForm.newPassword}
-                      onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))}
-                      placeholder="••••••••"
-                    />
-                  </div>
+                      <div className="profile-terminal-field">
+                        <label className="profile-terminal-label">NEW PASSWORD</label>
+                        <input
+                          className="profile-terminal-input"
+                          type="password"
+                          value={passwordForm.newPassword}
+                          onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))}
+                          placeholder="••••••••"
+                        />
+                      </div>
 
-                  <div className="profile-terminal-field">
-                    <label className="profile-terminal-label">CONFIRM NEW PASSWORD</label>
-                    <input
-                      className="profile-terminal-input"
-                      type="password"
-                      value={passwordForm.confirmNewPassword}
-                      onChange={(e) => setPasswordForm((p) => ({ ...p, confirmNewPassword: e.target.value }))}
-                      placeholder="••••••••"
-                    />
-                  </div>
+                      <div className="profile-terminal-field">
+                        <label className="profile-terminal-label">CONFIRM NEW PASSWORD</label>
+                        <input
+                          className="profile-terminal-input"
+                          type="password"
+                          value={passwordForm.confirmNewPassword}
+                          onChange={(e) => setPasswordForm((p) => ({ ...p, confirmNewPassword: e.target.value }))}
+                          placeholder="••••••••"
+                        />
+                      </div>
 
-                  <div className="profile-terminal-actions">
-                    <button type="submit" className="profile-terminal-btn primary" disabled={changingPassword}>
-                      {changingPassword ? 'UPDATING...' : 'UPDATE CREDENTIALS'}
-                    </button>
-                  </div>
-                </form>
-              </section>
+                      <div className="profile-terminal-actions">
+                        <button type="submit" className="profile-terminal-btn primary" disabled={changingPassword}>
+                          {changingPassword ? 'UPDATING...' : 'UPDATE CREDENTIALS'}
+                        </button>
+                      </div>
+                    </form>
+                  </section>
+                </>
+              )}
             </div>
             <div className="profile-terminal-right">
               <section className="profile-terminal-card">

@@ -14,24 +14,36 @@ import CheckoutPage from './pages/Payment/CheckoutPage';
 import FieldDetailPage from './pages/Fields/FieldDetailPage';
 import BookingConfirmPage from './pages/Payment/BookingConfirmPage';
 import ServicePage from './pages/Services/ServicePage';
+import AdminLayout from './layouts/AdminLayout';
+import ManagerAccountsPage from './pages/admin/ManagerAccountsPage';
+import OwnerAccountsPage from './pages/admin/OwnerAccountsPage';
+import CustomerAccountsPage from './pages/admin/CustomerAccountsPage';
+import ReportsPage from './pages/admin/ReportsPage';
 
 import ManagerLayout from './layouts/manager/ManagerLayout';
 import RequireManager from './components/manager/RequireManager';
 import {
-  ManagerBannersPage,
   ManagerFeedbackPage,
   ManagerPostsPage,
   ManagerPrivacyPage,
-  ManagerSlidesPage,
   ManagerStatisticsPage,
   ManagerWalletPage,
 } from './pages/Manager';
+
+import ManagerMarketingImagesPage from './pages/Manager/ManagerMarketingImagesPage';
 
 import { useAuth } from './context/AuthContext';
 
 function RequireAuth({ children }) {
   const auth = useAuth();
   if (!auth.isAuthenticated) return <Navigate to="/auth" replace />;
+  return children;
+}
+
+function RequireAdmin({ children }) {
+  const auth = useAuth();
+  if (!auth.isAuthenticated) return <Navigate to="/auth" replace />;
+  if (String(auth.user?.role || '').trim() !== 'Admin') return <Navigate to="/" replace />;
   return children;
 }
 
@@ -80,6 +92,22 @@ function App() {
               </RequireAuth>
             }
           />
+
+          <Route
+            path="admin"
+            element={
+              <RequireAdmin>
+                <AdminLayout />
+              </RequireAdmin>
+            }
+          >
+            <Route index element={<Navigate to="/admin/managers" replace />} />
+            <Route path="managers" element={<ManagerAccountsPage />} />
+            <Route path="owners" element={<OwnerAccountsPage />} />
+            <Route path="customers" element={<CustomerAccountsPage />} />
+            <Route path="reports" element={<ReportsPage />} />
+          </Route>
+
           {/* 404 Not Found */}
           <Route path="*" element={<NotFoundPage />} />
         </Route>
@@ -96,8 +124,10 @@ function App() {
           <Route index element={<Navigate to="/manager/statistics" replace />} />
           <Route path="statistics" element={<ManagerStatisticsPage />} />
           <Route path="posts" element={<ManagerPostsPage />} />
-          <Route path="slides" element={<ManagerSlidesPage />} />
-          <Route path="banners" element={<ManagerBannersPage />} />
+
+          {/* Unified marketing images management */}
+          <Route path="banners-ads" element={<ManagerMarketingImagesPage />} />
+
           <Route path="wallet" element={<ManagerWalletPage />} />
           <Route path="privacy" element={<ManagerPrivacyPage />} />
           <Route path="feedback" element={<ManagerFeedbackPage />} />
