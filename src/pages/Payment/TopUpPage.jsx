@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../styles/TopUpPage.css';
+import '../../styles/TopUpPage.css';
 const TopUpPage = () => {
   const [amount, setAmount] = useState('');
   const [error, setError] = useState('');

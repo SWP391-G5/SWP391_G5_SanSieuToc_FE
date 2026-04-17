@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import qrImage from '../assets/images/qr-vietqr.png';
-import '../styles/CheckoutPage.css';
+import { useAuth } from '../../context/AuthContext';
+import qrImage from '../../assets/images/qr-vietqr.png';
+import '../../styles/CheckoutPage.css';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();

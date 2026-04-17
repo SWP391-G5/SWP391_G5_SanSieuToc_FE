@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FIELDS } from '../data/fields';
+import { FIELDS } from '../../data/fields';
 
 const UTILITY_LABELS = {
   parking: 'Parking',
@@ -283,7 +283,7 @@ export default function FieldDetailPage() {
             <div className="border-t border-[#474944]/30 pt-4">
               <h3 className="font-headline text-sm font-bold text-[#8eff71] mb-2">About this field</h3>
               <p className="font-headline text-sm text-[#abaca5] leading-relaxed">
-                {field.name} là một trong những sân cỏ nhân tạo chất lượng cao tại {field.city}. 
+                {field.name} là một trong những sân cỏ nhân tạo chất lượng cao tại {field.city}.
                 Mặt cỏ đạt tiêu chuẩn quốc tế, phù hợp cho các trận đấu {field.size.toLowerCase()}.
               </p>
             </div>

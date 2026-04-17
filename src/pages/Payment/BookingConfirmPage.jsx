@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import profileService from '../services/profileService';
-import bookingService from '../services/bookingService';
-import { setAuthToken } from '../services/axios';
-import qrImage from '../assets/images/qr-vietqr.png';
+import { useAuth } from '../../context/AuthContext';
+import profileService from '../../services/profileService';
+import bookingService from '../../services/bookingService';
+import { setAuthToken } from '../../services/axios';
+import qrImage from '../../assets/images/qr-vietqr.png';
 
 const SERVICES = [
   { id: 'ball', name: 'Thuê bóng', price: 50000, icon: 'sports_soccer' },

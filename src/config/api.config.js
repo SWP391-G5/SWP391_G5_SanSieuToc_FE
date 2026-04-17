@@ -24,6 +24,7 @@ export const API_CONFIG = {
     WALLET: {
       TOP_UP: '/api/wallets/topup',
       GET_BALANCE: '/api/wallets/balance',
+      GET_TRANSACTIONS: '/api/wallets/transactions',
     },
   },
 };

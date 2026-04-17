@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import bookingService from '../services/bookingService';
 import profileService from '../services/profileService';
+import transactionService from '../services/transactionService';
 import { setAuthToken } from '../services/axios';
 
 import '../styles/UserProfilePage.css';
@@ -197,6 +198,8 @@ export default function UserProfilePage() {
   const [activeTab, setActiveTab] = useState('personal');
   const [bookings, setBookings] = useState([]);
   const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [transactions, setTransactions] = useState([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
 
   const fileInputRef = useRef(null);
 
@@ -324,6 +327,35 @@ export default function UserProfilePage() {
         }
       };
       fetchBookings();
+      return () => { ignore = true; };
+    }
+  }, [activeTab, notifyError, auth.accessToken]);
+
+  // Effect to fetch transactions when tab is active
+  useEffect(() => {
+    if (activeTab === 'transactions') {
+      let ignore = false;
+      const fetchTransactions = async () => {
+        setTransactionsLoading(true);
+        try {
+          if (auth.accessToken) {
+            setAuthToken(auth.accessToken);
+          }
+          const data = await transactionService.getMyTransactions();
+          if (!ignore) {
+            setTransactions(data?.transactions || []);
+            setWalletBalance(Number(data?.walletBalance || 0));
+          }
+        } catch (err) {
+          if (!ignore) {
+            notifyError('Could not load transaction history.');
+            setTransactions([]);
+          }
+        } finally {
+          if (!ignore) setTransactionsLoading(false);
+        }
+      };
+      fetchTransactions();
       return () => { ignore = true; };
     }
   }, [activeTab, notifyError, auth.accessToken]);
@@ -557,6 +589,13 @@ export default function UserProfilePage() {
           >
             MY BOOKINGS
           </button>
+          <button
+            type="button"
+            className={`profile-terminal-tab ${activeTab === 'transactions' ? 'active' : ''}`}
+            onClick={() => setActiveTab('transactions')}
+          >
+            TRANSACTION HISTORY
+          </button>
         </div>
 
         {activeTab === 'personal' ? (
@@ -715,31 +754,82 @@ export default function UserProfilePage() {
           </div>
         ) : (
           <div className="profile-terminal-full-width">
-            <section className="profile-terminal-card">
-              <div className="profile-terminal-card-title">
-                <span className="profile-terminal-card-icon">📅</span>
-                BOOKING HISTORY
-              </div>
-              {bookingsLoading ? (
-                <div className="profile-terminal-loading" style={{ marginTop: '1rem' }}>
-                  Loading bookings...
+            {activeTab === 'bookings' ? (
+              <section className="profile-terminal-card">
+                <div className="profile-terminal-card-title">
+                  <span className="profile-terminal-card-icon">📅</span>
+                  BOOKING HISTORY
                 </div>
-              ) : bookings.length === 0 ? (
-                <div style={{ padding: '1rem', textAlign: 'center', color: 'rgba(231, 249, 238, 0.65)' }}>
-                  No bookings found.
+                {bookingsLoading ? (
+                  <div className="profile-terminal-loading" style={{ marginTop: '1rem' }}>
+                    Loading bookings...
+                  </div>
+                ) : bookings.length === 0 ? (
+                  <div style={{ padding: '1rem', textAlign: 'center', color: 'rgba(231, 249, 238, 0.65)' }}>
+                    No bookings found.
+                  </div>
+                ) : (
+                  <div className="booking-history-list">
+                    {bookings.map((booking) => (
+                      <BookingCard 
+                        key={booking.id} 
+                        booking={booking}
+                        onCancel={handleCancelBooking}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+            ) : activeTab === 'transactions' ? (
+              <section className="profile-terminal-card">
+                <div className="profile-terminal-card-title">
+                  <span className="profile-terminal-card-icon">💰</span>
+                  BIẾN ĐỘNG SỐ DƯ
                 </div>
-              ) : (
-                <div className="booking-history-list">
-                  {bookings.map((booking) => (
-                    <BookingCard 
-                      key={booking.id} 
-                      booking={booking}
-                      onCancel={handleCancelBooking}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
+                {transactionsLoading ? (
+                  <div className="profile-terminal-loading" style={{ marginTop: '1rem' }}>
+                    Đang tải...
+                  </div>
+                ) : transactions.length === 0 ? (
+                  <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(231, 249, 238, 0.5)' }}>
+                    Chưa có giao dịch nào
+                  </div>
+                ) : (
+                  <div className="bank-transaction-list">
+                    {transactions.map((tx) => {
+                      const isCredit = tx.isCredit;
+                      const isDebit = tx.isDebit;
+                      const amountClass = isCredit ? 'tx-credit' : isDebit ? 'tx-debit' : '';
+                      
+                      const date = new Date(tx.createdAt);
+                      const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                      const timeStr = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                      
+                      return (
+                        <div key={tx.id} className="bank-transaction-item">
+                          <div className="bank-tx-left">
+                            <div className="bank-tx-icon-wrap">
+                              <span className={`material-symbols-outlined bank-tx-icon ${amountClass}`}>
+                                {isCredit ? 'south_east' : 'north_east'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="bank-tx-center">
+                            <div className="bank-tx-amount">
+                              {isCredit ? '+' : isDebit ? '-' : ''}{formatVnd(tx.amount)}đ
+                            </div>
+                            <div className="bank-tx-time">{dateStr} • {timeStr}</div>
+                          </div>
+                          <div className="bank-tx-right">
+                            <div className="bank-tx-balance">Số dư: {formatVnd(tx.balanceAfter)}đ</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            ) : null}
           </div>
         )}
         {emailOtpOpen && (
