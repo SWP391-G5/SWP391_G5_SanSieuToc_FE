@@ -40,6 +40,10 @@ export function AuthProvider({ children }) {
       accessToken,
       user,
       isAuthenticated: Boolean(accessToken),
+      updateUser: (patch) => {
+        if (!patch || typeof patch !== 'object') return;
+        setUser((prev) => ({ ...(prev || {}), ...patch }));
+      },
       logout: () => {
         setAccessToken(null);
         setUser(null);

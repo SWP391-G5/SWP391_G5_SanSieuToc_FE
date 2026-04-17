@@ -23,8 +23,10 @@ export const forgotPasswordUser = (payload) => authService.forgotPasswordUser(pa
 // =========================
 // Profile APIs
 // =========================
-export const getMyProfile = () => profileService.getMyProfile();
-export const updateMyProfile = (payload) => profileService.updateMyProfile(payload);
-export const changeMyPassword = (payload) => profileService.changeMyPassword(payload);
-export const requestEmailChange = (newEmail) => profileService.requestEmailChange(newEmail);
-export const verifyEmailChange = (payload) => profileService.verifyEmailChange(payload);
+export const getMyProfile = (accountType) => profileService.getMyProfile(accountType);
+export const updateMyProfile = (payload, accountType) => profileService.updateMyProfile(payload, accountType);
+export const changeMyPassword = (payload, accountType) => profileService.changeMyPassword(payload, accountType);
+export const requestEmailChange = (newEmail, accountType) =>
+  profileService.requestEmailChange(newEmail, accountType);
+export const verifyEmailChange = (payload, accountType) =>
+  profileService.verifyEmailChange(payload, accountType);

@@ -2,6 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
+import {
+  isValidEmail,
+  isValidName,
+  isValidPassword,
+  isValidUsername,
+  normalizeEmail,
+  normalizeUsername,
+} from '../../utils/validators';
 
 const ROLES = [
   { value: 'Customer', label: 'Customer', icon: 'person' },
@@ -66,17 +74,26 @@ export default function AuthPage() {
     e.preventDefault();
     setError('');
 
-    if (!loginForm.username || !loginForm.password) {
+    const username = normalizeUsername(loginForm.username);
+    const password = loginForm.password;
+
+    if (!username || !password) {
       setError('Vui lòng nhập username và mật khẩu.');
+      return;
+    }
+
+    if (!isValidUsername(username)) {
+      setError('Username không hợp lệ.');
       return;
     }
 
     setLoading(true);
     try {
+      const payload = { username, password, role: selectedRole };
       if (isAdminGroup(selectedRole)) {
-        await auth.loginAdmin({ ...loginForm, role: selectedRole });
+        await auth.loginAdmin(payload);
       } else {
-        await auth.loginUser({ ...loginForm, role: selectedRole });
+        await auth.loginUser(payload);
       }
       notifySuccess('Đăng nhập thành công.');
     } catch (err) {
@@ -111,25 +128,45 @@ export default function AuthPage() {
       return;
     }
 
-    if (!signupForm.name || !signupForm.email || !signupForm.username || !signupForm.password) {
+    const name = String(signupForm.name || '').trim();
+    const email = normalizeEmail(signupForm.email);
+    const username = normalizeUsername(signupForm.username);
+    const password = signupForm.password;
+
+    if (!name || !email || !username || !password) {
       setError('Vui lòng nhập đầy đủ thông tin.');
       return;
     }
 
-    if (signupForm.password !== signupForm.confirmPassword) {
+    if (!isValidName(name)) {
+      setError('Họ tên không hợp lệ.');
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setError('Email không hợp lệ.');
+      return;
+    }
+
+    if (!isValidUsername(username)) {
+      setError('Username không hợp lệ.');
+      return;
+    }
+
+    if (!isValidPassword(password)) {
+      setError('Mật khẩu phải 6-128 ký tự và gồm chữ hoa, chữ thường, số, ký tự đặc biệt (không có khoảng trắng).');
+      return;
+    }
+
+    if (password !== signupForm.confirmPassword) {
       setError('Mật khẩu xác nhận không khớp.');
       return;
     }
 
     setLoading(true);
     try {
-      const data = await auth.registerCustomer({
-        name: signupForm.name,
-        email: signupForm.email,
-        username: signupForm.username,
-        password: signupForm.password,
-      });
-      setPendingEmail(data?.email || signupForm.email);
+      const data = await auth.registerCustomer({ name, email, username, password });
+      setPendingEmail(data?.email || email);
       setOtpDigits(['', '', '', '', '', '']);
       setResendSeconds(60);
       setMode('verify');
@@ -207,15 +244,27 @@ export default function AuthPage() {
     e.preventDefault();
     setError('');
 
+    const email = normalizeEmail(pendingEmail);
     const code = getOtpCode();
-    if (!pendingEmail || code.length !== 6) {
+
+    if (!email) {
+      setError('Vui lòng nhập email.');
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setError('Email không hợp lệ.');
+      return;
+    }
+
+    if (!/^\d{6}$/.test(code)) {
       setError('Vui lòng nhập đủ 6 số của mã xác thực.');
       return;
     }
 
     setLoading(true);
     try {
-      await auth.verifyEmail({ email: pendingEmail, code });
+      await auth.verifyEmail({ email, code });
       notifySuccess('Xác thực tài khoản thành công.');
       setMode('login');
     } catch (err) {
@@ -229,13 +278,21 @@ export default function AuthPage() {
 
   const onResendCode = async () => {
     setError('');
-    if (!pendingEmail) {
+
+    const email = normalizeEmail(pendingEmail);
+    if (!email) {
       setError('Vui lòng nhập email.');
       return;
     }
+
+    if (!isValidEmail(email)) {
+      setError('Email không hợp lệ.');
+      return;
+    }
+
     setLoading(true);
     try {
-      const data = await auth.resendVerification({ email: pendingEmail });
+      const data = await auth.resendVerification({ email });
       setResendSeconds(60);
       notifySuccess(data?.message || 'Đã gửi lại mã xác thực.');
     } catch (err) {

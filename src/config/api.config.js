@@ -13,8 +13,17 @@ export const API_CONFIG = {
       GET_ME: '/api/user/profile',
       UPDATE_ME: '/api/user/profile',
       CHANGE_PASSWORD: '/api/user/profile/password',
+      UPLOAD_AVATAR: '/api/user/profile/avatar',
       EMAIL_CHANGE_REQUEST: '/api/user/profile/email/request',
       EMAIL_CHANGE_VERIFY: '/api/user/profile/email/verify',
+    },
+    PROFILE_ADMIN: {
+      GET_ME: '/api/admin/profile',
+      UPDATE_ME: '/api/admin/profile',
+      CHANGE_PASSWORD: '/api/admin/profile/password',
+      UPLOAD_AVATAR: '/api/admin/profile/avatar',
+      EMAIL_CHANGE_REQUEST: '/api/admin/profile/email/request',
+      EMAIL_CHANGE_VERIFY: '/api/admin/profile/email/verify',
     },
   },
 };
