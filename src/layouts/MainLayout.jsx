@@ -188,6 +188,7 @@ export default function MainLayout() {
   const isFields = pathname.startsWith('/fields');
   const isWishlist = pathname.startsWith('/wishlist');
   const isCommunity = pathname.startsWith('/community');
+  const isService = pathname.startsWith('/services');
 
   const isAdminRoute = pathname.startsWith('/admin');
   const accountTypeKey = String(auth.user?.accountType || '').trim().toLowerCase();
