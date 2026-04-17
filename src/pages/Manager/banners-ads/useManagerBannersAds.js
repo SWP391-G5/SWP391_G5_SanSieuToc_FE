@@ -1,12 +1,12 @@
 /**
- * useManagerBanners.js
- * Manager hook for banners CRUD.
+ * useManagerBannersAds.js
+ * Manager hook for banners/ads CRUD.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import managerApi from '../../../services/manager/managerApi';
 
-export default function useManagerBanners({ placement = '' } = {}) {
+export default function useManagerBannersAds({ placement = '' } = {}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [items, setItems] = useState([]);

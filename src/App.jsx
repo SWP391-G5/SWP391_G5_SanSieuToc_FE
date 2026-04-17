@@ -12,14 +12,14 @@ import UserProfilePage from './pages/UserProfilePage';
 import ManagerLayout from './layouts/manager/ManagerLayout';
 import RequireManager from './components/manager/RequireManager';
 import {
-  ManagerBannersPage,
   ManagerFeedbackPage,
   ManagerPostsPage,
   ManagerPrivacyPage,
-  ManagerSlidesPage,
   ManagerStatisticsPage,
   ManagerWalletPage,
 } from './pages/Manager';
+
+import ManagerMarketingImagesPage from './pages/Manager/ManagerMarketingImagesPage';
 
 import { useAuth } from './context/AuthContext';
 
@@ -63,8 +63,10 @@ function App() {
           <Route index element={<Navigate to="/manager/statistics" replace />} />
           <Route path="statistics" element={<ManagerStatisticsPage />} />
           <Route path="posts" element={<ManagerPostsPage />} />
-          <Route path="slides" element={<ManagerSlidesPage />} />
-          <Route path="banners" element={<ManagerBannersPage />} />
+
+          {/* Unified marketing images management */}
+          <Route path="banners-ads" element={<ManagerMarketingImagesPage />} />
+
           <Route path="wallet" element={<ManagerWalletPage />} />
           <Route path="privacy" element={<ManagerPrivacyPage />} />
           <Route path="feedback" element={<ManagerFeedbackPage />} />

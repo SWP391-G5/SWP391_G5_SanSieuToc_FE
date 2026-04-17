@@ -88,23 +88,34 @@ const managerApi = {
   },
 
   // =========================
+  // Privacy (Manager)
+  // =========================
+  async getPrivacies(params) {
+    const { data } = await axiosInstance.get(`/api/manager/privacy${buildQuery(params)}`);
+    return data;
+  },
+
+  async createPrivacy(payload) {
+    const { data } = await axiosInstance.post('/api/manager/privacy', payload);
+    return data;
+  },
+
+  async updatePrivacyItem(id, payload) {
+    const { data } = await axiosInstance.put(`/api/manager/privacy/${id}`, payload);
+    return data;
+  },
+
+  async deletePrivacy(id) {
+    const { data } = await axiosInstance.delete(`/api/manager/privacy/${id}`);
+    return data;
+  },
+
+  // =========================
   // Deferred modules (keep stubs)
   // =========================
   async getStatistics() {
     // TODO: implement GET /api/manager/statistics
     const { data } = await axiosInstance.get('/__todo__/manager/statistics');
-    return data;
-  },
-
-  async getPrivacy() {
-    // TODO: implement GET /api/manager/privacy
-    const { data } = await axiosInstance.get('/__todo__/manager/privacy');
-    return data;
-  },
-
-  async updatePrivacy(payload) {
-    // TODO: implement PUT /api/manager/privacy
-    const { data } = await axiosInstance.put('/__todo__/manager/privacy', payload);
     return data;
   },
 };

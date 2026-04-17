@@ -1,50 +1,331 @@
 /**
  * ManagerPrivacyPage.jsx
- * Manager page for creating/updating the single system privacy document.
- * UI skeleton only.
+ * Manager page for managing system privacy policies (CRUD + soft delete).
+ * UI: accordion list (dropdown) where clicking title expands content.
  */
 
-/**
- * ManagerPrivacyPage
- * @returns {JSX.Element} privacy page skeleton
- */
+import { useEffect, useMemo, useState } from 'react';
+
+import managerApi from '../../services/manager/managerApi';
+import { useNotification } from '../../context/NotificationContext';
+
+import PostConfirmModal from './posts/PostConfirmModal';
+
+function normalizePrivacyItem(x) {
+  if (!x || typeof x !== 'object') return null;
+
+  return {
+    id: x._id || x.id,
+    title: x.privacyName || x.title || '',
+    content: x.privacyContent || x.content || '',
+    isDeleted: !!(x.isDeleted || x.deleted || x.isActive === false),
+    updatedAt: x.updatedAt || null,
+    createdAt: x.createdAt || null,
+  };
+}
+
+function PrivacyFormModal({ open, busy, error, draft, setDraft, onClose, onSubmit }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[70]">
+      <div className="absolute inset-0 bg-black/60" onClick={() => (busy ? null : onClose?.())} />
+
+      <div className="absolute inset-0 flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl rounded-2xl bg-surface-container shadow-xl border border-outline-variant">
+          <div className="flex items-start justify-between gap-4 border-b border-outline-variant p-5">
+            <div>
+              <div className="text-lg font-headline font-black text-on-surface">
+                {draft?.id ? 'Update privacy' : 'Add privacy'}
+              </div>
+              <div className="text-xs text-on-surface-variant">Title + content. This will be shown on the public site.</div>
+            </div>
+            <button
+              type="button"
+              className="h-9 rounded-lg px-3 text-sm font-bold border border-outline-variant hover:bg-surface"
+              onClick={onClose}
+              disabled={busy}
+            >
+              Close
+            </button>
+          </div>
+
+          <div className="p-5 space-y-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+                Title
+              </label>
+              <input
+                className="h-11 w-full rounded-lg bg-surface border border-outline-variant px-4 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/40"
+                placeholder="Privacy title..."
+                type="text"
+                value={draft?.title || ''}
+                onChange={(e) => setDraft?.((p) => ({ ...p, title: e.target.value }))}
+                disabled={busy}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+                Content
+              </label>
+              <textarea
+                className="w-full min-h-56 rounded-lg bg-surface border border-outline-variant px-4 py-3 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/40"
+                placeholder="Write privacy content..."
+                value={draft?.content || ''}
+                onChange={(e) => setDraft?.((p) => ({ ...p, content: e.target.value }))}
+                disabled={busy}
+              />
+            </div>
+
+            {error ? <div className="text-sm text-error">{error}</div> : null}
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="h-11 rounded-lg px-5 text-sm font-bold border border-outline-variant hover:bg-surface disabled:opacity-50"
+                onClick={onClose}
+                disabled={busy}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="h-11 rounded-lg bg-primary px-5 text-sm font-black text-on-primary hover:opacity-90 disabled:opacity-50"
+                onClick={onSubmit}
+                disabled={busy}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ManagerPrivacyPage() {
+  const notify = useNotification();
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [items, setItems] = useState([]);
+
+  const [expandedId, setExpandedId] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const [draft, setDraft] = useState({ id: null, title: '', content: '' });
+  const [confirm, setConfirm] = useState(null);
+
+  const normalized = useMemo(() => {
+    return (items || [])
+      .map(normalizePrivacyItem)
+      .filter(Boolean)
+      .filter((x) => !x.isDeleted)
+      .sort((a, b) => String(a.title || '').localeCompare(String(b.title || '')));
+  }, [items]);
+
+  const load = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await managerApi.getPrivacies();
+      const list = data?.items || data?.data || data || [];
+      setItems(Array.isArray(list) ? list : []);
+    } catch (e) {
+      const msg = e?.response?.data?.message || e?.message || 'Failed to load privacy policies';
+      setError(msg);
+      setItems([]);
+      notify?.notifyError?.(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const openCreate = () => {
+    setDraft({ id: null, title: '', content: '' });
+    setFormError('');
+    setShowForm(true);
+  };
+
+  const openEdit = (p) => {
+    setDraft({ id: p?.id, title: p?.title || '', content: p?.content || '' });
+    setFormError('');
+    setShowForm(true);
+  };
+
+  const submit = async () => {
+    const title = String(draft?.title || '').trim();
+    const content = String(draft?.content || '').trim();
+
+    if (!title) {
+      notify?.notifyWarning?.('Title is required.');
+      return;
+    }
+
+    setBusy(true);
+    setFormError('');
+
+    try {
+      if (!draft?.id) {
+        await managerApi.createPrivacy({ privacyName: title, privacyContent: content });
+        notify?.notifySuccess?.('Saved');
+      } else {
+        await managerApi.updatePrivacyItem(draft.id, { privacyName: title, privacyContent: content });
+        notify?.notifySuccess?.('Updated');
+      }
+
+      setShowForm(false);
+      await load();
+    } catch (e) {
+      const msg = e?.response?.data?.message || e?.message || 'Failed to save';
+      setFormError(msg);
+      notify?.notifyError?.(msg);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const requestDelete = (p) => {
+    if (!p?.id) return;
+
+    setConfirm({
+      title: 'Confirm',
+      message: 'Bạn chắc chắn muốn xoá privacy này? (Xoá vĩnh viễn)',
+      confirmText: 'Delete',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirm(null);
+        try {
+          await managerApi.deletePrivacy(p.id);
+          notify?.notifySuccess?.('Deleted');
+          await load();
+        } catch (e) {
+          notify?.notifyError?.(e?.response?.data?.message || e?.message || 'Delete failed');
+        }
+      },
+    });
+  };
+
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-headline font-bold">Privacy Policy</h1>
-        <p className="text-sm text-on-surface-variant">Edit the system privacy policy shown on the Home site.</p>
-      </header>
-
-      <div className="bg-surface-container p-6 rounded-xl space-y-4">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Title</label>
-          <input
-            className="w-full bg-surface-container-high border border-outline-variant/30 rounded-lg px-4 py-3 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/40"
-            placeholder="Privacy Policy"
-            type="text"
-          />
+          <h1 className="text-2xl font-headline font-bold">Privacy</h1>
+          <p className="text-sm text-on-surface-variant">
+            Manage privacy policies shown on the public site. Click a title to expand/collapse.
+          </p>
         </div>
 
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Content</label>
-          <textarea
-            className="w-full min-h-48 bg-surface-container-high border border-outline-variant/30 rounded-lg px-4 py-3 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/40"
-            placeholder="Write policy content..."
-          />
-        </div>
-
-        <div className="flex justify-end">
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            className="rounded-lg bg-primary px-5 py-3 text-xs font-extrabold uppercase tracking-widest text-on-primary hover:opacity-90"
+            onClick={load}
+            className="h-10 rounded-lg px-4 text-sm font-bold border border-outline-variant hover:bg-surface disabled:opacity-50"
+            disabled={loading}
           >
-            Save
+            Refresh
+          </button>
+          <button
+            type="button"
+            onClick={openCreate}
+            className="h-10 rounded-lg bg-primary/20 px-4 text-xs font-extrabold uppercase tracking-widest text-primary hover:bg-primary hover:text-on-primary transition-all"
+          >
+            Add Privacy
           </button>
         </div>
+      </header>
 
-        {/* TODO: show last updated info from API */}
-      </div>
+      <section className="bg-surface-container p-4 sm:p-6 rounded-xl space-y-3">
+        {error ? <div className="text-sm text-error">{error}</div> : null}
+        {loading ? <div className="text-sm text-on-surface-variant">Loading...</div> : null}
+
+        {!loading && normalized.length === 0 ? (
+          <div className="rounded-xl border border-outline-variant bg-surface px-4 py-6 text-sm text-on-surface-variant">
+            No privacy policies yet.
+          </div>
+        ) : null}
+
+        <div className="space-y-2">
+          {normalized.map((p) => {
+            const isOpen = expandedId === p.id;
+
+            return (
+              <div key={p.id} className="rounded-xl border border-outline-variant bg-surface overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setExpandedId((prev) => (prev === p.id ? null : p.id))}
+                  className="w-full flex items-center justify-between gap-4 px-4 py-4 text-left hover:bg-surface-container"
+                >
+                  <div className="min-w-0">
+                    <div className="text-sm font-black text-on-surface truncate">{p.title || '—'}</div>
+                    <div className="mt-1 text-xs text-on-surface-variant">
+                      {p.updatedAt ? `Updated: ${new Date(p.updatedAt).toLocaleString()}` : ''}
+                    </div>
+                  </div>
+                  <span className="material-symbols-outlined text-on-surface-variant">
+                    {isOpen ? 'expand_less' : 'expand_more'}
+                  </span>
+                </button>
+
+                {isOpen ? (
+                  <div className="border-t border-outline-variant px-4 py-4">
+                    <div className="whitespace-pre-wrap text-sm text-on-surface-variant leading-relaxed">
+                      {p.content || '—'}
+                    </div>
+
+                    <div className="mt-4 flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openEdit(p)}
+                        className="h-9 rounded-lg px-3 text-xs font-bold border border-outline-variant hover:bg-surface"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => requestDelete(p)}
+                        className="h-9 rounded-lg px-3 text-xs font-bold border border-error text-error hover:bg-error hover:text-on-error"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <PrivacyFormModal
+        open={showForm}
+        busy={busy}
+        error={formError}
+        draft={draft}
+        setDraft={setDraft}
+        onClose={() => setShowForm(false)}
+        onSubmit={submit}
+      />
+
+      <PostConfirmModal
+        open={!!confirm}
+        title={confirm?.title}
+        message={confirm?.message}
+        confirmVariant="danger"
+        confirmText={confirm?.confirmText || 'OK'}
+        onCancel={() => setConfirm(null)}
+        onConfirm={() => confirm?.onConfirm?.()}
+        zIndexClassName="z-[80]"
+      />
     </div>
   );
 }
