@@ -66,15 +66,22 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (!auth.isAuthenticated) return;
-    const role = auth.user?.role;
-    if (String(role || '').trim() === 'Admin') {
+    const role = String(auth.user?.role || '').trim();
+
+    if (role === 'Admin') {
       navigate('/admin/managers', { replace: true });
       return;
     }
-    if (isAdminGroup(role)) {
-      navigate('/', { replace: true });
+    if (role === 'Manager') {
+      navigate('/manager', { replace: true });
       return;
     }
+    if (role === 'Owner') {
+      navigate('/owner/fields', { replace: true });
+      return;
+    }
+    
+    // Luồng mặc định cho Customer
     navigate('/', { replace: true });
   }, [auth.isAuthenticated, auth.user, navigate]);
 

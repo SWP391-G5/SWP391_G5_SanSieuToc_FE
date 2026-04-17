@@ -26,6 +26,10 @@ import {
 
 import ManagerMarketingImagesPage from './pages/Manager/ManagerMarketingImagesPage';
 
+import RequireOwner from './components/owner/RequireOwner';
+import OwnerLayout from './layouts/owner/OwnerLayout';
+import OwnerFieldsPage from './pages/owner/OwnerFieldsPage';
+
 import { useAuth } from './context/AuthContext';
 
 function RequireAuth({ children }) {
@@ -77,6 +81,19 @@ function App() {
 
           {/* 404 Not Found */}
           <Route path="*" element={<NotFoundPage />} />
+        </Route>
+
+        {/* Owner Area */}
+        <Route
+          path="/owner"
+          element={
+            <RequireOwner>
+              <OwnerLayout />
+            </RequireOwner>
+          }
+        >
+          <Route index element={<Navigate to="/owner/fields" replace />} />
+          <Route path="fields" element={<OwnerFieldsPage />} />
         </Route>
 
         {/* Manager Area */}
