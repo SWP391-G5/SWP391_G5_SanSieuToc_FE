@@ -3,9 +3,11 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext';
 
-function UserMenu({ auth, navigate }) {
+function UserMenu({ auth, navigate, profilePath, showProfile = true, showLogout = true }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
+
+  const showMenu = showProfile || showLogout;
 
   const displayName = useMemo(() => {
     const name = String(auth.user?.name || '').trim();
@@ -49,6 +51,7 @@ function UserMenu({ auth, navigate }) {
   }, []);
 
   useEffect(() => {
+    if (!showMenu) return undefined;
     if (!userMenuOpen) return undefined;
 
     const onMouseDown = (e) => {
@@ -68,11 +71,11 @@ function UserMenu({ auth, navigate }) {
       document.removeEventListener('mousedown', onMouseDown);
       document.removeEventListener('keydown', onKeyDown);
     };
-  }, [userMenuOpen]);
+  }, [showMenu, userMenuOpen]);
 
   const onProfile = () => {
     setUserMenuOpen(false);
-    navigate('/profile');
+    navigate(profilePath || '/profile');
   };
 
   const onLogout = () => {
@@ -90,6 +93,24 @@ function UserMenu({ auth, navigate }) {
       >
         Sign In
       </button>
+    );
+  }
+
+  if (!showMenu) {
+    return (
+      <div ref={userMenuRef} className="relative flex items-center">
+        <div className="flex items-center gap-3 rounded-full py-1 pl-1 pr-3">
+          <span className="h-10 w-10 overflow-hidden rounded-full ring-2 ring-[#8eff71]/30">
+            <img
+              src={avatarSrc || avatarFallback}
+              alt="Avatar"
+              className="h-full w-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          </span>
+          <span className="max-w-44 truncate text-sm font-semibold text-[#fdfdf6]">{displayName}</span>
+        </div>
+      </div>
     );
   }
 
@@ -118,27 +139,33 @@ function UserMenu({ auth, navigate }) {
           role="menu"
           className="absolute right-0 top-full mt-2 w-44 overflow-hidden rounded-md border border-white/10 bg-[#0d0f0b]/95 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.35)]"
         >
-          <button
-            type="button"
-            role="menuitem"
-            onClick={onProfile}
-            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
-          >
-            <span className="material-symbols-outlined text-[18px] leading-none">account_circle</span>
-            <span>Profile</span>
-          </button>
+          {showProfile ? (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={onProfile}
+                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
+              >
+                <span className="material-symbols-outlined text-[18px] leading-none">account_circle</span>
+                <span>Profile</span>
+              </button>
 
-          <div className="my-1 h-px bg-white/10" />
+              <div className="my-1 h-px bg-white/10" />
+            </>
+          ) : null}
 
-          <button
-            type="button"
-            role="menuitem"
-            onClick={onLogout}
-            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
-          >
-            <span className="material-symbols-outlined text-[18px] leading-none">logout</span>
-            <span>Logout</span>
-          </button>
+          {showLogout ? (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={onLogout}
+              className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
+            >
+              <span className="material-symbols-outlined text-[18px] leading-none">logout</span>
+              <span>Logout</span>
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -163,10 +190,15 @@ export default function MainLayout() {
   const isCommunity = pathname.startsWith('/community');
 
   const isAdminRoute = pathname.startsWith('/admin');
-  const isAdminUser =
-    String(auth.user?.accountType || '').trim().toLowerCase() === 'admin' ||
-    ['admin', 'manager'].includes(String(auth.user?.role || '').trim().toLowerCase());
+  const accountTypeKey = String(auth.user?.accountType || '').trim().toLowerCase();
+  const roleKey = String(auth.user?.role || '').trim().toLowerCase();
+  const isAdminAccount = accountTypeKey === 'admin';
+  const isAdminUser = isAdminAccount || ['admin', 'manager'].includes(roleKey);
+  const isAdminConsoleUser = roleKey === 'admin';
   const hidePublicNav = isAdminRoute || isAdminUser;
+  const profilePath = isAdminConsoleUser ? '/admin/profile' : '/profile';
+  const showProfileInUserMenu = !isAdminConsoleUser;
+  const showLogoutInUserMenu = !isAdminConsoleUser;
 
   const navItemClass = (active) =>
     active
@@ -235,7 +267,14 @@ export default function MainLayout() {
           ) : null}
 
           <div className="flex items-center gap-4">
-            <UserMenu key={location.pathname} auth={auth} navigate={navigate} />
+            <UserMenu
+              key={location.pathname}
+              auth={auth}
+              navigate={navigate}
+              profilePath={profilePath}
+              showProfile={showProfileInUserMenu}
+              showLogout={showLogoutInUserMenu}
+            />
           </div>
         </div>
       </nav>

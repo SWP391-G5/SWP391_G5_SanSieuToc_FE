@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
@@ -26,6 +26,7 @@ function formatVnd(amount) {
 
 export default function UserProfilePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const auth = useAuth();
   const { notifyError, notifyInfo, notifySuccess } = useNotification();
 
@@ -34,10 +35,18 @@ export default function UserProfilePage() {
 
   const roleName = auth.user?.role;
   const roleKey = String(roleName || '').trim().toLowerCase();
+  const isAdminConsoleUser = roleKey === 'admin';
   const isCustomer = roleKey === 'customer';
   const isManager = roleKey === 'manager';
 
   const canChangeEmail = !isAdminAccount || isManager;
+
+  useEffect(() => {
+    if (!auth.isAuthenticated) return;
+    if (isAdminConsoleUser && !String(location.pathname || '').startsWith('/admin')) {
+      navigate('/admin/profile', { replace: true });
+    }
+  }, [auth.isAuthenticated, isAdminConsoleUser, location.pathname, navigate]);
 
   const fileInputRef = useRef(null);
 
@@ -357,6 +366,20 @@ export default function UserProfilePage() {
     notifyInfo('Top up sẽ làm sau.');
   };
 
+  const onBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    if (isAdminAccount) {
+      navigate('/admin', { replace: true });
+      return;
+    }
+
+    navigate('/', { replace: true });
+  };
+
   if (loading) {
     return (
       <div className="profile-terminal-page">
@@ -383,6 +406,17 @@ export default function UserProfilePage() {
               MY BOOKINGS
             </button>
           )}
+
+          {isAdminAccount ? (
+            <button
+              type="button"
+              className="profile-terminal-tab"
+              style={{ marginLeft: 'auto' }}
+              onClick={onBack}
+            >
+              QUAY LẠI
+            </button>
+          ) : null}
         </div>
 
         <div className="profile-terminal-grid">
