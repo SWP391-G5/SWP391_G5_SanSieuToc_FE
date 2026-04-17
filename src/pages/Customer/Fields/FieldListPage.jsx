@@ -16,7 +16,6 @@ export default function FieldListPage() {
   const [sortBy, setSortBy] = useState('topRated');
 
   const { wishlistIds, toggleWishlist } = useWishlist();
-
   const [selectedCity, setSelectedCity] = useState('All');
   const [selectedSize, setSelectedSize] = useState(null);
   const [priceMaxK, setPriceMaxK] = useState(1500);
