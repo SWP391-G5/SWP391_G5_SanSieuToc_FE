@@ -27,5 +27,19 @@ export const API_CONFIG = {
       EMAIL_CHANGE_REQUEST: '/api/admin/profile/email/request',
       EMAIL_CHANGE_VERIFY: '/api/admin/profile/email/verify',
     },
+    BOOKING: {
+      GET_MY_BOOKINGS: '/api/bookings/my',
+      CREATE: '/api/bookings',
+      CANCEL: '/api/bookings/cancel',
+    },
+    WALLET: {
+      TOP_UP: '/api/wallets/topup',
+      GET_BALANCE: '/api/wallets/balance',
+      GET_TRANSACTIONS: '/api/wallets/transactions',
+    },
+    SERVICE: {
+      GET_BY_BOOKING_DETAIL: '/api/services/booking-detail',
+      BOOK: '/api/services',
+    },
   },
 };
