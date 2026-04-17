@@ -20,6 +20,11 @@ const publicApi = {
     const { data } = await axiosInstance.get(`/api/banners${buildQuery(params)}`);
     return data;
   },
+
+  async getFields(params) {
+    const { data } = await axiosInstance.get(`/api/public/fields${buildQuery(params)}`);
+    return data;
+  },
 };
 
 export default publicApi;
