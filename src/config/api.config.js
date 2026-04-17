@@ -16,5 +16,14 @@ export const API_CONFIG = {
       EMAIL_CHANGE_REQUEST: '/api/user/profile/email/request',
       EMAIL_CHANGE_VERIFY: '/api/user/profile/email/verify',
     },
+    BOOKING: {
+      GET_MY_BOOKINGS: '/api/bookings/my',
+      CREATE: '/api/bookings',
+      CANCEL: '/api/bookings/cancel',
+    },
+    WALLET: {
+      TOP_UP: '/api/wallets/topup',
+      GET_BALANCE: '/api/wallets/balance',
+    },
   },
 };

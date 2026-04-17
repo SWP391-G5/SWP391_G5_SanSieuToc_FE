@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
+import bookingService from '../services/bookingService';
 import profileService from '../services/profileService';
+import { setAuthToken } from '../services/axios';
 
 import '../styles/UserProfilePage.css';
 
@@ -35,10 +37,166 @@ async function uploadToCloudinary({ file, cloudName, uploadPreset }) {
   return secureUrl;
 }
 
+function BookingCard({ booking, onCancel }) {
+  const [expanded, setExpanded] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  const canCancel = booking.status === 'Confirmed' && booking.statusPayment === 'Paid';
+
+  const handleCancel = async () => {
+    if (!window.confirm('Bạn có chắc muốn hủy đơn đặt sân này?\nTiền sẽ được hoàn lại sau khi Owner xác nhận.')) {
+      return;
+    }
+    
+    setCancelling(true);
+    try {
+      await onCancel(booking.id);
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  return (
+    <div className={`booking-card ${expanded ? 'expanded' : ''}`}>
+      <div className="booking-card-image-wrapper">
+        <div
+          className="booking-card-image"
+          style={{ backgroundImage: `url(${booking.fieldImage || 'https://via.placeholder.com/400x200?text=San+Sieu+Toc'})` }}
+        ></div>
+      </div>
+      <div className="booking-card-body">
+        <div className="booking-card-top">
+          <div className="booking-card-info">
+            <h3 className="booking-card-title">{booking.fieldName}</h3>
+            <p className="booking-card-address">📍 {booking.fieldAddress}</p>
+          </div>
+          <div className="booking-card-status">
+            <span className={`booking-status-badge status-${booking.status.toLowerCase().replace(/\s+/g, '-')}`}>
+              {booking.status}
+            </span>
+            <span className={`booking-payment-badge ${booking.statusPayment.toLowerCase().replace(/\s+/g, '-')}`}>
+              {booking.statusPayment}
+            </span>
+          </div>
+        </div>
+        <p className="booking-card-date">📅 {new Date(booking.date).toLocaleDateString('vi-VN')}</p>
+        <p className="booking-card-time">🕒 {booking.timeSlots.map(s => typeof s === 'object' ? s.start : s).join(', ')}</p>
+        <div className="booking-card-footer">
+          <span className="booking-card-price">{formatVnd(booking.grandTotal)}đ</span>
+          <div className="booking-card-actions">
+            {canCancel && (
+              <button
+                className="booking-cancel-btn"
+                onClick={handleCancel}
+                disabled={cancelling}
+              >
+                {cancelling ? 'Đang hủy...' : 'Hủy đơn'}
+              </button>
+            )}
+            <button
+              className="booking-expand-btn"
+              onClick={() => setExpanded(!expanded)}
+            >
+              {expanded ? 'Thu gọn ▲' : 'Chi tiết ▼'}
+            </button>
+          </div>
+        </div>
+
+        {expanded && (
+          <div className="booking-expanded-content">
+            {booking.fieldType && (
+              <div className="booking-detail-row">
+                <span className="booking-detail-label">Loại sân:</span>
+                <span>{booking.fieldType}</span>
+              </div>
+            )}
+            
+            <div className="booking-detail-row">
+              <span className="booking-detail-label">Khung giờ:</span>
+              <div className="booking-slots-row">
+                {booking.allDates && booking.allDates.length > 0 ? (
+                  booking.allDates.map((d, idx) => (
+                    <div key={idx} className="booking-date-group">
+                      <span className="booking-date-label">{new Date(d.date).toLocaleDateString('vi-VN')}:</span>
+                      {d.slots.map((slot, sIdx) => (
+                        <span key={sIdx} className="booking-slot-badge">
+                          {slot.start} - {slot.end}
+                        </span>
+                      ))}
+                    </div>
+                  ))
+                ) : (
+                  booking.timeSlots.map((slot, idx) => (
+                    <span key={idx} className="booking-slot-badge">
+                      {typeof slot === 'object' ? `${slot.start} - ${slot.end}` : slot}
+                    </span>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {booking.services && booking.services.length > 0 && (
+              <div className="booking-detail-row">
+                <span className="booking-detail-label">Dịch vụ:</span>
+                <div className="booking-services-list">
+                  {booking.services.map((service, idx) => (
+                    <span key={idx} className="booking-service-badge">
+                      {service.serviceName}: {formatVnd(service.price)}đ
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="booking-price-breakdown">
+              {booking.fieldTotal > 0 && (
+                <div className="booking-price-row">
+                  <span>Tiền sân:</span>
+                  <span>{formatVnd(booking.fieldTotal)}đ</span>
+                </div>
+              )}
+              {booking.servicesTotal > 0 && (
+                <div className="booking-price-row">
+                  <span>Dịch vụ:</span>
+                  <span>{formatVnd(booking.servicesTotal)}đ</span>
+                </div>
+              )}
+              <div className="booking-price-row total">
+                <span>Tổng:</span>
+                <span>{formatVnd(booking.grandTotal)}đ</span>
+              </div>
+            </div>
+
+            <div className="booking-payment-status">
+              {booking.statusPayment === 'Paid' && (
+                <span className="payment-badge paid">✓ Đã thanh toán</span>
+              )}
+              {booking.statusPayment === 'Pending Payment' && (
+                <span className="payment-badge pending">⏳ Chờ thanh toán</span>
+              )}
+              {booking.statusPayment === 'Pending Refund' && (
+                <span className="payment-badge pending-refund">⏳ Đang chờ hoàn tiền</span>
+              )}
+              {booking.statusPayment === 'Refunded' && (
+                <span className="payment-badge refunded">↩️ Đã hoàn tiền</span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function UserProfilePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const auth = useAuth();
   const { notifyError, notifyInfo, notifySuccess } = useNotification();
+
+  const [activeTab, setActiveTab] = useState('personal');
+  const [bookings, setBookings] = useState([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
 
   const fileInputRef = useRef(null);
 
@@ -89,6 +247,16 @@ export default function UserProfilePage() {
     return form.image || fallback;
   }, [form.image]);
 
+  // Set initial tab from navigation state
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+      // Clear it from state to avoid re-triggering
+      const { activeTab: _activeTab, ...rest } = location.state;
+      navigate('.', { state: rest, replace: true });
+    }
+  }, [location.state, navigate]);
+
   useEffect(() => {
     if (!auth.isAuthenticated) {
       navigate('/auth', { replace: true });
@@ -113,6 +281,12 @@ export default function UserProfilePage() {
         });
         setEmailOriginal(u.email || '');
         setWalletBalance(Number(data?.wallet?.balance || 0));
+
+        // Clear the refresh state after fetching to prevent re-fetching on unrelated re-renders
+        if (location.state?.refreshWallet) {
+          const { refreshWallet, ...restState } = location.state;
+          navigate('.', { state: restState, replace: true });
+        }
       } catch (err) {
         const msg = err?.response?.data?.message || err?.message || 'Không tải được hồ sơ.';
         notifyError(msg);
@@ -124,7 +298,49 @@ export default function UserProfilePage() {
     return () => {
       ignore = true;
     };
-  }, [auth.isAuthenticated, navigate, notifyError]);
+  }, [auth.isAuthenticated, navigate, notifyError, location.state?.refreshWallet]);
+
+  // Effect to fetch bookings when tab is active
+  useEffect(() => {
+    if (activeTab === 'bookings') {
+      let ignore = false;
+      const fetchBookings = async () => {
+        setBookingsLoading(true);
+        try {
+          if (auth.accessToken) {
+            setAuthToken(auth.accessToken);
+          }
+          const data = await bookingService.getMyBookings();
+          if (!ignore) {
+            setBookings(data?.bookings || []);
+          }
+        } catch (err) {
+          if (!ignore) {
+            notifyError('Could not load booking history.');
+            setBookings([]);
+          }
+        } finally {
+          if (!ignore) setBookingsLoading(false);
+        }
+      };
+      fetchBookings();
+      return () => { ignore = true; };
+    }
+  }, [activeTab, notifyError, auth.accessToken]);
+
+  const handleCancelBooking = async (bookingId) => {
+    try {
+      if (auth.accessToken) {
+        setAuthToken(auth.accessToken);
+      }
+      await bookingService.cancelBooking(bookingId);
+      notifySuccess('Yêu cầu hủy đã được gửi. Vui lòng chờ Owner xác nhận hoàn tiền.');
+      const data = await bookingService.getMyBookings();
+      setBookings(data?.bookings || []);
+    } catch (err) {
+      notifyError(err?.response?.data?.message || 'Hủy đơn thất bại.');
+    }
+  };
 
   const onPickAvatar = () => {
     if (fileInputRef.current) fileInputRef.current.click();
@@ -327,189 +543,205 @@ export default function UserProfilePage() {
     <div className="profile-terminal-page">
       <div className="profile-terminal-container">
         <div className="profile-terminal-tabs">
-          <button type="button" className="profile-terminal-tab active">
+          <button
+            type="button"
+            className={`profile-terminal-tab ${activeTab === 'personal' ? 'active' : ''}`}
+            onClick={() => setActiveTab('personal')}
+          >
             PERSONAL INFORMATION
           </button>
           <button
             type="button"
-            className="profile-terminal-tab disabled"
-            onClick={() => notifyInfo('My bookings sẽ làm sau.')}
+            className={`profile-terminal-tab ${activeTab === 'bookings' ? 'active' : ''}`}
+            onClick={() => setActiveTab('bookings')}
           >
             MY BOOKINGS
           </button>
         </div>
 
-        <div className="profile-terminal-grid">
-          <div className="profile-terminal-left">
-            <section className="profile-terminal-card">
-              <div className="profile-terminal-card-title">
-                <span className="profile-terminal-card-icon">🔒</span>
-                BASIC CREDENTIALS
-              </div>
-
-              <div className="profile-terminal-form">
-                <div className="profile-terminal-field">
-                  <label className="profile-terminal-label">USERNAME</label>
-                  <input className="profile-terminal-input" value={form.username} disabled />
+        {activeTab === 'personal' ? (
+          <div className="profile-terminal-grid">
+            <div className="profile-terminal-left">
+              <section className="profile-terminal-card">
+                <div className="profile-terminal-card-title">
+                  <span className="profile-terminal-card-icon">🔒</span>
+                  BASIC CREDENTIALS
                 </div>
 
-                <div className="profile-terminal-field">
-                  <label className="profile-terminal-label">EMAIL ADDRESS</label>
-                  <input
-                    className="profile-terminal-input"
-                    value={form.email}
-                    onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                    placeholder="Email"
-                    disabled={emailOtpLoading}
-                  />
-                </div>
-
-                <div className="profile-terminal-field">
-                  <label className="profile-terminal-label">FULL NAME</label>
-                  <input
-                    className="profile-terminal-input"
-                    value={form.name}
-                    onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                    placeholder="Full name"
-                  />
-                </div>
-
-                <div className="profile-terminal-field">
-                  <label className="profile-terminal-label">PHONE NUMBER</label>
-                  <input
-                    className="profile-terminal-input"
-                    value={form.phone}
-                    onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
-                    placeholder="Phone"
-                  />
-                </div>
-
-                <div className="profile-terminal-field profile-terminal-field-wide">
-                  <label className="profile-terminal-label">ADDRESS</label>
-                  <input
-                    className="profile-terminal-input"
-                    value={form.address}
-                    onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
-                    placeholder="Address"
-                  />
-                </div>
-
-                <div className="profile-terminal-actions">
-                  <button
-                    type="button"
-                    className="profile-terminal-btn primary"
-                    disabled={saving || uploading || emailOtpLoading}
-                    onClick={onSaveProfile}
-                  >
-                    {saving ? 'SAVING...' : emailOtpLoading ? 'SENDING OTP...' : 'SAVE INFORMATION'}
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            <section className="profile-terminal-card">
-              <div className="profile-terminal-card-title">
-                <span className="profile-terminal-card-icon">💳</span>
-                PITCH CREDIT WALLET
-              </div>
-
-              <div className="profile-terminal-wallet">
-                <div className="profile-terminal-wallet-left">
-                  <div className="profile-terminal-wallet-label">AVAILABLE BALANCE</div>
-                  <div className="profile-terminal-wallet-balance">{formatVnd(walletBalance)}đ</div>
-                </div>
-                <button
-                  className="profile-terminal-btn"
-                  onClick={onTopUp}
-                >
-                  TOP UP
-                </button>
-                
-              </div>
-            </section>
-
-            <section className="profile-terminal-card">
-              <div className="profile-terminal-card-title">
-                <span className="profile-terminal-card-icon">🛡️</span>
-                SECURITY PROTOCOL
-              </div>
-
-              <form className="profile-terminal-form" onSubmit={onChangePassword}>
-                <div className="profile-terminal-field profile-terminal-field-wide">
-                  <label className="profile-terminal-label">CURRENT PASSWORD</label>
-                  <input
-                    className="profile-terminal-input"
-                    type="password"
-                    value={passwordForm.currentPassword}
-                    onChange={(e) => setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))}
-                    placeholder="••••••••"
-                  />
-                </div>
-
-                <div className="profile-terminal-field">
-                  <label className="profile-terminal-label">NEW PASSWORD</label>
-                  <input
-                    className="profile-terminal-input"
-                    type="password"
-                    value={passwordForm.newPassword}
-                    onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))}
-                    placeholder="••••••••"
-                  />
-                </div>
-
-                <div className="profile-terminal-field">
-                  <label className="profile-terminal-label">CONFIRM NEW PASSWORD</label>
-                  <input
-                    className="profile-terminal-input"
-                    type="password"
-                    value={passwordForm.confirmNewPassword}
-                    onChange={(e) => setPasswordForm((p) => ({ ...p, confirmNewPassword: e.target.value }))}
-                    placeholder="••••••••"
-                  />
-                </div>
-
-                <div className="profile-terminal-actions">
-                  <button type="submit" className="profile-terminal-btn primary" disabled={changingPassword}>
-                    {changingPassword ? 'UPDATING...' : 'UPDATE CREDENTIALS'}
-                  </button>
-                </div>
-              </form>
-            </section>
-          </div>
-
-          <div className="profile-terminal-right">
-            <section className="profile-terminal-card">
-              <div className="profile-terminal-avatar">
-                <div className="profile-terminal-avatar-preview">
-                  <img src={avatarUrl} alt="Avatar" className="profile-terminal-avatar-img" />
-                  <div className="profile-terminal-avatar-lock">🔒</div>
-                </div>
-
-                <div className="profile-terminal-avatar-meta">
-                  <div className="profile-terminal-avatar-title">AVATAR TERMINAL</div>
-                  <div className="profile-terminal-avatar-sub">
-                    Upload a square image for best performance. Max 5MB.
+                <div className="profile-terminal-form">
+                  <div className="profile-terminal-field">
+                    <label className="profile-terminal-label">USERNAME</label>
+                    <input className="profile-terminal-input" value={form.username} disabled />
                   </div>
-                  <button
-                    type="button"
-                    className="profile-terminal-btn"
-                    onClick={onPickAvatar}
-                    disabled={uploading}
-                  >
-                    {uploading ? 'UPLOADING...' : 'REPLACE VISUAL'}
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={onAvatarFileChange}
-                    style={{ display: 'none' }}
-                  />
+
+                  <div className="profile-terminal-field">
+                    <label className="profile-terminal-label">EMAIL ADDRESS</label>
+                    <input
+                      className="profile-terminal-input"
+                      value={form.email}
+                      onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                      placeholder="Email"
+                      disabled={emailOtpLoading}
+                    />
+                  </div>
+
+                  <div className="profile-terminal-field">
+                    <label className="profile-terminal-label">FULL NAME</label>
+                    <input
+                      className="profile-terminal-input"
+                      value={form.name}
+                      onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                      placeholder="Full name"
+                    />
+                  </div>
+
+                  <div className="profile-terminal-field">
+                    <label className="profile-terminal-label">PHONE NUMBER</label>
+                    <input
+                      className="profile-terminal-input"
+                      value={form.phone}
+                      onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+                      placeholder="Phone"
+                    />
+                  </div>
+
+                  <div className="profile-terminal-field profile-terminal-field-wide">
+                    <label className="profile-terminal-label">ADDRESS</label>
+                    <input
+                      className="profile-terminal-input"
+                      value={form.address}
+                      onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
+                      placeholder="Address"
+                    />
+                  </div>
+
+                  <div className="profile-terminal-actions">
+                    <button
+                      type="button"
+                      className="profile-terminal-btn primary"
+                      disabled={saving || uploading || emailOtpLoading}
+                      onClick={onSaveProfile}
+                    >
+                      {saving ? 'SAVING...' : emailOtpLoading ? 'SENDING OTP...' : 'SAVE INFORMATION'}
+                    </button>
+                  </div>
                 </div>
+              </section>
+
+              <section className="profile-terminal-card">
+                <div className="profile-terminal-card-title">
+                  <span className="profile-terminal-card-icon">💳</span>
+                  PITCH CREDIT WALLET
+                </div>
+
+                <div className="profile-terminal-wallet">
+                  <div className="profile-terminal-wallet-left">
+                    <div className="profile-terminal-wallet-label">AVAILABLE BALANCE</div>
+                    <div className="profile-terminal-wallet-balance">{formatVnd(walletBalance)}đ</div>
+                  </div>
+                  <button className="profile-terminal-btn" onClick={onTopUp}>
+                    TOP UP
+                  </button>
+                </div>
+              </section>
+
+              <section className="profile-terminal-card">
+                <div className="profile-terminal-card-title">
+                  <span className="profile-terminal-card-icon">🛡️</span>
+                  SECURITY PROTOCOL
+                </div>
+
+                <form className="profile-terminal-form" onSubmit={onChangePassword}>
+                  <div className="profile-terminal-field profile-terminal-field-wide">
+                    <label className="profile-terminal-label">CURRENT PASSWORD</label>
+                    <input
+                      className="profile-terminal-input"
+                      type="password"
+                      value={passwordForm.currentPassword}
+                      onChange={(e) => setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))}
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <div className="profile-terminal-field">
+                    <label className="profile-terminal-label">NEW PASSWORD</label>
+                    <input
+                      className="profile-terminal-input"
+                      type="password"
+                      value={passwordForm.newPassword}
+                      onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))}
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <div className="profile-terminal-field">
+                    <label className="profile-terminal-label">CONFIRM NEW PASSWORD</label>
+                    <input
+                      className="profile-terminal-input"
+                      type="password"
+                      value={passwordForm.confirmNewPassword}
+                      onChange={(e) => setPasswordForm((p) => ({ ...p, confirmNewPassword: e.target.value }))}
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <div className="profile-terminal-actions">
+                    <button type="submit" className="profile-terminal-btn primary" disabled={changingPassword}>
+                      {changingPassword ? 'UPDATING...' : 'UPDATE CREDENTIALS'}
+                    </button>
+                  </div>
+                </form>
+              </section>
+            </div>
+            <div className="profile-terminal-right">
+              <section className="profile-terminal-card">
+                <div className="profile-terminal-avatar">
+                  <div className="profile-terminal-avatar-preview">
+                    <img src={avatarUrl} alt="Avatar" className="profile-terminal-avatar-img" />
+                    <div className="profile-terminal-avatar-lock">🔒</div>
+                  </div>
+
+                  <div className="profile-terminal-avatar-meta">
+                    <div className="profile-terminal-avatar-title">AVATAR TERMINAL</div>
+                    <div className="profile-terminal-avatar-sub">Upload a square image for best performance. Max 5MB.</div>
+                    <button type="button" className="profile-terminal-btn" onClick={onPickAvatar} disabled={uploading}>
+                      {uploading ? 'UPLOADING...' : 'REPLACE VISUAL'}
+                    </button>
+                    <input ref={fileInputRef} type="file" accept="image/*" onChange={onAvatarFileChange} style={{ display: 'none' }} />
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        ) : (
+          <div className="profile-terminal-full-width">
+            <section className="profile-terminal-card">
+              <div className="profile-terminal-card-title">
+                <span className="profile-terminal-card-icon">📅</span>
+                BOOKING HISTORY
               </div>
+              {bookingsLoading ? (
+                <div className="profile-terminal-loading" style={{ marginTop: '1rem' }}>
+                  Loading bookings...
+                </div>
+              ) : bookings.length === 0 ? (
+                <div style={{ padding: '1rem', textAlign: 'center', color: 'rgba(231, 249, 238, 0.65)' }}>
+                  No bookings found.
+                </div>
+              ) : (
+                <div className="booking-history-list">
+                  {bookings.map((booking) => (
+                    <BookingCard 
+                      key={booking.id} 
+                      booking={booking}
+                      onCancel={handleCancelBooking}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
           </div>
-        </div>
+        )}
         {emailOtpOpen && (
           <div className="modal-overlay" role="dialog" aria-modal="true">
             <div className="modal-container">

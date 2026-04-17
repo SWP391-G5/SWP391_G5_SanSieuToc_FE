@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import qrImage from '../assets/images/qr-vietqr.png';
-import './CheckoutPage.css';
+import '../styles/CheckoutPage.css';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -82,7 +82,7 @@ const CheckoutPage = () => {
             const data = await response.json();
             if (data.success) {
               alert(`✓ PayPal Payment successful! Balance: ${data.data.wallet.balance} VND`);
-              navigate('/profile');
+              navigate('/profile', { state: { refreshWallet: true } });
             } else {
               setError(data.message || 'Transaction failed');
             }
@@ -133,7 +133,7 @@ const CheckoutPage = () => {
 
       if (data.success) {
         alert(`✓ Top-up successful! Balance: ${data.data.wallet.balance} VND`);
-        navigate('/profile');
+        navigate('/profile', { state: { refreshWallet: true } });
       } else {
         setError(data.message || 'Transaction failed');
       }
@@ -175,7 +175,7 @@ const CheckoutPage = () => {
 
       if (data.success) {
         alert(`✓ Payment successful! Balance: ${data.data.wallet.balance} VND`);
-        navigate('/profile');
+        navigate('/profile', { state: { refreshWallet: true } });
       } else {
         setError(data.message || 'Transaction failed');
       }

@@ -192,7 +192,7 @@
   background: rgba(0, 212, 255, 0.2);
 }
 
-.method input[type="radio"] {
+.method input[type='radio'] {
   margin-right: 15px;
   cursor: pointer;
   width: 18px;

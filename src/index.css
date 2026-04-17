@@ -86,4 +86,29 @@
   .shadow-neon {
     box-shadow: 0 0 10px rgba(0, 229, 54, 0.5);
   }
+
+  /* Material Symbols (Outlined) tuning */
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+
+  .fill-icon {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+
+  /* Line clamping (Tailwind's line-clamp plugin alternative) */
+  .line-clamp-1,
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-1 {
+    -webkit-line-clamp: 1;
+  }
+
+  .line-clamp-2 {
+    -webkit-line-clamp: 2;
+  }
 }

@@ -3,11 +3,15 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import AuthPage from './pages/auth/AuthPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import MainLayout from './layouts/MainLayout';
+import FieldListPage from './pages/FieldListPage';
 import HomePage from './pages/HomePage';
+import WishlistPage from './pages/WishlistPage';
 import NotFoundPage from './pages/NotFoundPage';
 import UserProfilePage from './pages/UserProfilePage';
 import TopUpPage from './pages/TopUpPage';
 import CheckoutPage from './pages/CheckoutPage';
+import FieldDetailPage from './pages/FieldDetailPage';
+import BookingConfirmPage from './pages/BookingConfirmPage';
 
 import { useAuth } from './context/AuthContext';
 
@@ -23,6 +27,10 @@ function App() {
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<HomePage />} />
+          <Route path="fields" element={<FieldListPage />} />
+          <Route path="fields/:id" element={<FieldDetailPage />} />
+          <Route path="booking-confirm" element={<BookingConfirmPage />} />
+          <Route path="wishlist" element={<WishlistPage />} />
           <Route path="auth" element={<AuthPage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
           <Route
