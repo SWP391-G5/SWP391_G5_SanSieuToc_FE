@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
-import { useWishlist } from '../../hooks/useWishlist';
-import { FIELDS } from '../../features/fields';
-import { normalizeText } from '../../utils/normalizeText';
-import { parsePriceText } from '../../utils/price';
+import { useWishlist } from '../../../hooks/useWishlist';
+import { FIELDS } from '../../../features/fields';
+import { normalizeText } from '../../../utils/normalizeText';
+import { parsePriceText } from '../../../utils/price';
 
 import FieldCard from './components/FieldCard';
 

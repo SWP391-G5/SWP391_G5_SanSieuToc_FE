@@ -3,10 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import AuthPage from './pages/auth/AuthPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import MainLayout from './layouts/MainLayout';
-import FieldListPage from './pages/Fields/FieldListPage';
-import HomePage from './pages/Home/HomePage';
-import WishlistPage from './pages/Wishlist/WishlistPage';
-import CommunityPage from './pages/Community/CommunityPage';
+import FieldListPage from './pages/Customer/Fields/FieldListPage';
+import HomePage from './pages/Customer/Home/HomePage';
+import WishlistPage from './pages/Customer/Wishlist/WishlistPage';
+import CommunityPage from './pages/Customer/Community/CommunityPage';
 import NotFoundPage from './pages/NotFoundPage';
 import UserProfilePage from './pages/UserProfilePage';
 

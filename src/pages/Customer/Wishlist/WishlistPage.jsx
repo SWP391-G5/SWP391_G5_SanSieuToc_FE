@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 
-import { useWishlist } from '../../hooks/useWishlist';
+import { useWishlist } from '../../../hooks/useWishlist';
 
 import WishlistCard from './components/WishlistCard';
 
