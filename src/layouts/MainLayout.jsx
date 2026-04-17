@@ -93,7 +93,11 @@ export default function MainLayout() {
   };
 
   const isHome = location.pathname === '/';
-  const isAdmin = location.pathname.startsWith('/admin');
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isAdminUser =
+    String(auth.user?.accountType || '').trim().toLowerCase() === 'admin' ||
+    ['admin', 'manager'].includes(String(auth.user?.role || '').trim().toLowerCase());
+  const hidePublicNav = isAdminRoute || isAdminUser;
 
   const onProfile = () => {
     setUserMenuOpen(false);
@@ -122,7 +126,7 @@ export default function MainLayout() {
               San Sieu Toc
             </button>
 
-            {!isAdmin ? (
+            {!hidePublicNav ? (
               <div className="hidden items-center gap-6 font-ui text-sm uppercase tracking-wider md:flex lg:gap-8">
                 <button
                   type="button"
@@ -238,7 +242,7 @@ export default function MainLayout() {
       </main>
 
       {/* Footer */}
-      {!isAdmin ? (
+      {!isAdminRoute ? (
         <footer id="community" className="scroll-mt-24 mx-auto w-full max-w-7xl px-6 py-16 md:px-8">
           <div id="privacy" className="scroll-mt-24" />
           <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
