@@ -26,13 +26,21 @@ const managerApi = {
 
   async createPost(payload) {
     const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
-    const { data } = await axiosInstance.post('/api/manager/posts', payload, isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined);
+    const { data } = await axiosInstance.post(
+      '/api/manager/posts',
+      payload,
+      isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined
+    );
     return data;
   },
 
   async updatePost(id, payload) {
     const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
-    const { data } = await axiosInstance.put(`/api/manager/posts/${id}`, payload, isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined);
+    const { data } = await axiosInstance.put(
+      `/api/manager/posts/${id}`,
+      payload,
+      isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined
+    );
     return data;
   },
 
@@ -43,6 +51,39 @@ const managerApi = {
 
   async deletePost(id) {
     const { data } = await axiosInstance.delete(`/api/manager/posts/${id}`);
+    return data;
+  },
+
+  // =========================
+  // Banners (Manager)
+  // =========================
+  async getBanners(params) {
+    const { data } = await axiosInstance.get(`/api/manager/banners${buildQuery(params)}`);
+    return data;
+  },
+
+  async createBanner(payload) {
+    const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
+    const { data } = await axiosInstance.post(
+      '/api/manager/banners',
+      payload,
+      isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined
+    );
+    return data;
+  },
+
+  async updateBanner(id, payload) {
+    const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
+    const { data } = await axiosInstance.put(
+      `/api/manager/banners/${id}`,
+      payload,
+      isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined
+    );
+    return data;
+  },
+
+  async deleteBanner(id) {
+    const { data } = await axiosInstance.delete(`/api/manager/banners/${id}`);
     return data;
   },
 
