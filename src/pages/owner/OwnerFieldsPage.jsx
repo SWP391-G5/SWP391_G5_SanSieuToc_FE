@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { ownerFieldService } from '../../services/owner/ownerFieldService';
+import { ownerServiceAPI } from '../../services/owner/ownerServiceAPI';
 import { useNotification } from '../../context/NotificationContext';
 import FieldFormModal from '../../components/owner/FieldFormModal';
+import ServiceFormModal from '../../components/owner/ServiceFormModal';
 
 export default function OwnerFieldsPage() {
   const [fields, setFields] = useState([]);
@@ -11,6 +13,13 @@ export default function OwnerFieldsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingField, setEditingField] = useState(null);
   const [saving, setSaving] = useState(false);
+
+  // States for Services
+  const [selectedFieldForServices, setSelectedFieldForServices] = useState(null);
+  const [services, setServices] = useState([]);
+  const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
+  const [editingService, setEditingService] = useState(null);
+  const [savingService, setSavingService] = useState(false);
 
   const fetchFields = async () => {
     try {
@@ -66,6 +75,63 @@ export default function OwnerFieldsPage() {
       showNotification(error.response?.data?.message || 'Có lỗi xảy ra', 'error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  // --- Handlers for Services ---
+  const handleSelectFieldForServices = async (field) => {
+    setSelectedFieldForServices(field);
+    try {
+      const res = await ownerServiceAPI.getServices(field._id);
+      setServices(res.services || []);
+    } catch (err) {
+      showNotification('Không tải được danh sách dịch vụ', 'error');
+    }
+  };
+
+  const handleAddService = () => {
+    if (!selectedFieldForServices) {
+       showNotification('Vui lòng chọn 1 sân trước khi thêm dịch vụ', 'error');
+       return;
+    }
+    setEditingService(null);
+    setIsServiceModalOpen(true);
+  };
+
+  const handleEditService = (srv) => {
+    setEditingService(srv);
+    setIsServiceModalOpen(true);
+  };
+
+  const handleDeleteService = async (id) => {
+    if (!window.confirm('Chắc chắn xóa dịch vụ này khỏi menu?')) return;
+    try {
+      await ownerServiceAPI.deleteService(id);
+      setServices(prev => prev.filter(s => s._id !== id));
+      showNotification('Đã xóa dịch vụ', 'success');
+    } catch (err) {
+      showNotification('Lỗi khi xóa dịch vụ', 'error');
+    }
+  };
+
+  const handleSaveService = async (formData) => {
+    try {
+      setSavingService(true);
+      if (editingService) {
+        const res = await ownerServiceAPI.updateService(editingService._id, formData);
+        setServices(prev => prev.map(s => s._id === editingService._id ? res.service : s));
+        showNotification('Cập nhật dịch vụ thành công!', 'success');
+      } else {
+        const payload = { ...formData, fieldID: selectedFieldForServices._id };
+        const res = await ownerServiceAPI.createService(payload);
+        setServices([res.service, ...services]);
+        showNotification('Thêm dịch vụ thành công!', 'success');
+      }
+      setIsServiceModalOpen(false);
+    } catch (err) {
+      showNotification(err.response?.data?.message || 'Có lỗi xảy ra', 'error');
+    } finally {
+      setSavingService(false);
     }
   };
 
@@ -158,6 +224,13 @@ export default function OwnerFieldsPage() {
                     </div>
                     <div className="mt-6 pt-6 border-t border-outline-variant/10 flex justify-end gap-3">
                       <button 
+                        onClick={() => handleSelectFieldForServices(field)}
+                        className={`px-4 py-2 text-xs font-bold font-label uppercase rounded transition-colors flex items-center gap-2 ${selectedFieldForServices?._id === field._id ? 'bg-tertiary/20 text-tertiary border border-tertiary/30' : 'text-tertiary/70 hover:text-tertiary hover:bg-tertiary/10 border border-transparent'}`}
+                      >
+                        <span className="material-symbols-outlined text-lg">concierge</span>
+                        Services
+                      </button>
+                      <button 
                         onClick={() => handleEdit(field)}
                         className="px-4 py-2 text-xs font-bold font-label uppercase text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded transition-colors flex items-center gap-2"
                       >
@@ -181,16 +254,56 @@ export default function OwnerFieldsPage() {
 
         {/* Right Column */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Services Placeholder */}
           <div className="bg-surface-container-low p-6 rounded-xl border border-outline-variant/10">
-            <h3 className="headline-font text-xl font-bold mb-6 flex items-center gap-2">
-              <span className="material-symbols-outlined text-tertiary">concierge</span>
-              Additional Services
-            </h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="headline-font text-xl font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined text-tertiary">concierge</span>
+                Additional Services
+              </h3>
+              {selectedFieldForServices && (
+                <button 
+                  onClick={handleAddService}
+                  className="w-8 h-8 rounded bg-tertiary/10 text-tertiary hover:bg-tertiary hover:text-black transition-colors flex items-center justify-center"
+                  title="Add New Service"
+                >
+                  <span className="material-symbols-outlined">add</span>
+                </button>
+              )}
+            </div>
+
             <div className="space-y-4">
-               <div className="text-sm text-on-surface-variant italic">
-                 (Service management will be loaded here...)
-               </div>
+              {!selectedFieldForServices ? (
+                 <div className="text-sm text-center py-8 text-on-surface-variant italic bg-surface-container/50 rounded-lg">
+                   Bấm nút "Services" ở một sân bóng<br/> để quản lý dịch vụ đính kèm.
+                 </div>
+              ) : services.length === 0 ? (
+                 <div className="text-sm text-center py-6 text-on-surface-variant italic bg-surface-container/50 rounded-lg">
+                   Sân này chưa có dịch vụ nào.<br/> Bấm dấu + để thêm (vd: Nước, Áo)
+                 </div>
+              ) : (
+                services.map(srv => (
+                  <div key={srv._id} className="flex items-center p-3 bg-surface-container rounded-lg group">
+                    {srv.image ? (
+                      <img src={srv.image} alt={srv.serviceName} className="w-12 h-12 object-cover rounded mr-4 bg-black/50" />
+                    ) : (
+                      <div className="w-12 h-12 rounded bg-surface border border-outline-variant/20 flex items-center justify-center mr-4 text-on-surface-variant/50">
+                        <span className="material-symbols-outlined">fastfood</span>
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <p className="font-bold text-sm text-on-surface">{srv.serviceName}</p>
+                      <p className="text-[10px] font-label text-tertiary tracking-widest">{srv.price.toLocaleString('vi-VN')} đ</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-[10px] text-on-surface-variant font-semibold">Kho: {srv.stock}</span>
+                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => handleEditService(srv)} className="text-on-surface-variant hover:text-tertiary transition-colors"><span className="material-symbols-outlined text-[16px]">edit</span></button>
+                        <button onClick={() => handleDeleteService(srv._id)} className="text-on-surface-variant hover:text-error transition-colors"><span className="material-symbols-outlined text-[16px]">delete</span></button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
           
@@ -214,6 +327,14 @@ export default function OwnerFieldsPage() {
         onSave={handleSaveField}
         initialData={editingField}
         isLoading={saving}
+      />
+
+      <ServiceFormModal
+        isOpen={isServiceModalOpen}
+        onClose={() => setIsServiceModalOpen(false)}
+        onSave={handleSaveService}
+        initialData={editingService}
+        isLoading={savingService}
       />
     </>
   );
