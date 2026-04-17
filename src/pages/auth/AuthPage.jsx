@@ -66,7 +66,14 @@ export default function AuthPage() {
   useEffect(() => {
     if (!auth.isAuthenticated) return;
     const role = auth.user?.role;
-    if (isAdminGroup(role)) return;
+    if (String(role || '').trim() === 'Admin') {
+      navigate('/admin/managers', { replace: true });
+      return;
+    }
+    if (isAdminGroup(role)) {
+      navigate('/', { replace: true });
+      return;
+    }
     navigate('/', { replace: true });
   }, [auth.isAuthenticated, auth.user, navigate]);
 
