@@ -161,6 +161,7 @@ export default function MainLayout() {
   const isFields = pathname.startsWith('/fields');
   const isWishlist = pathname.startsWith('/wishlist');
   const isCommunity = pathname.startsWith('/community');
+  const isService = pathname.startsWith('/services');
 
   const navItemClass = (active) =>
     active
@@ -227,6 +228,13 @@ export default function MainLayout() {
               className={navItemClass(isWishlist)}
             >
               Wishlist
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/services')}
+              className={navItemClass(isService)}
+            >
+              Service
             </button>
           </div>
 

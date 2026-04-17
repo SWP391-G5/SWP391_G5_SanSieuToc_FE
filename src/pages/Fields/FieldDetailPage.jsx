@@ -124,14 +124,6 @@ function CalendarPicker({ selectedDate, onSelectDate }) {
   );
 }
 
-const SERVICES = [
-  { id: 'ball', name: 'Thuê bóng', price: 50000, icon: 'sports_soccer' },
-  { id: 'water', name: 'Nước uống', price: 20000, icon: 'water_drop' },
-  { id: 'jersey', name: 'Thuê áo đấu', price: 30000, icon: 'dry_cleaning' },
-  { id: 'shoes', name: 'Thuê giày', price: 80000, icon: 'hiking' },
-  { id: 'referee', name: 'Thuê trọng tài', price: 150000, icon: 'sports' },
-];
-
 export default function FieldDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -139,7 +131,6 @@ export default function FieldDetailPage() {
 
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedSlots, setSelectedSlots] = useState([]);
-  const [selectedServices, setSelectedServices] = useState([]);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
   const bookedSlots = ['08:00 - 09:00', '09:00 - 10:00', '19:00 - 20:00'];
@@ -148,12 +139,6 @@ export default function FieldDetailPage() {
     if (bookedSlots.includes(slot)) return;
     setSelectedSlots((prev) =>
       prev.includes(slot) ? prev.filter((s) => s !== slot) : [...prev, slot]
-    );
-  };
-
-  const toggleService = (serviceId) => {
-    setSelectedServices((prev) =>
-      prev.includes(serviceId) ? prev.filter((s) => s !== serviceId) : [...prev, serviceId]
     );
   };
 
@@ -179,11 +164,7 @@ export default function FieldDetailPage() {
   const fieldPricePerHour = parsePrice(field.price);
   const totalHours = selectedSlots.length;
   const fieldTotal = fieldPricePerHour * totalHours;
-  const servicesTotal = selectedServices.reduce((sum, serviceId) => {
-    const service = SERVICES.find((s) => s.id === serviceId);
-    return sum + (service?.price || 0);
-  }, 0);
-  const grandTotal = fieldTotal + servicesTotal;
+  const grandTotal = fieldTotal;
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
@@ -202,7 +183,6 @@ export default function FieldDetailPage() {
           field,
           date: selectedDate,
           time: selectedSlots.join(', '),
-          services: selectedServices,
           total: grandTotal,
         },
       });
@@ -364,63 +344,12 @@ export default function FieldDetailPage() {
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <label className="font-headline flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#abaca5]">
-                    <span className="material-symbols-outlined text-sm">add_circle</span>
-                    Select Add-ons
-                  </label>
-                  <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#121410] p-3">
-                    {SERVICES.map((service, index) => {
-                      const isSelected = selectedServices.includes(service.id);
-                      const isLastItem = index === SERVICES.length - 1;
-                      const isOddCount = SERVICES.length % 2 !== 0;
-                      return (
-                        <button
-                          key={service.id}
-                          type="button"
-                          onClick={() => toggleService(service.id)}
-                          className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
-                            isSelected
-                              ? 'bg-[#8eff71]/10 text-[#8eff71]'
-                              : 'text-[#abaca5] hover:bg-[#242721]'
-                          } ${isLastItem && isOddCount ? 'col-span-2' : ''}`}
-                        >
-                          <span className={`material-symbols-outlined text-lg ${isSelected ? 'text-[#8eff71]' : 'text-[#abaca5]'}`}>
-                            {service.icon}
-                          </span>
-                          <span className={`flex-1 text-left font-headline text-xs font-medium ${isSelected ? 'text-[#8eff71]' : 'text-[#fdfdf6]'}`}>
-                            {service.name}
-                          </span>
-                          <span className={`font-headline text-xs font-bold ${isSelected ? 'text-[#8eff71]' : 'text-[#88f6ff]'}`}>
-                            +{formatPrice(service.price)}
-                          </span>
-                          <span className={`material-symbols-outlined text-base ${isSelected ? 'text-[#8eff71]' : 'text-[#474944]'}`}>
-                            {isSelected ? 'check_box' : 'check_box_outline_blank'}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
                 <div className="rounded-xl bg-[#121410] p-3 border border-[#8eff71]/20">
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-[#abaca5]">Field ({totalHours}h)</span>
-                    <span className="font-headline font-medium text-[#fdfdf6]">{formatPrice(fieldTotal)}</span>
-                  </div>
-                  {selectedServices.length > 0 && (
-                    <div className="flex justify-between text-sm mb-1.5">
-                      <span className="text-[#abaca5]">Services</span>
-                      <span className="font-headline font-medium text-[#fdfdf6]">{formatPrice(servicesTotal)}</span>
-                    </div>
-                  )}
-                  <div className="border-t border-[#8eff71]/30 pt-1.5 mt-1.5">
-                    <div className="flex justify-between items-center">
-                      <span className="font-headline font-bold text-[#fdfdf6]">Total</span>
-                      <span className="font-headline text-xl font-black text-[#8eff71]">
-                        {formatPrice(grandTotal)}
-                      </span>
-                    </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-headline font-bold text-[#fdfdf6]">Total</span>
+                    <span className="font-headline text-xl font-black text-[#8eff71]">
+                      {formatPrice(grandTotal)}
+                    </span>
                   </div>
                 </div>
 

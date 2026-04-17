@@ -1,16 +1,50 @@
 import { useMemo, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useWishlist } from '../../hooks/useWishlist';
 import { FIELDS } from '../../features/fields';
 import { normalizeText } from '../../utils/normalizeText';
 import { parsePriceText } from '../../utils/price';
+import { DEFAULT_FIELDS_LIST_ADS_SLIDES } from '../../assets/defaultSliders';
+import SimpleImageSlider from '../../components/ads/SimpleImageSlider';
+import useBanners from '../../hooks/useBanners';
+
+import { FIELD_LIST_ADS_COPY } from '../../data/ads/fieldListAdsCopy';
 
 import FieldCard from './components/FieldCard';
 
 export default function FieldListPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const initialSearchText = typeof location.state?.searchText === 'string' ? location.state.searchText : '';
+
+  // Ads banner (text is hard-coded; manager only changes images)
+  const ADS_SLIDE_COUNT = 6;
+
+  const { items: adsBanners } = useBanners({ placement: 'fields_list_ads' });
+  const adsSlides = useMemo(() => {
+    return (adsBanners || [])
+      .map((x) => x?.imageUrl)
+      .filter(Boolean)
+      .slice(0, ADS_SLIDE_COUNT);
+  }, [adsBanners]);
+
+  const adsFallbackSlides = useMemo(() => {
+    return (DEFAULT_FIELDS_LIST_ADS_SLIDES || []).slice(0, ADS_SLIDE_COUNT);
+  }, []);
+
+  const adsCopy = useMemo(() => {
+    return (FIELD_LIST_ADS_COPY || []).slice(0, ADS_SLIDE_COUNT);
+  }, []);
+
+  const [adsIndex, setAdsIndex] = useState(0);
+
+  const activeAdsCopy = useMemo(() => {
+    const list = Array.isArray(adsSlides) && adsSlides.length ? adsSlides : adsFallbackSlides;
+    const len = list.length || ADS_SLIDE_COUNT;
+    const idx = len ? ((adsIndex % len) + len) % len : 0;
+    return adsCopy[idx] || adsCopy[0];
+  }, [adsCopy, adsFallbackSlides, adsIndex, adsSlides]);
 
   const [searchText, setSearchText] = useState(initialSearchText);
   const [sortBy, setSortBy] = useState('topRated');
@@ -220,27 +254,43 @@ export default function FieldListPage() {
         {/* Main Content Area */}
         <section className="flex-1 pb-20">
           {/* Ad Banner */}
-          <div className="group relative mb-12 flex min-h-[10rem] flex-col justify-center overflow-hidden rounded-xl border border-[#8eff71]/20 bg-gradient-to-r from-[#181a16] via-[#181a16] to-[#8eff71]/20 p-8">
-            <div className="z-10 max-w-xl space-y-3">
-              <span className="font-headline inline-block rounded-full bg-[#8eff71]/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#8eff71]">
-                Pro Membership
-              </span>
-              <h2 className="font-headline text-2xl font-black leading-tight">
-                Unlock Exclusive Pitch Hours &amp; <span className="italic text-[#8eff71]">20% Discounts</span>
-              </h2>
-              <p className="max-w-sm text-sm text-[#abaca5]">Elevate your game with priority bookings and professional perks.</p>
-              <button type="button" className="font-headline rounded-lg bg-[#8eff71] px-6 py-2 text-sm font-black text-[#0d6100] transition-all hover:scale-105">
-                Join The Club
-              </button>
+          <div className="group relative mb-12 overflow-hidden rounded-xl border border-[#8eff71]/20 bg-[#121410]">
+            <div className="absolute inset-0">
+              <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#0d0f0b] via-[#0d0f0b]/75 to-transparent" />
+              <SimpleImageSlider
+                images={adsSlides}
+                fallbackImages={adsFallbackSlides}
+                intervalMs={5000}
+                className="absolute inset-0"
+                imgClassName="h-full w-full object-cover"
+                alt="Field list ad slider"
+                onIndexChange={setAdsIndex}
+              />
             </div>
 
-            <div className="pointer-events-none absolute right-0 top-0 h-full w-1/3 opacity-30 grayscale transition-all duration-500 group-hover:grayscale-0">
-              <img
-                alt="Promo Athlete"
-                className="h-full w-full object-cover"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCctJ_52eUrX1p0jXlKzCC9XybW_cOVNj4RRJlOSWLwHfTILYf03W8VSxaIzjT6ON-hoypfZxO4uTdgSbRZnEDUogpCJ03tHr31mDaVLnfaHfCURdqh5tjGfJr4o_DIiq2VCJzDeoX-D-ZqR04EkO5ASmQb4fgsHmHYzbhmcAiQkdfQ6_J1J7FmLfGAjCnYSlNeyNsCu0f6S6TcpXBLgmjb3dqB52q3nBk2ZteRAHoZyuklVC2yZcW0VAw5E6cSUOeaugrDE2APHg"
-                loading="lazy"
-              />
+            <div className="relative z-20 flex min-h-[12rem] items-center p-8">
+              <div className="max-w-xl space-y-3">
+                <span className="font-headline inline-block rounded-full bg-[#8eff71]/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#8eff71]">
+                  {activeAdsCopy?.badge}
+                </span>
+
+                <h2 className="font-headline text-2xl font-black leading-tight text-[#fdfdf6]">
+                  {activeAdsCopy?.title}{' '}
+                  <span className="italic text-[#8eff71]">{activeAdsCopy?.highlight}</span>
+                </h2>
+
+                <p className="max-w-sm text-sm text-[#abaca5]">{activeAdsCopy?.desc}</p>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (activeAdsCopy?.to) navigate(activeAdsCopy.to);
+                  }}
+                  className="font-headline rounded-lg bg-[#8eff71] px-6 py-2 text-sm font-black text-[#0d6100] transition-all hover:scale-105"
+                >
+                  {activeAdsCopy?.cta}
+                </button>
+              </div>
             </div>
           </div>
 

@@ -196,6 +196,7 @@ export default function UserProfilePage() {
   const { notifyError, notifyInfo, notifySuccess } = useNotification();
 
   const [activeTab, setActiveTab] = useState('personal');
+  const [bookingType, setBookingType] = useState('field');
   const [bookings, setBookings] = useState([]);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [transactions, setTransactions] = useState([]);
@@ -303,13 +304,20 @@ export default function UserProfilePage() {
     };
   }, [auth.isAuthenticated, navigate, notifyError, location.state?.refreshWallet]);
 
-  // Effect to fetch bookings when tab is active
+// Effect to fetch bookings when tab is active
   useEffect(() => {
     if (activeTab === 'bookings') {
       let ignore = false;
       const fetchBookings = async () => {
         setBookingsLoading(true);
         try {
+          if (bookingType === 'service') {
+            if (!ignore) {
+              setBookings([]);
+            }
+            setBookingsLoading(false);
+            return;
+          }
           if (auth.accessToken) {
             setAuthToken(auth.accessToken);
           }
@@ -327,9 +335,9 @@ export default function UserProfilePage() {
         }
       };
       fetchBookings();
-      return () => { ignore = true; };
+      return () => { ignore = true };
     }
-  }, [activeTab, notifyError, auth.accessToken]);
+  }, [activeTab, bookingType, notifyError, auth.accessToken]);
 
   // Effect to fetch transactions when tab is active
   useEffect(() => {
@@ -587,7 +595,7 @@ export default function UserProfilePage() {
             className={`profile-terminal-tab ${activeTab === 'bookings' ? 'active' : ''}`}
             onClick={() => setActiveTab('bookings')}
           >
-            MY BOOKINGS
+            BOOKING HISTORY ▾
           </button>
           <button
             type="button"
@@ -597,6 +605,18 @@ export default function UserProfilePage() {
             TRANSACTION HISTORY
           </button>
         </div>
+        {activeTab === 'bookings' && (
+          <div className="booking-type-selector">
+            <select
+              value={bookingType}
+              onChange={(e) => setBookingType(e.target.value)}
+              className="booking-type-dropdown"
+            >
+              <option value="field">Field Booking History</option>
+              <option value="service">Service Booking History</option>
+            </select>
+          </div>
+        )}
 
         {activeTab === 'personal' ? (
           <div className="profile-terminal-grid">
@@ -817,6 +837,11 @@ export default function UserProfilePage() {
                           <div className="bank-tx-center">
                             <div className="bank-tx-amount">
                               {isCredit ? '+' : isDebit ? '-' : ''}{formatVnd(tx.amount)}đ
+                            </div>
+                            <div className="bank-tx-desc">
+                              {tx.description || (isCredit ? 'Tiền vào' : 'Tiền ra')}
+                              {tx.bookingType === 'field' && <span className="tx-badge tx-badge-field">Field</span>}
+                              {tx.bookingType === 'service' && <span className="tx-badge tx-badge-service">Service</span>}
                             </div>
                             <div className="bank-tx-time">{dateStr} • {timeStr}</div>
                           </div>

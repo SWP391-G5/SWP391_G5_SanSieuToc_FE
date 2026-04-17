@@ -26,5 +26,9 @@ export const API_CONFIG = {
       GET_BALANCE: '/api/wallets/balance',
       GET_TRANSACTIONS: '/api/wallets/transactions',
     },
+    SERVICE: {
+      GET_BY_BOOKING_DETAIL: '/api/services/booking-detail',
+      BOOK: '/api/services',
+    },
   },
 };

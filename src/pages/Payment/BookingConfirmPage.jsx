@@ -4,15 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import profileService from '../../services/profileService';
 import bookingService from '../../services/bookingService';
 import { setAuthToken } from '../../services/axios';
-import qrImage from '../../assets/images/qr-vietqr.png';
-
-const SERVICES = [
-  { id: 'ball', name: 'Thuê bóng', price: 50000, icon: 'sports_soccer' },
-  { id: 'water', name: 'Nước uống', price: 20000, icon: 'water_drop' },
-  { id: 'jersey', name: 'Thuê áo đấu', price: 30000, icon: 'dry_cleaning' },
-  { id: 'shoes', name: 'Thuê giày', price: 80000, icon: 'hiking' },
-  { id: 'referee', name: 'Thuê trọng tài', price: 150000, icon: 'sports' },
-];
 
 export default function BookingConfirmPage() {
   const navigate = useNavigate();
@@ -21,7 +12,6 @@ export default function BookingConfirmPage() {
 
   const bookingData = location.state;
 
-  const [paymentMethod, setPaymentMethod] = useState('wallet');
   const [loading, setLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [walletBalance, setWalletBalance] = useState(0);
@@ -56,22 +46,9 @@ export default function BookingConfirmPage() {
     );
   }
 
-  const { field, date, time, services: selectedServiceIds, total } = bookingData;
+  const { field, date, time, total: grandTotal } = bookingData;
 
-  const parsePrice = (priceText) => {
-    const digits = String(priceText ?? '').replace(/[^\d]/g, '');
-    return Number(digits) || 0;
-  };
-
-  const fieldPricePerHour = parsePrice(field.price);
   const timeSlots = time.split(', ');
-  const totalHours = timeSlots.length;
-  const fieldTotal = fieldPricePerHour * totalHours;
-  const servicesTotal = (selectedServiceIds || []).reduce((sum, serviceId) => {
-    const service = SERVICES.find((s) => s.id === serviceId);
-    return sum + (service?.price || 0);
-  }, 0);
-  const grandTotal = fieldTotal + servicesTotal;
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
@@ -90,7 +67,7 @@ export default function BookingConfirmPage() {
   const walletSufficient = walletBalance >= grandTotal;
 
   const handleConfirmBooking = async () => {
-    if (paymentMethod === 'wallet' && !walletSufficient) {
+    if (!walletSufficient) {
       alert('Insufficient wallet balance. Please top up or choose another payment method.');
       return;
     }
@@ -100,10 +77,6 @@ export default function BookingConfirmPage() {
       if (auth.accessToken) {
         setAuthToken(auth.accessToken);
       }
-      const selectedServices = (selectedServiceIds || []).map(serviceId => {
-        const service = SERVICES.find(s => s.id === serviceId);
-        return service ? { id: service.id, name: service.name, price: service.price } : null;
-      }).filter(Boolean);
 
       const bookingPayload = {
         fieldId: field.id,
@@ -111,21 +84,12 @@ export default function BookingConfirmPage() {
         fieldImage: field.image,
         date: date,
         timeSlots: timeSlots,
-        services: selectedServices,
-        fieldTotal: fieldTotal,
-        servicesTotal: servicesTotal,
         grandTotal: grandTotal,
-        paymentMethod: paymentMethod,
+        paymentMethod: 'wallet',
       };
 
-      if (paymentMethod === 'wallet') {
-        bookingPayload.status = 'confirmed';
-        bookingPayload.deductWallet = true;
-      } else {
-        bookingPayload.status = 'pending';
-      }
-      // The offline fallback logic was causing data inconsistency.
-      // We now rely solely on the API to handle the booking and wallet deduction.
+      bookingPayload.status = 'confirmed';
+      bookingPayload.deductWallet = true;
       await bookingService.createBooking(bookingPayload);
       setBookingSuccess(true);
       setTimeout(() => {
@@ -214,25 +178,6 @@ export default function BookingConfirmPage() {
                     </div>
                   </div>
                 </div>
-
-                {selectedServiceIds && selectedServiceIds.length > 0 && (
-                  <div className="flex items-start gap-3">
-                    <span className="material-symbols-outlined text-[#88f6ff]"></span>
-                    <div>
-                      <p className="font-headline text-xs font-bold uppercase text-[#abaca5]">Services</p>
-                      <div className="mt-1 space-y-1">
-                        {selectedServiceIds.map((serviceId) => {
-                          const service = SERVICES.find((s) => s.id === serviceId);
-                          return service ? (
-                            <p key={service.id} className="font-headline text-sm text-[#fdfdf6]">
-                              {service.name}
-                            </p>
-                          ) : null;
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -242,24 +187,12 @@ export default function BookingConfirmPage() {
               <div className="rounded-xl bg-[#181a16] p-6 shadow-[0_0_20px_rgba(0,0,0,0.3)]">
                 <h2 className="font-headline text-xl font-bold text-[#fdfdf6] mb-4">Payment Summary</h2>
 
-                <div className="space-y-3 mb-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[#abaca5]">Field ({totalHours}h)</span>
-                    <span className="font-headline font-medium text-[#fdfdf6]">{formatPrice(fieldTotal)}</span>
-                  </div>
-                  {servicesTotal > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#abaca5]">Services ({selectedServiceIds.length})</span>
-                      <span className="font-headline font-medium text-[#fdfdf6]">{formatPrice(servicesTotal)}</span>
-                    </div>
-                  )}
-                  <div className="border-t border-[#474944]/30 pt-3">
-                    <div className="flex justify-between items-center">
-                      <span className="font-headline font-bold text-[#fdfdf6]">Total</span>
-                      <span className="font-headline text-2xl font-black text-[#8eff71]">
-                        {formatPrice(grandTotal)}
-                      </span>
-                    </div>
+                <div className="border-t border-[#474944]/30 pt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="font-headline font-bold text-[#fdfdf6]">Total</span>
+                    <span className="font-headline text-2xl font-black text-[#8eff71]">
+                      {formatPrice(grandTotal)}
+                    </span>
                   </div>
                 </div>
 

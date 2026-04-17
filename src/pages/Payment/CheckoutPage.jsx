@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import qrImage from '../../assets/images/qr-vietqr.png';
+import Toast from '../../components/Toast';
 import '../../styles/CheckoutPage.css';
 
 const CheckoutPage = () => {
@@ -19,6 +20,7 @@ const CheckoutPage = () => {
     expiryDate: '',
     cvv: '',
   });
+  const [toast, setToast] = useState(null);
 
   const amount = location.state?.amount || 0;
 
@@ -81,8 +83,11 @@ const CheckoutPage = () => {
 
             const data = await response.json();
             if (data.success) {
-              alert(`✓ PayPal Payment successful! Balance: ${data.data.wallet.balance} VND`);
-              navigate('/profile', { state: { refreshWallet: true } });
+              setToast({
+                message: `PayPal Payment successful! New balance: ${parseInt(data.data.wallet.balance).toLocaleString('vi-VN')} VND`,
+                type: 'success'
+              });
+              setTimeout(() => navigate('/profile', { state: { refreshWallet: true } }), 2000);
             } else {
               setError(data.message || 'Transaction failed');
             }
@@ -132,8 +137,11 @@ const CheckoutPage = () => {
       const data = await response.json();
 
       if (data.success) {
-        alert(`✓ Top-up successful! Balance: ${data.data.wallet.balance} VND`);
-        navigate('/profile', { state: { refreshWallet: true } });
+        setToast({
+          message: `Top-up successful! New balance: ${parseInt(data.data.wallet.balance).toLocaleString('vi-VN')} VND`,
+          type: 'success'
+        });
+        setTimeout(() => navigate('/profile', { state: { refreshWallet: true } }), 2000);
       } else {
         setError(data.message || 'Transaction failed');
       }
@@ -174,8 +182,11 @@ const CheckoutPage = () => {
       const data = await response.json();
 
       if (data.success) {
-        alert(`✓ Payment successful! Balance: ${data.data.wallet.balance} VND`);
-        navigate('/profile', { state: { refreshWallet: true } });
+        setToast({
+          message: `Payment successful! New balance: ${parseInt(data.data.wallet.balance).toLocaleString('vi-VN')} VND`,
+          type: 'success'
+        });
+        setTimeout(() => navigate('/profile', { state: { refreshWallet: true } }), 2000);
       } else {
         setError(data.message || 'Transaction failed');
       }
@@ -196,6 +207,13 @@ const CheckoutPage = () => {
 
   return (
     <div className="checkout-page">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <h1>Payment Confirmation</h1>
       <div className="checkout-container">
         <div className="checkout-left">

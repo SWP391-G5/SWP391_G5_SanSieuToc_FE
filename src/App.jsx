@@ -13,6 +13,19 @@ import TopUpPage from './pages/Payment/TopUpPage';
 import CheckoutPage from './pages/Payment/CheckoutPage';
 import FieldDetailPage from './pages/Fields/FieldDetailPage';
 import BookingConfirmPage from './pages/Payment/BookingConfirmPage';
+import ServicePage from './pages/Services/ServicePage';
+
+import ManagerLayout from './layouts/manager/ManagerLayout';
+import RequireManager from './components/manager/RequireManager';
+import {
+  ManagerBannersPage,
+  ManagerFeedbackPage,
+  ManagerPostsPage,
+  ManagerPrivacyPage,
+  ManagerSlidesPage,
+  ManagerStatisticsPage,
+  ManagerWalletPage,
+} from './pages/Manager';
 
 import { useAuth } from './context/AuthContext';
 
@@ -59,8 +72,35 @@ function App() {
               </RequireAuth>
             }
           />
+          <Route
+            path="services"
+            element={
+              <RequireAuth>
+                <ServicePage />
+              </RequireAuth>
+            }
+          />
           {/* 404 Not Found */}
           <Route path="*" element={<NotFoundPage />} />
+        </Route>
+
+        {/* Manager Area */}
+        <Route
+          path="/manager"
+          element={
+            <RequireManager>
+              <ManagerLayout />
+            </RequireManager>
+          }
+        >
+          <Route index element={<Navigate to="/manager/statistics" replace />} />
+          <Route path="statistics" element={<ManagerStatisticsPage />} />
+          <Route path="posts" element={<ManagerPostsPage />} />
+          <Route path="slides" element={<ManagerSlidesPage />} />
+          <Route path="banners" element={<ManagerBannersPage />} />
+          <Route path="wallet" element={<ManagerWalletPage />} />
+          <Route path="privacy" element={<ManagerPrivacyPage />} />
+          <Route path="feedback" element={<ManagerFeedbackPage />} />
         </Route>
       </Routes>
     </Router>
