@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { loginAdmin, loginUser, registerCustomer, verifyEmailUser, resendVerificationUser } from '../auth/services/authApi';
-import { setAuthToken } from '../utils/apiClient';
+import authService from '../services/authService';
+import { setAuthToken } from '../services/axios';
 
 const AuthContext = createContext(null);
 
@@ -40,34 +40,48 @@ export function AuthProvider({ children }) {
       accessToken,
       user,
       isAuthenticated: Boolean(accessToken),
+      updateUser: (patch) => {
+        if (!patch || typeof patch !== 'object') return;
+        setUser((prev) => ({ ...(prev || {}), ...patch }));
+      },
       logout: () => {
         setAccessToken(null);
         setUser(null);
       },
       loginAdmin: async ({ username, password, role }) => {
-        const data = await loginAdmin({ username, password, role });
+        const data = await authService.loginAdmin({ username, password, role });
         setAccessToken(data.accessToken);
         setUser(data.user);
         return data;
       },
       loginUser: async ({ username, password, role }) => {
-        const data = await loginUser({ username, password, role });
+        const data = await authService.loginUser({ username, password, role });
         setAccessToken(data.accessToken);
         setUser(data.user);
         return data;
       },
       registerCustomer: async ({ name, email, username, password }) => {
-        const data = await registerCustomer({ name, email, username, password });
+        const data = await authService.registerCustomer({ name, email, username, password });
         return data;
       },
       verifyEmail: async ({ email, code }) => {
-        const data = await verifyEmailUser({ email, code });
+        const data = await authService.verifyEmailUser({ email, code });
+        setAccessToken(data.accessToken);
+        setUser(data.user);
+        return data;
+      },
+      verifyEmailAdmin: async ({ email, code }) => {
+        const data = await authService.verifyEmailAdmin({ email, code });
         setAccessToken(data.accessToken);
         setUser(data.user);
         return data;
       },
       resendVerification: async ({ email }) => {
-        const data = await resendVerificationUser({ email });
+        const data = await authService.resendVerificationUser({ email });
+        return data;
+      },
+      resendVerificationAdmin: async ({ email }) => {
+        const data = await authService.resendVerificationAdmin({ email });
         return data;
       },
     }),
