@@ -16,7 +16,7 @@ const NAV_ITEMS = [
   { key: 'banners', label: 'Banners', to: '/manager/banners', icon: 'branding_watermark' },
   { key: 'statistics', label: 'Statistics', to: '/manager/statistics', icon: 'bar_chart' },
   { key: 'wallet', label: 'Wallet', to: '/manager/wallet', icon: 'account_balance_wallet' },
-  { key: 'privacy', label: 'Privacy', to: '/manager/privacy', icon: 'vps_shield' },
+  { key: 'privacy', label: 'Privacy', to: '/manager/privacy', icon: 'shield' },
   { key: 'feedback', label: 'Feedback', to: '/manager/feedback', icon: 'rate_review' },
 ];
 
