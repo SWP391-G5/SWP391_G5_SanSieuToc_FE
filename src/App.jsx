@@ -43,7 +43,7 @@ function RequireAdmin({ children }) {
 
 function App() {
   return (
-    <Router>
+    <Router basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<HomePage />} />
@@ -73,6 +73,7 @@ function App() {
             <Route path="owners" element={<OwnerAccountsPage />} />
             <Route path="customers" element={<CustomerAccountsPage />} />
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="profile" element={<UserProfilePage />} />
           </Route>
 
           {/* 404 Not Found */}
@@ -98,6 +99,7 @@ function App() {
           <Route path="wallet" element={<ManagerWalletPage />} />
           <Route path="privacy" element={<ManagerPrivacyPage />} />
           <Route path="feedback" element={<ManagerFeedbackPage />} />
+          <Route path="profile" element={<UserProfilePage />} />
         </Route>
       </Routes>
     </Router>

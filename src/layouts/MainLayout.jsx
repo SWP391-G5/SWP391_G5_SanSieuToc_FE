@@ -3,9 +3,11 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext';
 
-function UserMenu({ auth, navigate }) {
+function UserMenu({ auth, navigate, profilePath, showProfile = true, showLogout = true }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
+
+  const showMenu = showProfile || showLogout;
 
   const displayName = useMemo(() => {
     const name = String(auth.user?.name || '').trim();
@@ -49,6 +51,7 @@ function UserMenu({ auth, navigate }) {
   }, []);
 
   useEffect(() => {
+    if (!showMenu) return undefined;
     if (!userMenuOpen) return undefined;
 
     const onMouseDown = (e) => {
@@ -68,11 +71,11 @@ function UserMenu({ auth, navigate }) {
       document.removeEventListener('mousedown', onMouseDown);
       document.removeEventListener('keydown', onKeyDown);
     };
-  }, [userMenuOpen]);
+  }, [showMenu, userMenuOpen]);
 
   const onProfile = () => {
     setUserMenuOpen(false);
-    navigate('/profile');
+    navigate(profilePath || '/profile');
   };
 
   const onLogout = () => {
@@ -90,6 +93,24 @@ function UserMenu({ auth, navigate }) {
       >
         Sign In
       </button>
+    );
+  }
+
+  if (!showMenu) {
+    return (
+      <div ref={userMenuRef} className="relative flex items-center">
+        <div className="flex items-center gap-3 rounded-full py-1 pl-1 pr-3">
+          <span className="h-10 w-10 overflow-hidden rounded-full ring-2 ring-[#8eff71]/30">
+            <img
+              src={avatarSrc || avatarFallback}
+              alt="Avatar"
+              className="h-full w-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          </span>
+          <span className="max-w-44 truncate text-sm font-semibold text-[#fdfdf6]">{displayName}</span>
+        </div>
+      </div>
     );
   }
 
@@ -118,27 +139,33 @@ function UserMenu({ auth, navigate }) {
           role="menu"
           className="absolute right-0 top-full mt-2 w-44 overflow-hidden rounded-md border border-white/10 bg-[#0d0f0b]/95 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.35)]"
         >
-          <button
-            type="button"
-            role="menuitem"
-            onClick={onProfile}
-            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
-          >
-            <span className="material-symbols-outlined text-[18px] leading-none">account_circle</span>
-            <span>Profile</span>
-          </button>
+          {showProfile ? (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={onProfile}
+                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
+              >
+                <span className="material-symbols-outlined text-[18px] leading-none">account_circle</span>
+                <span>Profile</span>
+              </button>
 
-          <div className="my-1 h-px bg-white/10" />
+              <div className="my-1 h-px bg-white/10" />
+            </>
+          ) : null}
 
-          <button
-            type="button"
-            role="menuitem"
-            onClick={onLogout}
-            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
-          >
-            <span className="material-symbols-outlined text-[18px] leading-none">logout</span>
-            <span>Logout</span>
-          </button>
+          {showLogout ? (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={onLogout}
+              className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
+            >
+              <span className="material-symbols-outlined text-[18px] leading-none">logout</span>
+              <span>Logout</span>
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -162,6 +189,17 @@ export default function MainLayout() {
   const isWishlist = pathname.startsWith('/wishlist');
   const isCommunity = pathname.startsWith('/community');
 
+  const isAdminRoute = pathname.startsWith('/admin');
+  const accountTypeKey = String(auth.user?.accountType || '').trim().toLowerCase();
+  const roleKey = String(auth.user?.role || '').trim().toLowerCase();
+  const isAdminAccount = accountTypeKey === 'admin';
+  const isAdminUser = isAdminAccount || ['admin', 'manager'].includes(roleKey);
+  const isAdminConsoleUser = roleKey === 'admin';
+  const hidePublicNav = isAdminRoute || isAdminUser;
+  const profilePath = isAdminConsoleUser ? '/admin/profile' : '/profile';
+  const showProfileInUserMenu = !isAdminConsoleUser;
+  const showLogoutInUserMenu = !isAdminConsoleUser;
+
   const navItemClass = (active) =>
     active
       ? 'border-b-2 border-[#8eff71] pb-1 text-[#8eff71] transition-colors duration-300'
@@ -183,55 +221,60 @@ export default function MainLayout() {
             San Sieu Toc
           </button>
 
-          <div className="hidden items-center gap-6 font-ui text-sm uppercase tracking-wider md:flex lg:gap-8">
-            <button
-              type="button"
-              onClick={() => {
-                navigate('/');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className={navItemClass(isHome)}
-            >
-              Home
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                navigate('/fields');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className={navItemClass(isFields)}
-            >
-              Field
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                navigate('/community');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className={navItemClass(isCommunity)}
-            >
-              Community
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollToId('privacy')}
-              className="text-[#fdfdf6]/70 transition-colors duration-300 hover:text-[#8eff71]"
-            >
-              Privacy
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/wishlist')}
-              className={navItemClass(isWishlist)}
-            >
-              Wishlist
-            </button>
-          </div>
+          {!hidePublicNav ? (
+            <div className="hidden items-center gap-6 font-ui text-sm uppercase tracking-wider md:flex lg:gap-8">
+              <button
+                type="button"
+                onClick={() => {
+                  navigate('/');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className={navItemClass(isHome)}
+              >
+                Home
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  navigate('/fields');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className={navItemClass(isFields)}
+              >
+                Field
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  navigate('/community');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className={navItemClass(isCommunity)}
+              >
+                Community
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollToId('privacy')}
+                className="text-[#fdfdf6]/70 transition-colors duration-300 hover:text-[#8eff71]"
+              >
+                Privacy
+              </button>
+              <button type="button" onClick={() => navigate('/wishlist')} className={navItemClass(isWishlist)}>
+                Wishlist
+              </button>
+            </div>
+          ) : null}
 
           <div className="flex items-center gap-4">
-            <UserMenu key={location.pathname} auth={auth} navigate={navigate} />
+            <UserMenu
+              key={location.pathname}
+              auth={auth}
+              navigate={navigate}
+              profilePath={profilePath}
+              showProfile={showProfileInUserMenu}
+              showLogout={showLogoutInUserMenu}
+            />
           </div>
         </div>
       </nav>
@@ -242,74 +285,80 @@ export default function MainLayout() {
       </main>
 
       {/* Footer */}
-      <footer id="community" className="scroll-mt-24 mx-auto w-full max-w-7xl px-6 py-16 md:px-8">
-        <div id="privacy" className="scroll-mt-24" />
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
-          <div>
-            <div className="font-headline text-2xl font-black italic text-[#8eff71]">San Sieu Toc</div>
-            <p className="mt-3 text-sm text-[#abaca5]">Fast field booking. Better play.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-8 md:col-span-2">
+      {!isAdminRoute ? (
+        <footer id="community" className="scroll-mt-24 mx-auto w-full max-w-7xl px-6 py-16 md:px-8">
+          <div id="privacy" className="scroll-mt-24" />
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
             <div>
-              <div className="mb-3 text-xs font-black uppercase tracking-widest text-[#fdfdf6]">Product</div>
-              <ul className="space-y-2 text-sm text-[#abaca5]">
-                <li>
-                  <button
-                    type="button"
-                    className="hover:text-[#8eff71]"
-                    onClick={() => {
-                      navigate('/fields');
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                  >
-                    Fields
-                  </button>
-                </li>
-                <li>
-                  <button type="button" className="hover:text-[#8eff71]" onClick={() => navigate('/auth')}>
-                    Bookings
-                  </button>
-                </li>
-                <li>
-                  <button type="button" className="hover:text-[#8eff71]" onClick={() => navigate('/auth')}>
-                    Pricing
-                  </button>
-                </li>
-              </ul>
+              <div className="font-headline text-2xl font-black italic text-[#8eff71]">San Sieu Toc</div>
+              <p className="mt-3 text-sm text-[#abaca5]">Fast field booking. Better play.</p>
             </div>
-            <div>
-              <div className="mb-3 text-xs font-black uppercase tracking-widest text-[#fdfdf6]">Company</div>
-              <ul className="space-y-2 text-sm text-[#abaca5]">
-                <li>
-                  <button type="button" className="hover:text-[#8eff71]" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-                    About
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    className="hover:text-[#8eff71]"
-                    onClick={() => {
-                      navigate('/community');
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                  >
-                    Community
-                  </button>
-                </li>
-                <li>
-                  <button type="button" className="hover:text-[#8eff71]" onClick={() => scrollToId('privacy')}>
-                    Contact
-                  </button>
-                </li>
-              </ul>
+            <div className="grid grid-cols-2 gap-8 md:col-span-2">
+              <div>
+                <div className="mb-3 text-xs font-black uppercase tracking-widest text-[#fdfdf6]">Product</div>
+                <ul className="space-y-2 text-sm text-[#abaca5]">
+                  <li>
+                    <button
+                      type="button"
+                      className="hover:text-[#8eff71]"
+                      onClick={() => {
+                        navigate('/fields');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    >
+                      Fields
+                    </button>
+                  </li>
+                  <li>
+                    <button type="button" className="hover:text-[#8eff71]" onClick={() => navigate('/auth')}>
+                      Bookings
+                    </button>
+                  </li>
+                  <li>
+                    <button type="button" className="hover:text-[#8eff71]" onClick={() => navigate('/auth')}>
+                      Pricing
+                    </button>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <div className="mb-3 text-xs font-black uppercase tracking-widest text-[#fdfdf6]">Company</div>
+                <ul className="space-y-2 text-sm text-[#abaca5]">
+                  <li>
+                    <button
+                      type="button"
+                      className="hover:text-[#8eff71]"
+                      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    >
+                      About
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="hover:text-[#8eff71]"
+                      onClick={() => {
+                        navigate('/community');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    >
+                      Community
+                    </button>
+                  </li>
+                  <li>
+                    <button type="button" className="hover:text-[#8eff71]" onClick={() => scrollToId('privacy')}>
+                      Contact
+                    </button>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="mt-12 border-t border-[#474944]/20 pt-8 text-xs text-[#abaca5]">
-          © {new Date().getFullYear()} San Sieu Toc. All rights reserved.
-        </div>
-      </footer>
+          <div className="mt-12 border-t border-[#474944]/20 pt-8 text-xs text-[#abaca5]">
+            © {new Date().getFullYear()} San Sieu Toc. All rights reserved.
+          </div>
+        </footer>
+      ) : null}
     </div>
   );
 }

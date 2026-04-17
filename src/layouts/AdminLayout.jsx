@@ -1,5 +1,4 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 function NavItem({ to, label, icon }) {
@@ -22,13 +21,6 @@ export default function AdminLayout() {
   const auth = useAuth();
   const navigate = useNavigate();
 
-  const displayName = useMemo(() => {
-    const name = String(auth.user?.name || '').trim();
-    if (name) return name;
-    const username = String(auth.user?.username || '').trim();
-    return username || 'Admin';
-  }, [auth.user?.name, auth.user?.username]);
-
   return (
     <div className="min-h-screen bg-[#0d0f0b] text-[#fdfdf6] font-ui selection:bg-[#8eff71] selection:text-[#0d6100]">
       <div className="flex min-h-screen w-full">
@@ -47,10 +39,21 @@ export default function AdminLayout() {
             <NavItem to="/admin/owners" label="Owner Accounts" icon="domain" />
             <NavItem to="/admin/customers" label="Customer Accounts" icon="group" />
             <NavItem to="/admin/reports" label="Reports" icon="report" />
+            <NavItem to="/admin/profile" label="My Profile" icon="account_circle" />
           </div>
 
           <div className="mt-auto pt-6">
-            <div className="mb-2 text-xs text-[#fdfdf6]/60">{displayName}</div>
+            <button
+              type="button"
+              onClick={() => {
+                auth.logout();
+                navigate('/', { replace: true });
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-br from-[#8eff71] to-[#2ff801] px-3 py-2 text-sm font-bold text-[#0d6100] hover:opacity-90"
+            >
+              <span className="material-symbols-outlined text-[18px] leading-none">logout</span>
+              <span>Logout</span>
+            </button>
           </div>
         </aside>
 
