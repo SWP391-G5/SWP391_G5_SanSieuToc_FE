@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { ownerFieldService } from '../../services/owner/ownerFieldService';
 import { useNotification } from '../../context/NotificationContext';
+import FieldFormModal from '../../components/owner/FieldFormModal';
 
 export default function OwnerFieldsPage() {
   const [fields, setFields] = useState([]);
   const [loading, setLoading] = useState(true);
   const { showNotification } = useNotification();
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingField, setEditingField] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   const fetchFields = async () => {
     try {
@@ -35,6 +40,35 @@ export default function OwnerFieldsPage() {
     }
   };
 
+  const handleAdd = () => {
+    setEditingField(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (field) => {
+    setEditingField(field);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveField = async (formData) => {
+    try {
+      setSaving(true);
+      if (editingField) {
+        await ownerFieldService.updateField(editingField._id, formData);
+        showNotification('Cập nhật thông tin sân thành công!', 'success');
+      } else {
+        await ownerFieldService.createField(formData);
+        showNotification('Thêm sân bóng mới thành công!', 'success');
+      }
+      setIsModalOpen(false);
+      fetchFields();
+    } catch (error) {
+      showNotification(error.response?.data?.message || 'Có lỗi xảy ra', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <>
       {/* Header Section */}
@@ -48,7 +82,10 @@ export default function OwnerFieldsPage() {
             Control your arena's inventory. Manage field availability, professional amenities, and pricing dynamics from a single hub.
           </p>
         </div>
-        <button className="impact-gradient text-on-primary font-bold px-8 py-4 rounded-md flex items-center gap-3 headline-font uppercase text-sm tracking-widest scale-100 hover:scale-[1.02] transition-transform active:scale-95">
+        <button 
+          onClick={handleAdd}
+          className="impact-gradient text-on-primary font-bold px-8 py-4 rounded-md flex items-center gap-3 headline-font uppercase text-sm tracking-widest scale-100 hover:scale-[1.02] transition-transform active:scale-95"
+        >
           <span className="material-symbols-outlined">add_box</span>
           Add New Field
         </button>
@@ -120,7 +157,10 @@ export default function OwnerFieldsPage() {
                       </div>
                     </div>
                     <div className="mt-6 pt-6 border-t border-outline-variant/10 flex justify-end gap-3">
-                      <button className="px-4 py-2 text-xs font-bold font-label uppercase text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded transition-colors flex items-center gap-2">
+                      <button 
+                        onClick={() => handleEdit(field)}
+                        className="px-4 py-2 text-xs font-bold font-label uppercase text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded transition-colors flex items-center gap-2"
+                      >
                         <span className="material-symbols-outlined text-lg">edit</span>
                         Edit Pitch
                       </button>
@@ -167,6 +207,14 @@ export default function OwnerFieldsPage() {
           </div>
         </div>
       </div>
+
+      <FieldFormModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveField}
+        initialData={editingField}
+        isLoading={saving}
+      />
     </>
   );
 }
