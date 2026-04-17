@@ -59,7 +59,7 @@ export default function AuthPage() {
     if (!auth.isAuthenticated) return;
     const role = auth.user?.role;
     if (isAdminGroup(role)) return;
-    navigate('/profile', { replace: true });
+    navigate('/', { replace: true });
   }, [auth.isAuthenticated, auth.user, navigate]);
 
   const onLoginSubmit = async (e) => {
