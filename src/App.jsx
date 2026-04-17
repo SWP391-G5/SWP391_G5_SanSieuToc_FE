@@ -10,18 +10,28 @@ import CommunityPage from './pages/Customer/Community/CommunityPage';
 import CommunityPostDetailPage from './pages/Customer/Community/CommunityPostDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
 import UserProfilePage from './pages/UserProfilePage';
+import TopUpPage from './pages/Payment/TopUpPage';
+import CheckoutPage from './pages/Payment/CheckoutPage';
+import FieldDetailPage from './pages/Customer/Fields/FieldDetailPage';
+import BookingConfirmPage from './pages/Payment/BookingConfirmPage';
+import ServicePage from './pages/Services/ServicePage';
+import AdminLayout from './layouts/AdminLayout';
+import ManagerAccountsPage from './pages/admin/ManagerAccountsPage';
+import OwnerAccountsPage from './pages/admin/OwnerAccountsPage';
+import CustomerAccountsPage from './pages/admin/CustomerAccountsPage';
+import ReportsPage from './pages/admin/ReportsPage';
 
 import ManagerLayout from './layouts/manager/ManagerLayout';
 import RequireManager from './components/manager/RequireManager';
 import {
-  ManagerBannersPage,
   ManagerFeedbackPage,
   ManagerPostsPage,
   ManagerPrivacyPage,
-  ManagerSlidesPage,
   ManagerStatisticsPage,
   ManagerWalletPage,
 } from './pages/Manager';
+
+import ManagerMarketingImagesPage from './pages/Manager/ManagerMarketingImagesPage';
 
 import { useAuth } from './context/AuthContext';
 
@@ -31,13 +41,22 @@ function RequireAuth({ children }) {
   return children;
 }
 
+function RequireAdmin({ children }) {
+  const auth = useAuth();
+  if (!auth.isAuthenticated) return <Navigate to="/auth" replace />;
+  if (String(auth.user?.role || '').trim() !== 'Admin') return <Navigate to="/" replace />;
+  return children;
+}
+
 function App() {
   return (
-    <Router>
+    <Router basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<HomePage />} />
           <Route path="fields" element={<FieldListPage />} />
+          <Route path="fields/:id" element={<FieldDetailPage />} />
+          <Route path="booking-confirm" element={<BookingConfirmPage />} />
           <Route path="wishlist" element={<WishlistPage />} />
           <Route path="community" element={<CommunityPage />} />
           <Route path="community/:id" element={<CommunityPostDetailPage />} />
@@ -51,6 +70,47 @@ function App() {
               </RequireAuth>
             }
           />
+          <Route
+            path="top-up"
+            element={
+              <RequireAuth>
+                <TopUpPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="checkout"
+            element={
+              <RequireAuth>
+                <CheckoutPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="services"
+            element={
+              <RequireAuth>
+                <ServicePage />
+              </RequireAuth>
+            }
+          />
+
+          <Route
+            path="admin"
+            element={
+              <RequireAdmin>
+                <AdminLayout />
+              </RequireAdmin>
+            }
+          >
+            <Route index element={<Navigate to="/admin/managers" replace />} />
+            <Route path="managers" element={<ManagerAccountsPage />} />
+            <Route path="owners" element={<OwnerAccountsPage />} />
+            <Route path="customers" element={<CustomerAccountsPage />} />
+            <Route path="reports" element={<ReportsPage />} />
+            <Route path="profile" element={<UserProfilePage />} />
+          </Route>
+
           {/* 404 Not Found */}
           <Route path="*" element={<NotFoundPage />} />
         </Route>
@@ -67,11 +127,14 @@ function App() {
           <Route index element={<Navigate to="/manager/statistics" replace />} />
           <Route path="statistics" element={<ManagerStatisticsPage />} />
           <Route path="posts" element={<ManagerPostsPage />} />
-          <Route path="slides" element={<ManagerSlidesPage />} />
-          <Route path="banners" element={<ManagerBannersPage />} />
+
+          {/* Unified marketing images management */}
+          <Route path="banners-ads" element={<ManagerMarketingImagesPage />} />
+
           <Route path="wallet" element={<ManagerWalletPage />} />
           <Route path="privacy" element={<ManagerPrivacyPage />} />
           <Route path="feedback" element={<ManagerFeedbackPage />} />
+          <Route path="profile" element={<UserProfilePage />} />
         </Route>
       </Routes>
     </Router>

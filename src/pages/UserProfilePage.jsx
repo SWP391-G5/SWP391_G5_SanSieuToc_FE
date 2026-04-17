@@ -1,9 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
+import bookingService from '../services/bookingService';
 import profileService from '../services/profileService';
+import transactionService from '../services/transactionService';
+import { setAuthToken } from '../services/axios';
+import {
+  isValidAddress,
+  isValidEmail,
+  isValidName,
+  isValidPassword,
+  isValidPhone,
+  normalizePhone,
+} from '../utils/validators';
 
 import '../styles/UserProfilePage.css';
 
@@ -35,10 +46,186 @@ async function uploadToCloudinary({ file, cloudName, uploadPreset }) {
   return secureUrl;
 }
 
+function BookingCard({ booking, onCancel }) {
+  const [expanded, setExpanded] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  const canCancel = booking.status === 'Confirmed' && booking.statusPayment === 'Paid';
+
+  const handleCancel = async () => {
+    if (!window.confirm('Bạn có chắc muốn hủy đơn đặt sân này?\nTiền sẽ được hoàn lại sau khi Owner xác nhận.')) {
+      return;
+    }
+    
+    setCancelling(true);
+    try {
+      await onCancel(booking.id);
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  return (
+    <div className={`booking-card ${expanded ? 'expanded' : ''}`}>
+      <div className="booking-card-image-wrapper">
+        <div
+          className="booking-card-image"
+          style={{ backgroundImage: `url(${booking.fieldImage || 'https://via.placeholder.com/400x200?text=San+Sieu+Toc'})` }}
+        ></div>
+      </div>
+      <div className="booking-card-body">
+        <div className="booking-card-top">
+          <div className="booking-card-info">
+            <h3 className="booking-card-title">{booking.fieldName}</h3>
+            <p className="booking-card-address">📍 {booking.fieldAddress}</p>
+          </div>
+          <div className="booking-card-status">
+            <span className={`booking-status-badge status-${booking.status.toLowerCase().replace(/\s+/g, '-')}`}>
+              {booking.status}
+            </span>
+            <span className={`booking-payment-badge ${booking.statusPayment.toLowerCase().replace(/\s+/g, '-')}`}>
+              {booking.statusPayment}
+            </span>
+          </div>
+        </div>
+        <p className="booking-card-date">📅 {new Date(booking.date).toLocaleDateString('vi-VN')}</p>
+        <p className="booking-card-time">🕒 {booking.timeSlots.map(s => typeof s === 'object' ? s.start : s).join(', ')}</p>
+        <div className="booking-card-footer">
+          <span className="booking-card-price">{formatVnd(booking.grandTotal)}đ</span>
+          <div className="booking-card-actions">
+            {canCancel && (
+              <button
+                className="booking-cancel-btn"
+                onClick={handleCancel}
+                disabled={cancelling}
+              >
+                {cancelling ? 'Đang hủy...' : 'Hủy đơn'}
+              </button>
+            )}
+            <button
+              className="booking-expand-btn"
+              onClick={() => setExpanded(!expanded)}
+            >
+              {expanded ? 'Thu gọn ▲' : 'Chi tiết ▼'}
+            </button>
+          </div>
+        </div>
+
+        {expanded && (
+          <div className="booking-expanded-content">
+            {booking.fieldType && (
+              <div className="booking-detail-row">
+                <span className="booking-detail-label">Loại sân:</span>
+                <span>{booking.fieldType}</span>
+              </div>
+            )}
+            
+            <div className="booking-detail-row">
+              <span className="booking-detail-label">Khung giờ:</span>
+              <div className="booking-slots-row">
+                {booking.allDates && booking.allDates.length > 0 ? (
+                  booking.allDates.map((d, idx) => (
+                    <div key={idx} className="booking-date-group">
+                      <span className="booking-date-label">{new Date(d.date).toLocaleDateString('vi-VN')}:</span>
+                      {d.slots.map((slot, sIdx) => (
+                        <span key={sIdx} className="booking-slot-badge">
+                          {slot.start} - {slot.end}
+                        </span>
+                      ))}
+                    </div>
+                  ))
+                ) : (
+                  booking.timeSlots.map((slot, idx) => (
+                    <span key={idx} className="booking-slot-badge">
+                      {typeof slot === 'object' ? `${slot.start} - ${slot.end}` : slot}
+                    </span>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {booking.services && booking.services.length > 0 && (
+              <div className="booking-detail-row">
+                <span className="booking-detail-label">Dịch vụ:</span>
+                <div className="booking-services-list">
+                  {booking.services.map((service, idx) => (
+                    <span key={idx} className="booking-service-badge">
+                      {service.serviceName}: {formatVnd(service.price)}đ
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="booking-price-breakdown">
+              {booking.fieldTotal > 0 && (
+                <div className="booking-price-row">
+                  <span>Tiền sân:</span>
+                  <span>{formatVnd(booking.fieldTotal)}đ</span>
+                </div>
+              )}
+              {booking.servicesTotal > 0 && (
+                <div className="booking-price-row">
+                  <span>Dịch vụ:</span>
+                  <span>{formatVnd(booking.servicesTotal)}đ</span>
+                </div>
+              )}
+              <div className="booking-price-row total">
+                <span>Tổng:</span>
+                <span>{formatVnd(booking.grandTotal)}đ</span>
+              </div>
+            </div>
+
+            <div className="booking-payment-status">
+              {booking.statusPayment === 'Paid' && (
+                <span className="payment-badge paid">✓ Đã thanh toán</span>
+              )}
+              {booking.statusPayment === 'Pending Payment' && (
+                <span className="payment-badge pending">⏳ Chờ thanh toán</span>
+              )}
+              {booking.statusPayment === 'Pending Refund' && (
+                <span className="payment-badge pending-refund">⏳ Đang chờ hoàn tiền</span>
+              )}
+              {booking.statusPayment === 'Refunded' && (
+                <span className="payment-badge refunded">↩️ Đã hoàn tiền</span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function UserProfilePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const auth = useAuth();
   const { notifyError, notifyInfo, notifySuccess } = useNotification();
+
+  const [activeTab, setActiveTab] = useState('personal');
+  const [bookingType, setBookingType] = useState('field');
+  const [bookings, setBookings] = useState([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [transactions, setTransactions] = useState([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const accountType = auth.user?.accountType;
+  const isAdminAccount = String(accountType || '').trim().toLowerCase() === 'admin';
+
+  const roleName = auth.user?.role;
+  const roleKey = String(roleName || '').trim().toLowerCase();
+  const isAdminConsoleUser = roleKey === 'admin';
+  const isCustomer = roleKey === 'customer';
+  const isManager = roleKey === 'manager';
+
+  const canChangeEmail = !isAdminAccount || isManager;
+
+  useEffect(() => {
+    if (!auth.isAuthenticated) return;
+    if (isAdminConsoleUser && !String(location.pathname || '').startsWith('/admin')) {
+      navigate('/admin/profile', { replace: true });
+    }
+  }, [auth.isAuthenticated, isAdminConsoleUser, location.pathname, navigate]);
 
   const fileInputRef = useRef(null);
 
@@ -89,6 +276,16 @@ export default function UserProfilePage() {
     return form.image || fallback;
   }, [form.image]);
 
+  // Set initial tab from navigation state
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+      // Clear it from state to avoid re-triggering
+      const { activeTab: _activeTab, ...rest } = location.state;
+      navigate('.', { state: rest, replace: true });
+    }
+  }, [location.state, navigate]);
+
   useEffect(() => {
     if (!auth.isAuthenticated) {
       navigate('/auth', { replace: true });
@@ -99,7 +296,7 @@ export default function UserProfilePage() {
     (async () => {
       setLoading(true);
       try {
-        const data = await profileService.getMyProfile();
+        const data = await profileService.getMyProfile(accountType);
         if (ignore) return;
 
         const u = data?.user || {};
@@ -112,7 +309,13 @@ export default function UserProfilePage() {
           image: u.image || '',
         });
         setEmailOriginal(u.email || '');
-        setWalletBalance(Number(data?.wallet?.balance || 0));
+        setWalletBalance(isAdminAccount ? 0 : Number(data?.wallet?.balance || 0));
+
+        // Clear the refresh state after fetching to prevent re-fetching on unrelated re-renders
+        if (location.state?.refreshWallet) {
+          const { refreshWallet, ...restState } = location.state;
+          navigate('.', { state: restState, replace: true });
+        }
       } catch (err) {
         const msg = err?.response?.data?.message || err?.message || 'Không tải được hồ sơ.';
         notifyError(msg);
@@ -124,7 +327,85 @@ export default function UserProfilePage() {
     return () => {
       ignore = true;
     };
-  }, [auth.isAuthenticated, navigate, notifyError]);
+  }, [auth.isAuthenticated, accountType, isAdminAccount, navigate, notifyError, location.state?.refreshWallet]);
+
+// Effect to fetch bookings when tab is active
+  useEffect(() => {
+    if (activeTab === 'bookings') {
+      let ignore = false;
+      const fetchBookings = async () => {
+        setBookingsLoading(true);
+        try {
+          if (bookingType === 'service') {
+            if (!ignore) {
+              setBookings([]);
+            }
+            setBookingsLoading(false);
+            return;
+          }
+          if (auth.accessToken) {
+            setAuthToken(auth.accessToken);
+          }
+          const data = await bookingService.getMyBookings();
+          if (!ignore) {
+            setBookings(data?.bookings || []);
+          }
+        } catch (err) {
+          if (!ignore) {
+            notifyError('Could not load booking history.');
+            setBookings([]);
+          }
+        } finally {
+          if (!ignore) setBookingsLoading(false);
+        }
+      };
+      fetchBookings();
+      return () => { ignore = true };
+    }
+  }, [activeTab, bookingType, notifyError, auth.accessToken]);
+
+  // Effect to fetch transactions when tab is active
+  useEffect(() => {
+    if (activeTab === 'transactions') {
+      let ignore = false;
+      const fetchTransactions = async () => {
+        setTransactionsLoading(true);
+        try {
+          if (auth.accessToken) {
+            setAuthToken(auth.accessToken);
+          }
+          const data = await transactionService.getMyTransactions();
+          if (!ignore) {
+            setTransactions(data?.transactions || []);
+            setWalletBalance(Number(data?.walletBalance || 0));
+          }
+        } catch (err) {
+          if (!ignore) {
+            notifyError('Could not load transaction history.');
+            setTransactions([]);
+          }
+        } finally {
+          if (!ignore) setTransactionsLoading(false);
+        }
+      };
+      fetchTransactions();
+      return () => { ignore = true; };
+    }
+  }, [activeTab, notifyError, auth.accessToken]);
+
+  const handleCancelBooking = async (bookingId) => {
+    try {
+      if (auth.accessToken) {
+        setAuthToken(auth.accessToken);
+      }
+      await bookingService.cancelBooking(bookingId);
+      notifySuccess('Yêu cầu hủy đã được gửi. Vui lòng chờ Owner xác nhận hoàn tiền.');
+      const data = await bookingService.getMyBookings();
+      setBookings(data?.bookings || []);
+    } catch (err) {
+      notifyError(err?.response?.data?.message || 'Hủy đơn thất bại.');
+    }
+  };
 
   const onPickAvatar = () => {
     if (fileInputRef.current) fileInputRef.current.click();
@@ -144,20 +425,24 @@ export default function UserProfilePage() {
       return;
     }
 
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-    if (!cloudName || !uploadPreset) {
-      notifyError('Chưa cấu hình Cloudinary (VITE_CLOUDINARY_CLOUD_NAME / VITE_CLOUDINARY_UPLOAD_PRESET).');
-      return;
-    }
-
     setUploading(true);
     try {
-      const url = await uploadToCloudinary({ file, cloudName, uploadPreset });
-      setForm((prev) => ({ ...prev, image: url }));
-      notifySuccess('Upload avatar thành công.');
+      const data = await profileService.uploadAvatar(file, accountType);
+      const imageUrl = data?.imageUrl;
+      if (!imageUrl) {
+        notifyError('Upload avatar thất bại.');
+        return;
+      }
+      setForm((prev) => ({ ...prev, image: imageUrl }));
+      if (data?.user) {
+        auth.updateUser(data.user);
+      } else {
+        auth.updateUser({ image: imageUrl });
+      }
+      notifySuccess('Đã cập nhật ảnh đại diện.');
     } catch (err) {
-      notifyError(err?.message || 'Upload avatar thất bại.');
+      const msg = err?.response?.data?.message || err?.message || 'Upload avatar thất bại.';
+      notifyError(msg);
     } finally {
       setUploading(false);
     }
@@ -177,7 +462,7 @@ export default function UserProfilePage() {
   const openEmailOtp = async (newEmail) => {
     setEmailOtpLoading(true);
     try {
-      await profileService.requestEmailChange(newEmail);
+      await profileService.requestEmailChange(newEmail, accountType);
       setEmailOtp('');
       setEmailOtpResendSeconds(60);
       setEmailOtpOpen(true);
@@ -193,19 +478,48 @@ export default function UserProfilePage() {
   };
 
   const onSaveProfile = async () => {
+
+    const name = String(form.name || '').trim().replace(/\s+/g, ' ');
+    const phone = normalizePhone(form.phone);
+    const address = String(form.address || '').trim();
+
+    if (!isValidName(name)) {
+      notifyError('Họ tên không hợp lệ.');
+      return;
+    }
+
+    // Phone is optional; validate when user enters something.
+    if (String(form.phone || '').trim().length > 0 && !isValidPhone(form.phone)) {
+      notifyError('Số điện thoại không hợp lệ (10 chữ số, bắt đầu bằng 0).');
+      return;
+    }
+
+    if (!isValidAddress(address)) {
+      notifyError('Địa chỉ không hợp lệ (tối đa 200 ký tự).');
+      return;
+    }
+
     const desiredEmail = String(form.email || '').trim();
     const emailChanged =
-      desiredEmail && emailOriginal && desiredEmail.toLowerCase() !== String(emailOriginal).trim().toLowerCase();
+      canChangeEmail &&
+      desiredEmail &&
+      emailOriginal &&
+      desiredEmail.toLowerCase() !== String(emailOriginal).trim().toLowerCase();
+
+    if (emailChanged && !isValidEmail(desiredEmail)) {
+      notifyError('Email không hợp lệ.');
+      return;
+    }
 
     setSaving(true);
     try {
       const payload = {
-        name: form.name,
-        phone: form.phone,
-        address: form.address,
+        name,
+        phone,
+        address,
         image: form.image,
       };
-      const data = await profileService.updateMyProfile(payload);
+      const data = await profileService.updateMyProfile(payload, accountType);
       const u = data?.user || {};
       setForm((prev) => ({
         ...prev,
@@ -214,6 +528,9 @@ export default function UserProfilePage() {
         address: u.address || '',
         image: u.image || '',
       }));
+      if (u && Object.keys(u).length > 0) {
+        auth.updateUser(u);
+      }
       notifySuccess('Đã lưu thông tin.');
 
       if (emailChanged) {
@@ -235,6 +552,11 @@ export default function UserProfilePage() {
       return;
     }
 
+    if (!isValidPassword(passwordForm.newPassword)) {
+      notifyError('Mật khẩu mới phải 6-128 ký tự và gồm chữ hoa, chữ thường, số, ký tự đặc biệt (không có khoảng trắng).');
+      return;
+    }
+
     if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
       notifyError('Mật khẩu xác nhận không khớp.');
       return;
@@ -242,10 +564,13 @@ export default function UserProfilePage() {
 
     setChangingPassword(true);
     try {
-      const data = await profileService.changeMyPassword({
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword,
-      });
+      const data = await profileService.changeMyPassword(
+        {
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+        },
+        accountType
+      );
       notifySuccess(data?.message || 'Đổi mật khẩu thành công.');
       setPasswordForm({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
     } catch (err) {
@@ -260,15 +585,18 @@ export default function UserProfilePage() {
     e.preventDefault();
 
     const newEmail = String(form.email || '').trim();
-    if (!newEmail || String(emailOtp || '').trim().length !== 6) {
-      notifyError('Vui lòng nhập đủ 6 số OTP.');
+    if (!newEmail || !isValidEmail(newEmail) || String(emailOtp || '').trim().length !== 6) {
+      notifyError('Vui lòng nhập email hợp lệ và đủ 6 số OTP.');
       return;
     }
 
     setEmailOtpLoading(true);
     try {
-      const data = await profileService.verifyEmailChange({ newEmail, code: String(emailOtp).trim() });
+      const data = await profileService.verifyEmailChange({ newEmail, code: String(emailOtp).trim() }, accountType);
       notifySuccess(data?.message || 'Đổi email thành công.');
+
+      if (data?.user) auth.updateUser(data.user);
+
       const normalizedEmail = data?.user?.email || newEmail;
       setForm((p) => ({ ...p, email: normalizedEmail }));
       setEmailOriginal(normalizedEmail);
@@ -289,7 +617,7 @@ export default function UserProfilePage() {
 
     setEmailOtpLoading(true);
     try {
-      await profileService.requestEmailChange(newEmail);
+      await profileService.requestEmailChange(newEmail, accountType);
       setEmailOtpResendSeconds(60);
       notifySuccess('Đã gửi lại OTP.');
     } catch (err) {
@@ -308,7 +636,21 @@ export default function UserProfilePage() {
   };
 
   const onTopUp = () => {
-    notifyInfo('Top up sẽ làm sau.');
+    navigate('/top-up');
+  };
+
+  const onBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    if (isAdminAccount) {
+      navigate('/admin', { replace: true });
+      return;
+    }
+
+    navigate('/', { replace: true });
   };
 
   if (loading) {
@@ -325,185 +667,303 @@ export default function UserProfilePage() {
     <div className="profile-terminal-page">
       <div className="profile-terminal-container">
         <div className="profile-terminal-tabs">
-          <button type="button" className="profile-terminal-tab active">
-            PERSONAL INFORMATION
-          </button>
           <button
             type="button"
-            className="profile-terminal-tab disabled"
-            onClick={() => notifyInfo('My bookings sẽ làm sau.')}
+            className={`profile-terminal-tab ${activeTab === 'personal' ? 'active' : ''}`}
+            onClick={() => setActiveTab('personal')}
           >
-            MY BOOKINGS
+            PERSONAL INFORMATION
           </button>
+          {isCustomer && (
+            <button
+              type="button"
+              className={`profile-terminal-tab ${activeTab === 'bookings' ? 'active' : ''}`}
+              onClick={() => setActiveTab('bookings')}
+            >
+              BOOKING HISTORY ▾
+            </button>
+          )}
+
+          {isAdminAccount ? (
+            <button
+              type="button"
+              className="profile-terminal-tab"
+              style={{ marginLeft: 'auto' }}
+              onClick={onBack}
+            >
+              QUAY LẠI
+            </button>
+          ) : null}
+
+          <button
+            type="button"
+            className={`profile-terminal-tab ${activeTab === 'transactions' ? 'active' : ''}`}
+            onClick={() => setActiveTab('transactions')}
+          >
+            TRANSACTION HISTORY
+          </button>
+          
         </div>
-
-        <div className="profile-terminal-grid">
-          <div className="profile-terminal-left">
-            <section className="profile-terminal-card">
-              <div className="profile-terminal-card-title">
-                <span className="profile-terminal-card-icon">🔒</span>
-                BASIC CREDENTIALS
-              </div>
-
-              <div className="profile-terminal-form">
-                <div className="profile-terminal-field">
-                  <label className="profile-terminal-label">USERNAME</label>
-                  <input className="profile-terminal-input" value={form.username} disabled />
-                </div>
-
-                <div className="profile-terminal-field">
-                  <label className="profile-terminal-label">EMAIL ADDRESS</label>
-                  <input
-                    className="profile-terminal-input"
-                    value={form.email}
-                    onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                    placeholder="Email"
-                    disabled={emailOtpLoading}
-                  />
-                </div>
-
-                <div className="profile-terminal-field">
-                  <label className="profile-terminal-label">FULL NAME</label>
-                  <input
-                    className="profile-terminal-input"
-                    value={form.name}
-                    onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                    placeholder="Full name"
-                  />
-                </div>
-
-                <div className="profile-terminal-field">
-                  <label className="profile-terminal-label">PHONE NUMBER</label>
-                  <input
-                    className="profile-terminal-input"
-                    value={form.phone}
-                    onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
-                    placeholder="Phone"
-                  />
-                </div>
-
-                <div className="profile-terminal-field profile-terminal-field-wide">
-                  <label className="profile-terminal-label">ADDRESS</label>
-                  <input
-                    className="profile-terminal-input"
-                    value={form.address}
-                    onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
-                    placeholder="Address"
-                  />
-                </div>
-
-                <div className="profile-terminal-actions">
-                  <button
-                    type="button"
-                    className="profile-terminal-btn primary"
-                    disabled={saving || uploading || emailOtpLoading}
-                    onClick={onSaveProfile}
-                  >
-                    {saving ? 'SAVING...' : emailOtpLoading ? 'SENDING OTP...' : 'SAVE INFORMATION'}
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            <section className="profile-terminal-card">
-              <div className="profile-terminal-card-title">
-                <span className="profile-terminal-card-icon">💳</span>
-                PITCH CREDIT WALLET
-              </div>
-
-              <div className="profile-terminal-wallet">
-                <div className="profile-terminal-wallet-left">
-                  <div className="profile-terminal-wallet-label">AVAILABLE BALANCE</div>
-                  <div className="profile-terminal-wallet-balance">{formatVnd(walletBalance)}đ</div>
-                </div>
-                <button type="button" className="profile-terminal-btn" onClick={onTopUp}>
-                  TOP UP
-                </button>
-              </div>
-            </section>
-
-            <section className="profile-terminal-card">
-              <div className="profile-terminal-card-title">
-                <span className="profile-terminal-card-icon">🛡️</span>
-                SECURITY PROTOCOL
-              </div>
-
-              <form className="profile-terminal-form" onSubmit={onChangePassword}>
-                <div className="profile-terminal-field profile-terminal-field-wide">
-                  <label className="profile-terminal-label">CURRENT PASSWORD</label>
-                  <input
-                    className="profile-terminal-input"
-                    type="password"
-                    value={passwordForm.currentPassword}
-                    onChange={(e) => setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))}
-                    placeholder="••••••••"
-                  />
-                </div>
-
-                <div className="profile-terminal-field">
-                  <label className="profile-terminal-label">NEW PASSWORD</label>
-                  <input
-                    className="profile-terminal-input"
-                    type="password"
-                    value={passwordForm.newPassword}
-                    onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))}
-                    placeholder="••••••••"
-                  />
-                </div>
-
-                <div className="profile-terminal-field">
-                  <label className="profile-terminal-label">CONFIRM NEW PASSWORD</label>
-                  <input
-                    className="profile-terminal-input"
-                    type="password"
-                    value={passwordForm.confirmNewPassword}
-                    onChange={(e) => setPasswordForm((p) => ({ ...p, confirmNewPassword: e.target.value }))}
-                    placeholder="••••••••"
-                  />
-                </div>
-
-                <div className="profile-terminal-actions">
-                  <button type="submit" className="profile-terminal-btn primary" disabled={changingPassword}>
-                    {changingPassword ? 'UPDATING...' : 'UPDATE CREDENTIALS'}
-                  </button>
-                </div>
-              </form>
-            </section>
+        {activeTab === 'bookings' && (
+          <div className="booking-type-selector">
+            <select
+              value={bookingType}
+              onChange={(e) => setBookingType(e.target.value)}
+              className="booking-type-dropdown"
+            >
+              <option value="field">Field Booking History</option>
+              <option value="service">Service Booking History</option>
+            </select>
           </div>
+        )}
 
-          <div className="profile-terminal-right">
-            <section className="profile-terminal-card">
-              <div className="profile-terminal-avatar">
-                <div className="profile-terminal-avatar-preview">
-                  <img src={avatarUrl} alt="Avatar" className="profile-terminal-avatar-img" />
-                  <div className="profile-terminal-avatar-lock">🔒</div>
+        {activeTab === 'personal' ? (
+          <div className="profile-terminal-grid">
+            <div className="profile-terminal-left">
+              <section className="profile-terminal-card">
+                <div className="profile-terminal-card-title">
+                  <span className="profile-terminal-card-icon">🔒</span>
+                  BASIC CREDENTIALS
                 </div>
 
-                <div className="profile-terminal-avatar-meta">
-                  <div className="profile-terminal-avatar-title">AVATAR TERMINAL</div>
-                  <div className="profile-terminal-avatar-sub">
-                    Upload a square image for best performance. Max 5MB.
+                <div className="profile-terminal-form">
+                  <div className="profile-terminal-field">
+                    <label className="profile-terminal-label">USERNAME</label>
+                    <input className="profile-terminal-input" value={form.username} disabled />
                   </div>
-                  <button
-                    type="button"
-                    className="profile-terminal-btn"
-                    onClick={onPickAvatar}
-                    disabled={uploading}
-                  >
-                    {uploading ? 'UPLOADING...' : 'REPLACE VISUAL'}
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={onAvatarFileChange}
-                    style={{ display: 'none' }}
-                  />
+
+                  <div className="profile-terminal-field">
+                    <label className="profile-terminal-label">EMAIL ADDRESS</label>
+                    <input
+                      className="profile-terminal-input"
+                      value={form.email}
+                      onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                      placeholder="Email"
+                      disabled={emailOtpLoading || !canChangeEmail}
+                    />
+                  </div>
+
+                  <div className="profile-terminal-field">
+                    <label className="profile-terminal-label">FULL NAME</label>
+                    <input
+                      className="profile-terminal-input"
+                      value={form.name}
+                      onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                      placeholder="Full name"
+                    />
+                  </div>
+
+                  <div className="profile-terminal-field">
+                    <label className="profile-terminal-label">PHONE NUMBER</label>
+                    <input
+                      className="profile-terminal-input"
+                      value={form.phone}
+                      onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+                      placeholder="Phone"
+                    />
+                  </div>
+
+                  <div className="profile-terminal-field profile-terminal-field-wide">
+                    <label className="profile-terminal-label">ADDRESS</label>
+                    <input
+                      className="profile-terminal-input"
+                      value={form.address}
+                      onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
+                      placeholder="Address"
+                    />
+                  </div>
+
+                  <div className="profile-terminal-actions">
+                    <button
+                      type="button"
+                      className="profile-terminal-btn primary"
+                      disabled={saving || uploading || emailOtpLoading}
+                      onClick={onSaveProfile}
+                    >
+                      {saving ? 'SAVING...' : emailOtpLoading ? 'SENDING OTP...' : 'SAVE INFORMATION'}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
+
+              {!isAdminAccount && (
+                <>
+                  <section className="profile-terminal-card">
+                    <div className="profile-terminal-card-title">
+                      <span className="profile-terminal-card-icon">💳</span>
+                      PITCH CREDIT WALLET
+                    </div>
+
+                    <div className="profile-terminal-wallet">
+                      <div className="profile-terminal-wallet-left">
+                        <div className="profile-terminal-wallet-label">AVAILABLE BALANCE</div>
+                        <div className="profile-terminal-wallet-balance">{formatVnd(walletBalance)}đ</div>
+                      </div>
+                      <button type="button" className="profile-terminal-btn" onClick={onTopUp}>
+                        TOP UP
+                      </button>
+                    </div>
+                  </section>
+
+                  <section className="profile-terminal-card">
+                    <div className="profile-terminal-card-title">
+                      <span className="profile-terminal-card-icon">🛡️</span>
+                      SECURITY PROTOCOL
+                    </div>
+
+                    <form className="profile-terminal-form" onSubmit={onChangePassword}>
+                      <div className="profile-terminal-field profile-terminal-field-wide">
+                        <label className="profile-terminal-label">CURRENT PASSWORD</label>
+                        <input
+                          className="profile-terminal-input"
+                          type="password"
+                          value={passwordForm.currentPassword}
+                          onChange={(e) => setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))}
+                          placeholder="••••••••"
+                        />
+                      </div>
+
+                      <div className="profile-terminal-field">
+                        <label className="profile-terminal-label">NEW PASSWORD</label>
+                        <input
+                          className="profile-terminal-input"
+                          type="password"
+                          value={passwordForm.newPassword}
+                          onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))}
+                          placeholder="••••••••"
+                        />
+                      </div>
+
+                      <div className="profile-terminal-field">
+                        <label className="profile-terminal-label">CONFIRM NEW PASSWORD</label>
+                        <input
+                          className="profile-terminal-input"
+                          type="password"
+                          value={passwordForm.confirmNewPassword}
+                          onChange={(e) => setPasswordForm((p) => ({ ...p, confirmNewPassword: e.target.value }))}
+                          placeholder="••••••••"
+                        />
+                      </div>
+
+                      <div className="profile-terminal-actions">
+                        <button type="submit" className="profile-terminal-btn primary" disabled={changingPassword}>
+                          {changingPassword ? 'UPDATING...' : 'UPDATE CREDENTIALS'}
+                        </button>
+                      </div>
+                    </form>
+                  </section>
+                </>
+              )}
+            </div>
+            <div className="profile-terminal-right">
+              <section className="profile-terminal-card">
+                <div className="profile-terminal-avatar">
+                  <div className="profile-terminal-avatar-preview">
+                    <img src={avatarUrl} alt="Avatar" className="profile-terminal-avatar-img" />
+                    <div className="profile-terminal-avatar-lock">🔒</div>
+                  </div>
+
+                  <div className="profile-terminal-avatar-meta">
+                    <div className="profile-terminal-avatar-title">AVATAR TERMINAL</div>
+                    <div className="profile-terminal-avatar-sub">Upload a square image for best performance. Max 5MB.</div>
+                    <button type="button" className="profile-terminal-btn" onClick={onPickAvatar} disabled={uploading}>
+                      {uploading ? 'UPLOADING...' : 'REPLACE VISUAL'}
+                    </button>
+                    <input ref={fileInputRef} type="file" accept="image/*" onChange={onAvatarFileChange} style={{ display: 'none' }} />
+                  </div>
+                </div>
+              </section>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="profile-terminal-full-width">
+            {activeTab === 'bookings' ? (
+              <section className="profile-terminal-card">
+                <div className="profile-terminal-card-title">
+                  <span className="profile-terminal-card-icon">📅</span>
+                  BOOKING HISTORY
+                </div>
+                {bookingsLoading ? (
+                  <div className="profile-terminal-loading" style={{ marginTop: '1rem' }}>
+                    Loading bookings...
+                  </div>
+                ) : bookings.length === 0 ? (
+                  <div style={{ padding: '1rem', textAlign: 'center', color: 'rgba(231, 249, 238, 0.65)' }}>
+                    No bookings found.
+                  </div>
+                ) : (
+                  <div className="booking-history-list">
+                    {bookings.map((booking) => (
+                      <BookingCard 
+                        key={booking.id} 
+                        booking={booking}
+                        onCancel={handleCancelBooking}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+            ) : activeTab === 'transactions' ? (
+              <section className="profile-terminal-card">
+                <div className="profile-terminal-card-title">
+                  <span className="profile-terminal-card-icon">💰</span>
+                  BIẾN ĐỘNG SỐ DƯ
+                </div>
+                {transactionsLoading ? (
+                  <div className="profile-terminal-loading" style={{ marginTop: '1rem' }}>
+                    Đang tải...
+                  </div>
+                ) : transactions.length === 0 ? (
+                  <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(231, 249, 238, 0.5)' }}>
+                    Chưa có giao dịch nào
+                  </div>
+                ) : (
+                  <div className="bank-transaction-list">
+                    {transactions.map((tx) => {
+                      const isCredit = tx.isCredit;
+                      const isDebit = tx.isDebit;
+                      const amountClass = isCredit ? 'tx-credit' : isDebit ? 'tx-debit' : '';
+                      
+                      const date = new Date(tx.createdAt);
+                      const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                      const timeStr = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                      
+                      return (
+                        <div key={tx.id} className="bank-transaction-item">
+                          <div className="bank-tx-left">
+                            <div className="bank-tx-icon-wrap">
+                              <span className={`material-symbols-outlined bank-tx-icon ${amountClass}`}>
+                                {isCredit ? 'south_east' : 'north_east'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="bank-tx-center">
+                            <div className="bank-tx-amount">
+                              {isCredit ? '+' : isDebit ? '-' : ''}{formatVnd(tx.amount)}đ
+                            </div>
+                            <div className="bank-tx-desc">
+                              {tx.description || (isCredit ? 'Tiền vào' : 'Tiền ra')}
+                              {isDebit && tx.bookingType && (
+                                <>
+                                  {tx.bookingType === 'field' && <span className="tx-badge tx-badge-field">Field</span>}
+                                  {tx.bookingType === 'service' && <span className="tx-badge tx-badge-service">Service</span>}
+                                </>
+                              )}
+                            </div>
+                            <div className="bank-tx-time">{dateStr} • {timeStr}</div>
+                          </div>
+                          <div className="bank-tx-right">
+                            <div className="bank-tx-balance">Số dư: {formatVnd(tx.balanceAfter)}đ</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            ) : null}
+          </div>
+        )}
         {emailOtpOpen && (
           <div className="modal-overlay" role="dialog" aria-modal="true">
             <div className="modal-container">

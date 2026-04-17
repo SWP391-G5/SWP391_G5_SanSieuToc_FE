@@ -1,5 +1,8 @@
+import { useNavigate } from 'react-router-dom';
+
 export default function FieldCard({ field, wished, onToggleWishlist }) {
   const f = field;
+  const navigate = useNavigate();
 
   const imageUrl = (() => {
     if (f?.image) return f.image;
@@ -115,6 +118,7 @@ export default function FieldCard({ field, wished, onToggleWishlist }) {
 
           <button
             type="button"
+            onClick={() => navigate(`/fields/${f.id}`)}
             className="font-headline rounded-lg bg-[#242721] px-4 py-2 text-xs font-bold transition-all hover:bg-[#8eff71] hover:text-[#0d6100]"
           >
             View Details

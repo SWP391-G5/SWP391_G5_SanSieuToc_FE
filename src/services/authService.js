@@ -14,6 +14,16 @@ const authService = {
     return data;
   },
 
+  async verifyEmailAdmin({ email, code }) {
+    const { data } = await axiosInstance.post(ENDPOINTS.AUTH.ADMIN_VERIFY_EMAIL, { email, code });
+    return data;
+  },
+
+  async resendVerificationAdmin({ email }) {
+    const { data } = await axiosInstance.post(ENDPOINTS.AUTH.ADMIN_RESEND_VERIFICATION, { email });
+    return data;
+  },
+
   async loginUser({ username, password, role }) {
     const { data } = await axiosInstance.post(ENDPOINTS.AUTH.USER_LOGIN, { username, password, role });
     return data;

@@ -1,20 +1,12 @@
 /**
- * BannerFormModal.jsx
- * Create/Edit modal for Banner.
+ * BannersAdsFormModal.jsx
+ * Create/Edit modal for banner/ad item.
  */
 
 import { useEffect } from 'react';
 import { buildPickedImagePreview, revokePreviewUrl } from './bannerUploadHelpers';
 
-export default function BannerFormModal({
-  open,
-  initial,
-  busy,
-  error,
-  onClose,
-  onSubmit,
-  notify,
-}) {
+export default function BannersAdsFormModal({ open, initial, busy, error, onClose, onSubmit, notify }) {
   const [form, setForm] = initial;
 
   useEffect(() => {
@@ -39,7 +31,7 @@ export default function BannerFormModal({
       <div className="w-full max-w-2xl rounded-2xl bg-surface-container-high border border-outline-variant shadow-2xl my-10">
         <div className="flex items-start justify-between gap-4 border-b border-outline-variant px-5 py-4 sm:px-6">
           <div>
-            <h2 className="text-xl font-headline font-bold">{form?.id ? 'Edit Banner' : 'New Banner'}</h2>
+            <h2 className="text-xl font-headline font-bold">{form?.id ? 'Edit Item' : 'New Item'}</h2>
             <p className="text-sm text-on-surface-variant mt-1">Upload 1 image and control placement/order/active.</p>
           </div>
           <button
@@ -72,8 +64,10 @@ export default function BannerFormModal({
                 onChange={(e) => setForm((p) => ({ ...p, placement: e.target.value }))}
                 disabled={busy}
               >
+                {/* Keep full list in placementsMeta to avoid duplicating here */}
                 <option value="home_hero">Home Hero</option>
                 <option value="home_promo">Home Promo</option>
+                <option value="fields_list_ads">Fields List Ads</option>
               </select>
             </label>
 
@@ -117,7 +111,7 @@ export default function BannerFormModal({
               {form?.image ? (
                 <img
                   src={typeof form.image === 'string' ? form.image : form.image.previewUrl}
-                  alt="banner-preview"
+                  alt="item-preview"
                   className="w-full max-h-64 object-cover rounded-lg"
                 />
               ) : (

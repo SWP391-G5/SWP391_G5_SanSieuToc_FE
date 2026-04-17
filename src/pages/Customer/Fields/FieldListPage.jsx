@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-
 import { DEFAULT_FIELDS_LIST_ADS_SLIDES } from '../../../assets/defaultSliders';
 import SimpleImageSlider from '../../../components/ads/SimpleImageSlider';
 import Pagination from '../../../components/common/Pagination';

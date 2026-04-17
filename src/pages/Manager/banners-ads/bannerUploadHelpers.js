@@ -1,4 +1,10 @@
 /**
+ * NOTE
+ * This helper stays here temporarily for compatibility.
+ * The unified UI now lives under `pages/Manager/banners-ads/`.
+ */
+
+/**
  * bannerUploadHelpers.js
  * Image helpers for Banner management.
  */
