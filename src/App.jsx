@@ -3,14 +3,28 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import AuthPage from './pages/auth/AuthPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import MainLayout from './layouts/MainLayout';
+import FieldListPage from './pages/FieldListPage';
 import AdminLayout from './layouts/AdminLayout';
 import HomePage from './pages/HomePage';
+import WishlistPage from './pages/WishlistPage';
 import NotFoundPage from './pages/NotFoundPage';
 import UserProfilePage from './pages/UserProfilePage';
 import ManagerAccountsPage from './pages/admin/ManagerAccountsPage';
 import OwnerAccountsPage from './pages/admin/OwnerAccountsPage';
 import CustomerAccountsPage from './pages/admin/CustomerAccountsPage';
 import ReportsPage from './pages/admin/ReportsPage';
+
+import ManagerLayout from './layouts/manager/ManagerLayout';
+import RequireManager from './components/manager/RequireManager';
+import {
+  ManagerFeedbackPage,
+  ManagerPostsPage,
+  ManagerPrivacyPage,
+  ManagerStatisticsPage,
+  ManagerWalletPage,
+} from './pages/Manager';
+
+import ManagerMarketingImagesPage from './pages/Manager/ManagerMarketingImagesPage';
 
 import { useAuth } from './context/AuthContext';
 
@@ -33,6 +47,8 @@ function App() {
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<HomePage />} />
+          <Route path="fields" element={<FieldListPage />} />
+          <Route path="wishlist" element={<WishlistPage />} />
           <Route path="auth" element={<AuthPage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
           <Route
@@ -61,6 +77,27 @@ function App() {
 
           {/* 404 Not Found */}
           <Route path="*" element={<NotFoundPage />} />
+        </Route>
+
+        {/* Manager Area */}
+        <Route
+          path="/manager"
+          element={
+            <RequireManager>
+              <ManagerLayout />
+            </RequireManager>
+          }
+        >
+          <Route index element={<Navigate to="/manager/statistics" replace />} />
+          <Route path="statistics" element={<ManagerStatisticsPage />} />
+          <Route path="posts" element={<ManagerPostsPage />} />
+
+          {/* Unified marketing images management */}
+          <Route path="banners-ads" element={<ManagerMarketingImagesPage />} />
+
+          <Route path="wallet" element={<ManagerWalletPage />} />
+          <Route path="privacy" element={<ManagerPrivacyPage />} />
+          <Route path="feedback" element={<ManagerFeedbackPage />} />
         </Route>
       </Routes>
     </Router>
