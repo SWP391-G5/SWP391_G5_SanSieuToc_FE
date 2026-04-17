@@ -1,46 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
-import { FIELDS } from '../data/fields';
+import { useWishlist } from '../../hooks/useWishlist';
+import { FIELDS } from '../../features/fields';
+import { normalizeText } from '../../utils/normalizeText';
+import { parsePriceText } from '../../utils/price';
 
-const WISHLIST_KEY = 'sst_wishlist';
-
-function loadWishlist() {
-  try {
-    const raw = localStorage.getItem(WISHLIST_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((x) => x && typeof x.id === 'number');
-  } catch {
-    return [];
-  }
-}
-
-function saveWishlist(items) {
-  try {
-    localStorage.setItem(WISHLIST_KEY, JSON.stringify(items));
-  } catch {
-    // ignore
-  }
-}
-
-function toWishlistItem(f) {
-  return {
-    id: f.id,
-    name: f.name,
-    address: f.address,
-    city: f.city,
-    rating: f.rating,
-    size: f.size,
-    sizeKey: f.sizeKey,
-    sizeTone: f.sizeTone,
-    price: f.price,
-    utilities: f.utilities,
-    image: f.image,
-    imageAlt: f.imageAlt,
-  };
-}
+import FieldCard from './components/FieldCard';
 
 export default function FieldListPage() {
   const location = useLocation();
@@ -49,17 +15,7 @@ export default function FieldListPage() {
   const [searchText, setSearchText] = useState(initialSearchText);
   const [sortBy, setSortBy] = useState('topRated');
 
-  const [wishlist, setWishlist] = useState(() => loadWishlist());
-  const wishlistIds = useMemo(() => new Set(wishlist.map((x) => x.id)), [wishlist]);
-
-  const toggleWishlist = (field) => {
-    setWishlist((prev) => {
-      const exists = prev.some((x) => x.id === field.id);
-      const next = exists ? prev.filter((x) => x.id !== field.id) : [...prev, toWishlistItem(field)];
-      saveWishlist(next);
-      return next;
-    });
-  };
+  const { wishlistIds, toggleWishlist } = useWishlist();
 
   const [selectedCity, setSelectedCity] = useState('All');
   const [selectedSize, setSelectedSize] = useState(null);
@@ -78,23 +34,6 @@ export default function FieldListPage() {
     setUtilities({ parking: false, lighting: false, wifi: false, shower: false });
   };
 
-  const normalizeText = (s) => {
-    const v = String(s ?? '')
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/đ/g, 'd')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    return v;
-  };
-
-  const parsePrice = (priceText) => {
-    const digits = String(priceText ?? '').replace(/[^\d]/g, '');
-    return Number(digits) || 0;
-  };
-
   const displayFields = useMemo(() => {
     const q = normalizeText(searchText);
 
@@ -109,7 +48,7 @@ export default function FieldListPage() {
       .filter((f) => (selectedCity === 'All' ? true : f.city === selectedCity))
       .filter((f) => (selectedSize ? f.sizeKey === selectedSize : true))
       .filter((f) => {
-        const p = parsePrice(f.price);
+        const p = parsePriceText(f.price);
         return p >= minVnd && p <= maxVnd;
       })
       .filter((f) => {
@@ -125,8 +64,8 @@ export default function FieldListPage() {
     }
 
     const sorted = [...list].sort((a, b) => {
-      if (sortBy === 'priceAsc') return parsePrice(a.price) - parsePrice(b.price);
-      if (sortBy === 'priceDesc') return parsePrice(b.price) - parsePrice(a.price);
+      if (sortBy === 'priceAsc') return parsePriceText(a.price) - parsePriceText(b.price);
+      if (sortBy === 'priceDesc') return parsePriceText(b.price) - parsePriceText(a.price);
 
       // topRated
       const ra = Number(a.rating) || 0;
@@ -289,13 +228,8 @@ export default function FieldListPage() {
               <h2 className="font-headline text-2xl font-black leading-tight">
                 Unlock Exclusive Pitch Hours &amp; <span className="italic text-[#8eff71]">20% Discounts</span>
               </h2>
-              <p className="max-w-sm text-sm text-[#abaca5]">
-                Elevate your game with priority bookings and professional perks.
-              </p>
-              <button
-                type="button"
-                className="font-headline rounded-lg bg-[#8eff71] px-6 py-2 text-sm font-black text-[#0d6100] transition-all hover:scale-105"
-              >
+              <p className="max-w-sm text-sm text-[#abaca5]">Elevate your game with priority bookings and professional perks.</p>
+              <button type="button" className="font-headline rounded-lg bg-[#8eff71] px-6 py-2 text-sm font-black text-[#0d6100] transition-all hover:scale-105">
                 Join The Club
               </button>
             </div>
@@ -314,8 +248,7 @@ export default function FieldListPage() {
             <div className="flex w-full items-center gap-4 xl:w-auto">
               <div>
                 <h1 className="font-headline whitespace-nowrap text-4xl font-black tracking-tight">
-                  Showing {displayFields.length}{' '}
-                  <span className="italic text-[#8eff71]">Fields</span>
+                  Showing {displayFields.length} <span className="italic text-[#8eff71]">Fields</span>
                 </h1>
                 {searchText.trim() ? (
                   <div className="mt-1 text-xs text-[#abaca5]">
@@ -327,9 +260,7 @@ export default function FieldListPage() {
 
             {/* Search Bar */}
             <div className="group relative w-full max-w-2xl">
-              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#abaca5] transition-colors group-focus-within:text-[#8eff71]">
-                search
-              </span>
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#abaca5] transition-colors group-focus-within:text-[#8eff71]">search</span>
               <input
                 type="text"
                 value={searchText}
@@ -403,94 +334,9 @@ export default function FieldListPage() {
                 <div className="mt-2 text-sm text-[#abaca5]">Try another keyword (partial search works).</div>
               </div>
             ) : (
-              displayFields.map((f) => {
-                const wished = wishlistIds.has(f.id);
-
-                return (
-                  <div
-                    key={f.id}
-                    className="group flex h-full flex-col overflow-hidden rounded-xl bg-[#181a16] shadow-[0_0_20px_rgba(0,0,0,0.3)] transition-all duration-300 hover:scale-[1.02]"
-                  >
-                    <div className="relative h-56 flex-shrink-0 overflow-hidden">
-                      <img
-                        alt={f.imageAlt}
-                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                        src={f.image}
-                        loading="lazy"
-                      />
-
-                      <button
-                        type="button"
-                        onClick={() => toggleWishlist(f)}
-                        aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'}
-                        aria-pressed={wished}
-                        className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#0d0f0b]/70 backdrop-blur-md transition-transform hover:scale-105"
-                      >
-                        <span
-                          className={`material-symbols-outlined text-[20px] leading-none ${
-                            wished ? 'fill-icon text-[#ff4d6d]' : 'text-[#fdfdf6]/90'
-                          }`}
-                        >
-                          favorite
-                        </span>
-                      </button>
-
-                      <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-[#0d0f0b]/80 px-3 py-1 backdrop-blur-md">
-                        <span className="material-symbols-outlined fill-icon text-xs text-[#8eff71]">star</span>
-                        <span className="font-headline text-xs font-bold">{f.rating}</span>
-                      </div>
-
-                      <div
-                        className={
-                          f.sizeTone === 'tertiary'
-                            ? 'absolute bottom-4 right-4 rounded-lg bg-[#88f6ff] px-3 py-1'
-                            : 'absolute bottom-4 right-4 rounded-lg bg-[#8eff71] px-3 py-1'
-                        }
-                      >
-                        <span
-                          className={
-                            f.sizeTone === 'tertiary'
-                              ? 'font-headline text-xs font-black text-[#003f43]'
-                              : 'font-headline text-xs font-black text-[#0d6100]'
-                          }
-                        >
-                          {f.size}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-1 flex-col gap-4 p-5">
-                      <div className="h-16">
-                        <h3 className="line-clamp-2 font-headline text-xl font-extrabold transition-colors group-hover:text-[#8eff71]">
-                          {f.name}
-                        </h3>
-                        <div className="mt-1 flex items-center gap-1 text-[#abaca5]">
-                          <span className="material-symbols-outlined text-sm">location_on</span>
-                          <span className="line-clamp-1 text-xs font-medium">{f.address}</span>
-                        </div>
-                      </div>
-
-                      <div className="mt-auto flex items-end justify-between">
-                        <div>
-                          <span className="font-headline block text-[10px] font-bold uppercase text-[#88f6ff]">
-                            Price per hour
-                          </span>
-                          <span className="font-headline text-2xl font-black tracking-tighter text-[#8eff71]">
-                            {f.price}
-                          </span>
-                        </div>
-
-                        <button
-                          type="button"
-                          className="font-headline rounded-lg bg-[#242721] px-4 py-2 text-xs font-bold transition-all hover:bg-[#8eff71] hover:text-[#0d6100]"
-                        >
-                          View Details
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
+              displayFields.map((f) => (
+                <FieldCard key={f.id} field={f} wished={wishlistIds.has(f.id)} onToggleWishlist={toggleWishlist} />
+              ))
             )}
           </div>
 
@@ -504,10 +350,7 @@ export default function FieldListPage() {
               <span className="material-symbols-outlined">chevron_left</span>
             </button>
 
-            <button
-              type="button"
-              className="font-headline flex h-10 w-10 items-center justify-center rounded-lg bg-[#8eff71] text-sm font-bold text-[#0d6100]"
-            >
+            <button type="button" className="font-headline flex h-10 w-10 items-center justify-center rounded-lg bg-[#8eff71] text-sm font-bold text-[#0d6100]">
               1
             </button>
             <button

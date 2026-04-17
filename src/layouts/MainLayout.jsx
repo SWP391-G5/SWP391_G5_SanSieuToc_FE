@@ -160,6 +160,7 @@ export default function MainLayout() {
   const isHome = pathname === '/';
   const isFields = pathname.startsWith('/fields');
   const isWishlist = pathname.startsWith('/wishlist');
+  const isCommunity = pathname.startsWith('/community');
 
   const navItemClass = (active) =>
     active
@@ -205,8 +206,11 @@ export default function MainLayout() {
             </button>
             <button
               type="button"
-              onClick={() => scrollToId('community')}
-              className="text-[#fdfdf6]/70 transition-colors duration-300 hover:text-[#8eff71]"
+              onClick={() => {
+                navigate('/community');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className={navItemClass(isCommunity)}
             >
               Community
             </button>
@@ -282,7 +286,14 @@ export default function MainLayout() {
                   </button>
                 </li>
                 <li>
-                  <button type="button" className="hover:text-[#8eff71]" onClick={() => scrollToId('community')}>
+                  <button
+                    type="button"
+                    className="hover:text-[#8eff71]"
+                    onClick={() => {
+                      navigate('/community');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
                     Community
                   </button>
                 </li>

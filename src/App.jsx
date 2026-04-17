@@ -3,9 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import AuthPage from './pages/auth/AuthPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import MainLayout from './layouts/MainLayout';
-import FieldListPage from './pages/FieldListPage';
-import HomePage from './pages/HomePage';
-import WishlistPage from './pages/WishlistPage';
+import FieldListPage from './pages/Fields/FieldListPage';
+import HomePage from './pages/Home/HomePage';
+import WishlistPage from './pages/Wishlist/WishlistPage';
+import CommunityPage from './pages/Community/CommunityPage';
 import NotFoundPage from './pages/NotFoundPage';
 import UserProfilePage from './pages/UserProfilePage';
 
@@ -25,6 +26,7 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="fields" element={<FieldListPage />} />
           <Route path="wishlist" element={<WishlistPage />} />
+          <Route path="community" element={<CommunityPage />} />
           <Route path="auth" element={<AuthPage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
           <Route
