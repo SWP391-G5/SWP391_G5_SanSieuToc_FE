@@ -23,8 +23,7 @@ export default function ServicePage() {
   const [showHistory, setShowHistory] = useState(false);
   const [servicesList, setServicesList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [voucherCode, setVoucherCode] = useState('');
-  const [voucherApplied, setVoucherApplied] = useState(null);
+  
   const itemsPerPage = 5;
 
   const fetchBookings = async () => {
@@ -225,36 +224,6 @@ export default function ServicePage() {
           {showHistory ? '← Back to Book' : '📋 View History'}
         </button>
       </div>
-
-      {!showHistory && (
-        <div className="rounded-xl bg-[#181a16] p-4 mb-6">
-          <div className="flex gap-3">
-            <input
-              type="text"
-              placeholder="Enter voucher code"
-              value={voucherCode}
-              onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
-              className="flex-1 px-4 py-2 rounded-lg bg-[#242721] border border-[#474944] text-[#fdfdf6] font-headline text-sm placeholder-[#abaca5]"
-            />
-            <button
-              onClick={() => {
-                if (!voucherCode) {
-                  alert('Please enter a voucher code');
-                  return;
-                }
-                // TODO: Call API to validate voucher
-                setVoucherApplied(voucherCode);
-              }}
-              className="px-4 py-2 rounded-lg font-headline text-sm font-bold bg-[#8eff71] text-[#0d6100]"
-            >
-              Apply
-            </button>
-          </div>
-          {voucherApplied && (
-            <p className="mt-2 text-sm text-[#8eff71]">✓ Voucher {voucherApplied} applied!</p>
-          )}
-        </div>
-      )}
 
       {showHistory ? (
         <div className="rounded-xl bg-[#181a16] p-6">

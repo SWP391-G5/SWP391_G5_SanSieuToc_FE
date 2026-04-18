@@ -42,9 +42,9 @@ function CalendarPicker({ selectedDate, onSelectDate }) {
   };
 
   const isPastDate = (day) => {
-    const date = new Date(year, month, day);
-    const todayStr = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    return date < todayStr;
+    const dateTs = new Date(year, month, day).setHours(0, 0, 0, 0);
+    const todayTs = new Date(today.getFullYear(), today.getMonth(), today.getDate()).setHours(0, 0, 0, 0);
+    return dateTs < todayTs;
   };
 
   const isSelected = (day) => {
@@ -61,7 +61,10 @@ function CalendarPicker({ selectedDate, onSelectDate }) {
   const handleSelectDate = (day) => {
     if (isPastDate(day)) return;
     const date = new Date(year, month, day);
-    onSelectDate(date.toISOString().split('T')[0]);
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    onSelectDate(`${y}-${m}-${d}`);
   };
 
   const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -143,6 +146,18 @@ export default function FieldDetailPage() {
   const [bookedSlots, setBookedSlots] = useState([]);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+
+  const isSlotPast = (slot) => {
+    const startHour = parseInt(slot.split(':')[0], 10);
+    if (selectedDate === todayStr) {
+      const currentHour = now.getHours();
+      if (currentHour > startHour) return true;
+    }
+    return false;
+  };
+
   useEffect(() => {
     const fetchField = async () => {
       try {
@@ -179,6 +194,7 @@ export default function FieldDetailPage() {
 
   const toggleSlot = (slot) => {
     if (bookedSlots.includes(slot)) return;
+    if (isSlotPast(slot)) return;
     setSelectedSlots((prev) =>
       prev.includes(slot) ? prev.filter((s) => s !== slot) : [...prev, slot]
     );
@@ -372,14 +388,17 @@ export default function FieldDetailPage() {
                     {timeSlots.map((slot) => {
                       const isBooked = bookedSlots.includes(slot);
                       const isSelected = selectedSlots.includes(slot);
+                      const isPast = isSlotPast(slot);
                       return (
                         <button
                           key={slot}
                           type="button"
                           onClick={() => toggleSlot(slot)}
-                          disabled={isBooked}
+                          disabled={isBooked || isPast}
                           className={
-                            isBooked
+                            isPast
+                              ? 'font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through'
+                              : isBooked
                               ? 'font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through'
                               : isSelected
                               ? 'font-headline rounded-lg bg-[#8eff71] px-1 py-2 text-[10px] font-bold text-[#0d6100]'
