@@ -207,7 +207,7 @@ export default function AuthPage() {
       setResendSeconds(60);
       setMode('verify');
       // Do not show "đăng ký chưa thành công" here.
-      // Only show that warning when user explicitly goes back to Sign Up.
+      // Only show that warning when user explicitly goes back to Register.
     } catch (err) {
       const msg = err?.response?.data?.message || 'Đăng ký thất bại.';
       setError(msg);
@@ -397,7 +397,7 @@ export default function AuthPage() {
                     : 'text-white/70 hover:text-white'
                 }`}
               >
-                Sign Up
+                Register
               </button>
             </div>
 
@@ -511,7 +511,7 @@ export default function AuthPage() {
                 <>
                   <div className="mb-8">
                     <div className="text-center">
-                      <h2 className="text-lg font-extrabold uppercase tracking-widest text-primary">Customer Sign Up</h2>
+                      <h2 className="text-lg font-extrabold uppercase tracking-widest text-primary">Customer Register</h2>
                       <p className="text-xs text-white/70 mt-2">Hiện tại hệ thống chỉ cho phép đăng ký tài khoản Customer.</p>
                     </div>
                   </div>
