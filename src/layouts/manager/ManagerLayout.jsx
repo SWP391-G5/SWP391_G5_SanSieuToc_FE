@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { key: 'wallet', label: 'Wallet', to: '/manager/wallet', icon: 'account_balance_wallet' },
   { key: 'privacy', label: 'Privacy', to: '/manager/privacy', icon: 'shield' },
   { key: 'feedback', label: 'Feedback', to: '/manager/feedback', icon: 'rate_review' },
+  { key: 'profile', label: 'Profile', to: '/manager/profile', icon: 'account_circle' },
 ];
 
 /**

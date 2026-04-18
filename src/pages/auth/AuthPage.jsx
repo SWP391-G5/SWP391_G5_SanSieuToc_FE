@@ -66,14 +66,17 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (!auth.isAuthenticated) return;
-    const role = String(auth.user?.role || '').trim();
-
-    if (role === 'Admin') {
+    const roleKey = String(auth.user?.role || '').trim().toLowerCase();
+    if (roleKey === 'admin') {
       navigate('/admin/managers', { replace: true });
       return;
     }
-    if (role === 'Manager') {
-      navigate('/manager', { replace: true });
+    if (roleKey === 'manager') {
+      navigate('/manager/statistics', { replace: true });
+      return;
+    }
+    if (roleKey === 'owner') {
+      navigate('/owner/fields', { replace: true });
       return;
     }
     if (role === 'Owner') {

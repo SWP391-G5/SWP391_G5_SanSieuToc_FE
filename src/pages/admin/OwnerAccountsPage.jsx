@@ -83,14 +83,18 @@ export default function OwnerAccountsPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('All');
 
-  const [form, setForm] = useState({ username: '', email: '', name: '', phone: '', address: '' });
+  const [managers, setManagers] = useState([]);
+  const [managersLoading, setManagersLoading] = useState(false);
+
+  const [form, setForm] = useState({ managerID: '', username: '', email: '', name: '', phone: '', address: '' });
   const [submitting, setSubmitting] = useState(false);
 
   const canSubmit = useMemo(() => {
+    const managerID = String(form.managerID || '').trim();
     const username = normalizeUsername(form.username);
     const email = normalizeEmail(form.email);
     const name = String(form.name || '').trim();
-    return isValidUsername(username) && isValidEmail(email) && isValidName(name);
+    return !!managerID && isValidUsername(username) && isValidEmail(email) && isValidName(name);
   }, [form]);
 
   const availableStatuses = useMemo(() => {
@@ -126,13 +130,32 @@ export default function OwnerAccountsPage() {
     }
   };
 
+  const loadManagers = async () => {
+    setManagersLoading(true);
+    try {
+      const data = await adminService.listManagers();
+      setManagers(data?.items || []);
+    } catch (e) {
+      notifyError(e?.response?.data?.message || 'Tải danh sách Manager thất bại.');
+    } finally {
+      setManagersLoading(false);
+    }
+  };
+
   useEffect(() => {
     load();
+    loadManagers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onCreate = async (e) => {
     e.preventDefault();
+
+    const managerID = String(form.managerID || '').trim();
+    if (!managerID) {
+      notifyError('Vui lòng chọn Manager phụ trách Owner này.');
+      return;
+    }
 
     const username = normalizeUsername(form.username);
     const email = normalizeEmail(form.email);
@@ -146,6 +169,7 @@ export default function OwnerAccountsPage() {
     setSubmitting(true);
     try {
       await adminService.createOwner({
+        managerID,
         username,
         email,
         name,
@@ -153,7 +177,7 @@ export default function OwnerAccountsPage() {
         address: String(form.address || ''),
       });
       notifySuccess('Đã tạo Owner và gửi email tài khoản.');
-      setForm({ username: '', email: '', name: '', phone: '', address: '' });
+      setForm({ managerID: '', username: '', email: '', name: '', phone: '', address: '' });
       await load();
     } catch (e2) {
       notifyError(e2?.response?.data?.message || 'Tạo Owner thất bại.');
@@ -246,6 +270,21 @@ export default function OwnerAccountsPage() {
             </div>
 
             <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label className="text-xs text-[#fdfdf6]/60">Manager (required)</label>
+                <select
+                  value={form.managerID}
+                  onChange={(e) => setForm((p) => ({ ...p, managerID: e.target.value }))}
+                  className="mt-1 w-full rounded-md border border-white/10 bg-[#0d0f0b] px-3 py-2 text-sm outline-none focus:border-[#8eff71]/40"
+                >
+                  <option value="">{managersLoading ? 'Loading managers...' : 'Select a manager'}</option>
+                  {(managers || []).map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name || m.username} ({m.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className="text-xs text-[#fdfdf6]/60">Username</label>
                 <input
@@ -297,7 +336,7 @@ export default function OwnerAccountsPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setForm({ username: '', email: '', name: '', phone: '', address: '' });
+                  setForm({ managerID: '', username: '', email: '', name: '', phone: '', address: '' });
                 }}
                 className="rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm text-[#fdfdf6]/80 hover:text-[#8eff71]"
               >

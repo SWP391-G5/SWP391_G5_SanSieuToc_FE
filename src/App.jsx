@@ -3,12 +3,18 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import AuthPage from './pages/auth/AuthPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import MainLayout from './layouts/MainLayout';
-import FieldListPage from './pages/FieldListPage';
-import AdminLayout from './layouts/AdminLayout';
-import HomePage from './pages/HomePage';
-import WishlistPage from './pages/WishlistPage';
+import FieldListPage from './pages/Fields/FieldListPage';
+import HomePage from './pages/Home/HomePage';
+import WishlistPage from './pages/Wishlist/WishlistPage';
+import CommunityPage from './pages/Community/CommunityPage';
 import NotFoundPage from './pages/NotFoundPage';
 import UserProfilePage from './pages/UserProfilePage';
+import TopUpPage from './pages/Payment/TopUpPage';
+import CheckoutPage from './pages/Payment/CheckoutPage';
+import FieldDetailPage from './pages/Fields/FieldDetailPage';
+import BookingConfirmPage from './pages/Payment/BookingConfirmPage';
+import ServicePage from './pages/Services/ServicePage';
+import AdminLayout from './layouts/AdminLayout';
 import ManagerAccountsPage from './pages/admin/ManagerAccountsPage';
 import OwnerAccountsPage from './pages/admin/OwnerAccountsPage';
 import CustomerAccountsPage from './pages/admin/CustomerAccountsPage';
@@ -47,12 +53,15 @@ function RequireAdmin({ children }) {
 
 function App() {
   return (
-    <Router>
+    <Router basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<HomePage />} />
           <Route path="fields" element={<FieldListPage />} />
+          <Route path="fields/:id" element={<FieldDetailPage />} />
+          <Route path="booking-confirm" element={<BookingConfirmPage />} />
           <Route path="wishlist" element={<WishlistPage />} />
+          <Route path="community" element={<CommunityPage />} />
           <Route path="auth" element={<AuthPage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
           <Route
@@ -60,6 +69,30 @@ function App() {
             element={
               <RequireAuth>
                 <UserProfilePage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="top-up"
+            element={
+              <RequireAuth>
+                <TopUpPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="checkout"
+            element={
+              <RequireAuth>
+                <CheckoutPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="services"
+            element={
+              <RequireAuth>
+                <ServicePage />
               </RequireAuth>
             }
           />
@@ -77,6 +110,7 @@ function App() {
             <Route path="owners" element={<OwnerAccountsPage />} />
             <Route path="customers" element={<CustomerAccountsPage />} />
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="profile" element={<UserProfilePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
 
@@ -114,6 +148,7 @@ function App() {
           <Route path="wallet" element={<ManagerWalletPage />} />
           <Route path="privacy" element={<ManagerPrivacyPage />} />
           <Route path="feedback" element={<ManagerFeedbackPage />} />
+          <Route path="profile" element={<UserProfilePage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
