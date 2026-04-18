@@ -36,6 +36,14 @@ const adminService = {
     const res = await axios.patch(`/api/admin/accounts/owners/${id}/deactivate`);
     return res.data;
   },
+  requestDeleteOwner: async (id) => {
+    const res = await axios.post(`/api/admin/accounts/owners/${id}/request-delete`);
+    return res.data;
+  },
+  restoreOwner: async (id) => {
+    const res = await axios.patch(`/api/admin/accounts/owners/${id}/restore`);
+    return res.data;
+  },
 
   // Customers (UserAccount)
   listCustomers: async () => {

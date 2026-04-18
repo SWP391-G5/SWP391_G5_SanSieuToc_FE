@@ -437,6 +437,12 @@ export default function ManagerAccountsPage() {
                 {items.filter((x) => x.status === 'InActive').length}
               </div>
             </div>
+            <div className="rounded-lg bg-[#0d0f0b] p-3">
+              <div className="text-[#fdfdf6]/50">Deleted</div>
+              <div className="mt-1 text-lg font-black text-[#fdfdf6]/60">
+                {items.filter((x) => x.status === 'Deleted').length}
+              </div>
+            </div>
           </div>
         </div>
 

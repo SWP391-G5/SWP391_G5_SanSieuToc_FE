@@ -787,73 +787,71 @@ export default function UserProfilePage() {
               </section>
 
               {!isAdminAccount && (
-                <>
-                  <section className="profile-terminal-card">
-                    <div className="profile-terminal-card-title">
-                      <span className="profile-terminal-card-icon">💳</span>
-                      PITCH CREDIT WALLET
+                <section className="profile-terminal-card">
+                  <div className="profile-terminal-card-title">
+                    <span className="profile-terminal-card-icon">💳</span>
+                    PITCH CREDIT WALLET
+                  </div>
+
+                  <div className="profile-terminal-wallet">
+                    <div className="profile-terminal-wallet-left">
+                      <div className="profile-terminal-wallet-label">AVAILABLE BALANCE</div>
+                      <div className="profile-terminal-wallet-balance">{formatVnd(walletBalance)}đ</div>
                     </div>
-
-                    <div className="profile-terminal-wallet">
-                      <div className="profile-terminal-wallet-left">
-                        <div className="profile-terminal-wallet-label">AVAILABLE BALANCE</div>
-                        <div className="profile-terminal-wallet-balance">{formatVnd(walletBalance)}đ</div>
-                      </div>
-                      <button type="button" className="profile-terminal-btn" onClick={onTopUp}>
-                        TOP UP
-                      </button>
-                    </div>
-                  </section>
-
-                  <section className="profile-terminal-card">
-                    <div className="profile-terminal-card-title">
-                      <span className="profile-terminal-card-icon">🛡️</span>
-                      SECURITY PROTOCOL
-                    </div>
-
-                    <form className="profile-terminal-form" onSubmit={onChangePassword}>
-                      <div className="profile-terminal-field profile-terminal-field-wide">
-                        <label className="profile-terminal-label">CURRENT PASSWORD</label>
-                        <input
-                          className="profile-terminal-input"
-                          type="password"
-                          value={passwordForm.currentPassword}
-                          onChange={(e) => setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))}
-                          placeholder="••••••••"
-                        />
-                      </div>
-
-                      <div className="profile-terminal-field">
-                        <label className="profile-terminal-label">NEW PASSWORD</label>
-                        <input
-                          className="profile-terminal-input"
-                          type="password"
-                          value={passwordForm.newPassword}
-                          onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))}
-                          placeholder="••••••••"
-                        />
-                      </div>
-
-                      <div className="profile-terminal-field">
-                        <label className="profile-terminal-label">CONFIRM NEW PASSWORD</label>
-                        <input
-                          className="profile-terminal-input"
-                          type="password"
-                          value={passwordForm.confirmNewPassword}
-                          onChange={(e) => setPasswordForm((p) => ({ ...p, confirmNewPassword: e.target.value }))}
-                          placeholder="••••••••"
-                        />
-                      </div>
-
-                      <div className="profile-terminal-actions">
-                        <button type="submit" className="profile-terminal-btn primary" disabled={changingPassword}>
-                          {changingPassword ? 'UPDATING...' : 'UPDATE CREDENTIALS'}
-                        </button>
-                      </div>
-                    </form>
-                  </section>
-                </>
+                    <button type="button" className="profile-terminal-btn" onClick={onTopUp}>
+                      TOP UP
+                    </button>
+                  </div>
+                </section>
               )}
+
+              <section className="profile-terminal-card">
+                <div className="profile-terminal-card-title">
+                  <span className="profile-terminal-card-icon">🛡️</span>
+                  SECURITY PROTOCOL
+                </div>
+
+                <form className="profile-terminal-form" onSubmit={onChangePassword}>
+                  <div className="profile-terminal-field profile-terminal-field-wide">
+                    <label className="profile-terminal-label">CURRENT PASSWORD</label>
+                    <input
+                      className="profile-terminal-input"
+                      type="password"
+                      value={passwordForm.currentPassword}
+                      onChange={(e) => setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))}
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <div className="profile-terminal-field">
+                    <label className="profile-terminal-label">NEW PASSWORD</label>
+                    <input
+                      className="profile-terminal-input"
+                      type="password"
+                      value={passwordForm.newPassword}
+                      onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))}
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <div className="profile-terminal-field">
+                    <label className="profile-terminal-label">CONFIRM NEW PASSWORD</label>
+                    <input
+                      className="profile-terminal-input"
+                      type="password"
+                      value={passwordForm.confirmNewPassword}
+                      onChange={(e) => setPasswordForm((p) => ({ ...p, confirmNewPassword: e.target.value }))}
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <div className="profile-terminal-actions">
+                    <button type="submit" className="profile-terminal-btn primary" disabled={changingPassword}>
+                      {changingPassword ? 'UPDATING...' : 'UPDATE CREDENTIALS'}
+                    </button>
+                  </div>
+                </form>
+              </section>
             </div>
             <div className="profile-terminal-right">
               <section className="profile-terminal-card">

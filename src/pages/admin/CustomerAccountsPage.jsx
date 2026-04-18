@@ -75,7 +75,7 @@ export default function CustomerAccountsPage() {
   const [statusFilter, setStatusFilter] = useState('All');
 
   const availableStatuses = useMemo(() => {
-    const set = new Set(['Active', 'Banned']);
+    const set = new Set(['Active', 'InActive', 'Banned']);
     for (const it of items || []) {
       const s = String(it.status || '').trim();
       if (s) set.add(s);
@@ -284,6 +284,12 @@ export default function CustomerAccountsPage() {
               <div className="text-[#fdfdf6]/50">Active</div>
               <div className="mt-1 text-lg font-black text-[#8eff71]">
                 {items.filter((x) => x.status === 'Active').length}
+              </div>
+            </div>
+            <div className="rounded-lg bg-[#0d0f0b] p-3">
+              <div className="text-[#fdfdf6]/50">Inactive</div>
+              <div className="mt-1 text-lg font-black text-yellow-200">
+                {items.filter((x) => x.status === 'InActive').length}
               </div>
             </div>
             <div className="rounded-lg bg-[#0d0f0b] p-3">

@@ -103,7 +103,7 @@ export default function OwnerAccountsPage() {
   }, [form]);
 
   const availableStatuses = useMemo(() => {
-    const set = new Set(['Active', 'InActive']);
+    const set = new Set(['Active', 'InActive', 'Deleted']);
     for (const it of items || []) {
       const s = String(it.status || '').trim();
       if (s) set.add(s);
@@ -191,11 +191,22 @@ export default function OwnerAccountsPage() {
     }
   };
 
-  const onDeactivate = async (id) => {
+  const onRequestDelete = async (id) => {
     if (!id) return;
     try {
-      await adminService.deactivateOwner(id);
-      notifySuccess('Đã vô hiệu hóa tài khoản.');
+      const data = await adminService.requestDeleteOwner(id);
+      notifySuccess(data?.message || 'Đã gửi email. Tài khoản sẽ được xóa sau 3 ngày.');
+      await load();
+    } catch (e) {
+      notifyError(e?.response?.data?.message || 'Thao tác thất bại.');
+    }
+  };
+
+  const onRestore = async (id) => {
+    if (!id) return;
+    try {
+      const data = await adminService.restoreOwner(id);
+      notifySuccess(data?.message || 'Đã khôi phục tài khoản.');
       await load();
     } catch (e) {
       notifyError(e?.response?.data?.message || 'Thao tác thất bại.');
@@ -417,11 +428,29 @@ export default function OwnerAccountsPage() {
                       <td className="px-5 py-4">
                         <StatusBadge status={it.status} />
                       </td>
-                      <td className="px-5 py-4 text-[#fdfdf6]/70">{formatDate(it.createdAt)}</td>
+                      <td className="px-5 py-4 text-[#fdfdf6]/70">{formatDate(it.deletion?.requestedAt || it.createdAt)}</td>
                       <td className="px-5 py-4 text-right">
+                        {it.status === 'Deleted' ? (
+                          <button
+                            type="button"
+                            onClick={() => onRestore(it.id)}
+                            className="rounded-md bg-white/10 px-3 py-2 text-xs text-[#fdfdf6]/80 hover:text-[#8eff71]"
+                          >
+                            Restore
+                          </button>
+                        ) : it.deletion?.scheduledAt ? (
+                          <button
+                            type="button"
+                            onClick={() => onRestore(it.id)}
+                            className="rounded-md bg-white/10 px-3 py-2 text-xs text-[#fdfdf6]/80 hover:text-[#8eff71]"
+                            title={`Scheduled at ${formatDate(it.deletion?.scheduledAt)}`}
+                          >
+                            Cancel delete
+                          </button>
+                        ) : (
                         <button
                           type="button"
-                          onClick={() => onDeactivate(it.id)}
+                          onClick={() => onRequestDelete(it.id)}
                           disabled={it.status !== 'Active'}
                           className={
                             it.status !== 'Active'
@@ -431,6 +460,7 @@ export default function OwnerAccountsPage() {
                         >
                           Delete
                         </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -467,6 +497,12 @@ export default function OwnerAccountsPage() {
               <div className="text-[#fdfdf6]/50">Inactive</div>
               <div className="mt-1 text-lg font-black text-yellow-200">
                 {items.filter((x) => x.status === 'InActive').length}
+              </div>
+            </div>
+            <div className="rounded-lg bg-[#0d0f0b] p-3">
+              <div className="text-[#fdfdf6]/50">Deleted</div>
+              <div className="mt-1 text-lg font-black text-[#fdfdf6]/60">
+                {items.filter((x) => x.status === 'Deleted').length}
               </div>
             </div>
           </div>
