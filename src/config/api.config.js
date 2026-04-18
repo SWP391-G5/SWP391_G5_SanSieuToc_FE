@@ -39,6 +39,7 @@ export const API_CONFIG = {
     },
     SERVICE: {
       GET_BY_BOOKING_DETAIL: '/api/services/booking-detail',
+      GET_MY_HISTORY: '/api/services/my',
       BOOK: '/api/services',
     },
   },

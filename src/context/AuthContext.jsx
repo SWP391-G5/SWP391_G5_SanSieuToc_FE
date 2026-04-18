@@ -30,7 +30,7 @@ export function AuthProvider({ children }) {
     return null;
   });
 
-  // Khi login state thay đổi (nhưng navigate thường xảy ra trước khi useEffect này chạy)
+  // Khi login state thay đổi
   useEffect(() => {
     if (accessToken) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ accessToken, user }));
@@ -40,6 +40,9 @@ export function AuthProvider({ children }) {
       setAuthToken(null);
     }
   }, [accessToken, user]);
+
+  // Track login success for navigation
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
 
   const value = useMemo(
     () => ({

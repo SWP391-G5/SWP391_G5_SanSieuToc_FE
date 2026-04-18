@@ -3,15 +3,16 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import AuthPage from './pages/auth/AuthPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import MainLayout from './layouts/MainLayout';
-import FieldListPage from './pages/Fields/FieldListPage';
-import HomePage from './pages/Home/HomePage';
-import WishlistPage from './pages/Wishlist/WishlistPage';
-import CommunityPage from './pages/Community/CommunityPage';
+import FieldListPage from './pages/Customer/Fields/FieldListPage';
+import HomePage from './pages/Customer/Home/HomePage';
+import WishlistPage from './pages/Customer/Wishlist/WishlistPage';
+import CommunityPage from './pages/Customer/Community/CommunityPage';
+import CommunityPostDetailPage from './pages/Customer/Community/CommunityPostDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
 import UserProfilePage from './pages/UserProfilePage';
 import TopUpPage from './pages/Payment/TopUpPage';
 import CheckoutPage from './pages/Payment/CheckoutPage';
-import FieldDetailPage from './pages/Fields/FieldDetailPage';
+import FieldDetailPage from './pages/Customer/Fields/FieldDetailPage';
 import BookingConfirmPage from './pages/Payment/BookingConfirmPage';
 import ServicePage from './pages/Services/ServicePage';
 import AdminLayout from './layouts/AdminLayout';
@@ -62,6 +63,7 @@ function App() {
           <Route path="booking-confirm" element={<BookingConfirmPage />} />
           <Route path="wishlist" element={<WishlistPage />} />
           <Route path="community" element={<CommunityPage />} />
+          <Route path="community/:id" element={<CommunityPostDetailPage />} />
           <Route path="auth" element={<AuthPage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
           <Route
