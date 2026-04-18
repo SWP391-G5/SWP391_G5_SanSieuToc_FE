@@ -45,6 +45,25 @@ export default function AuthPage() {
   const [showSignupConfirmPassword, setShowSignupConfirmPassword] = useState(false);
 
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+
+  useEffect(() => {
+    if (!auth.isAuthenticated) return;
+    const roleKey = String(auth.user?.role || '').trim().toLowerCase();
+    if (roleKey === 'admin') {
+      navigate('/admin/managers', { replace: true });
+      return;
+    }
+    if (roleKey === 'manager') {
+      navigate('/manager/statistics', { replace: true });
+      return;
+    }
+    if (roleKey === 'owner') {
+      navigate('/owner/fields', { replace: true });
+      return;
+    }
+    navigate('/', { replace: true });
+  }, [auth.isAuthenticated, auth.user, navigate]);
+
   const [signupForm, setSignupForm] = useState({
     name: '',
     email: '',
@@ -79,12 +98,6 @@ export default function AuthPage() {
       navigate('/owner/fields', { replace: true });
       return;
     }
-    if (role === 'Owner') {
-      navigate('/owner/fields', { replace: true });
-      return;
-    }
-    
-    // Luồng mặc định cho Customer
     navigate('/', { replace: true });
   }, [auth.isAuthenticated, auth.user, navigate]);
 
@@ -114,6 +127,9 @@ export default function AuthPage() {
         await auth.loginUser(payload);
       }
       notifySuccess('Đăng nhập thành công.');
+      const dest = isAdminGroup(selectedRole) ? '/admin' : '/';
+      setLoading(false);
+      navigate(dest, { replace: true });
     } catch (err) {
       const status = err?.response?.status;
       const data = err?.response?.data;

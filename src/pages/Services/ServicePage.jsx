@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import bookingService from '../../services/bookingService';
 import serviceService from '../../services/serviceService';
+import profileService from '../../services/profileService';
 import { setAuthToken } from '../../services/axios';
 import { Modal } from '../../components/Modal';
 
@@ -17,6 +18,13 @@ export default function ServicePage() {
   const [loadingServices, setLoadingServices] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [servicesList, setServicesList] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  const itemsPerPage = 5;
 
   const fetchBookings = async () => {
     try {
@@ -25,8 +33,35 @@ export default function ServicePage() {
       }
       const data = await bookingService.getMyBookings();
       setBookings(data.bookings || []);
+      
+      const allEntries = [];
+      
+      for (const b of (data.bookings || [])) {
+        for (const dateGroup of (b.allDates || [])) {
+          for (const slot of (dateGroup.slots || [])) {
+            allEntries.push({
+              id: `${b.id}_${dateGroup.date}_${slot.start}`,
+              bookingId: b.id,
+              fieldName: b.fieldName,
+              date: dateGroup.date,
+              timeSlots: `${slot.start} - ${slot.end}`,
+              status: b.status,
+              services: b.services || [],
+              totalPrice: b.servicesTotal || 0,
+              createdAt: b.createdAt
+            });
+          }
+        }
+      }
+      
+      // Filter and sort by newest
+      const withServices = allEntries
+        .filter(e => e.services && e.services.length > 0)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      setServicesList(withServices);
     } catch (err) {
-      console.error('Failed to fetch bookings:', err);
+      console.error('Failed to fetch:', err);
     } finally {
       setLoading(false);
     }
@@ -40,6 +75,15 @@ export default function ServicePage() {
     setLoadingServices(true);
     setShowModal(true);
     
+    try {
+      const profileRes = await profileService.getMyProfile();
+      const profileData = profileRes?.data || profileRes;
+      setWalletBalance(Number(profileData?.wallet?.balance || 0));
+    } catch (err) {
+      console.error('Failed to fetch wallet:', err);
+      setWalletBalance(0);
+    }
+
     try {
       const data = await serviceService.getServicesByBookingDetail(slot.id);
       setAvailableServices(data.services || []);
@@ -89,6 +133,11 @@ export default function ServicePage() {
       return;
     }
 
+    if (walletBalance < totalServicesPrice) {
+      alert('Insufficient wallet balance. Please top up your wallet.');
+      return;
+    }
+
     setSubmitting(true);
     try {
       if (auth.accessToken) {
@@ -97,10 +146,16 @@ export default function ServicePage() {
       await serviceService.bookServices({
         bookingDetailId: selectedSlot.id,
         services: selectedServices,
+        paymentMethod: 'wallet',
+        totalPrice: totalServicesPrice,
       });
-      alert('Services booked successfully!');
       setShowModal(false);
+      setShowSuccess(true);
       fetchBookings();
+      setTimeout(() => {
+        setShowSuccess(false);
+        setShowHistory(true);
+      }, 2000);
     } catch (err) {
       console.error('Failed to book services:', err);
       alert('Failed to book services. Please try again.');
@@ -110,6 +165,7 @@ export default function ServicePage() {
   };
 
   const totalServicesPrice = selectedServices.reduce((sum, s) => sum + (s.price * s.quantity), 0);
+  const walletSufficient = walletBalance >= totalServicesPrice;
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
@@ -152,9 +208,97 @@ export default function ServicePage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-8">
-      <h1 className="font-headline text-3xl font-black text-[#fdfdf6] mb-2">Book Services</h1>
-      <p className="font-headline text-[#abaca5] mb-8">Select a booking slot to add services</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="font-headline text-3xl font-black text-[#fdfdf6] mb-2">Services</h1>
+          <p className="font-headline text-[#abaca5]">{showHistory ? 'Your service booking history' : 'Select a booking slot to add services'}</p>
+        </div>
+        <button
+          onClick={() => setShowHistory(!showHistory)}
+          className="px-4 py-2 rounded-lg font-headline text-sm font-bold transition-all"
+          style={{ 
+            background: showHistory ? '#8eff71' : '#242721',
+            color: showHistory ? '#0d6100' : '#abaca5'
+          }}
+        >
+          {showHistory ? '← Back to Book' : '📋 View History'}
+        </button>
+      </div>
 
+      {showHistory ? (
+        <div className="rounded-xl bg-[#181a16] p-6">
+          {servicesList.length === 0 ? (
+            <div className="text-center py-8">
+              <span className="material-symbols-outlined text-5xl text-[#474944]">receipt_long</span>
+              <p className="mt-4 font-headline text-lg text-[#abaca5]">No services booked yet</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {servicesList
+                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                .map((group, idx) => (
+                  <div key={idx} className="rounded-lg bg-[#242721] border border-[#474944] overflow-hidden">
+                    <div className="flex items-center justify-between p-3 bg-[#1a1c18]">
+                      <div>
+                        <p className="font-headline text-sm font-bold text-[#fdfdf6]">{group.fieldName}</p>
+                        <p className="font-headline text-xs text-[#abaca5]">
+                          {new Date(group.date).toLocaleDateString('vi-VN')} | {group.timeSlots}
+                        </p>
+                        <p className="font-headline text-xs text-[#88f6ff]">
+                          Booked: {new Date(group.createdAt).toLocaleString('vi-VN')}
+                        </p>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-xs ${group.status === 'Booked' || group.status === 'Confirmed' ? 'bg-[#8eff71]/20 text-[#8eff71]' : 'bg-[#abaca5]/20 text-[#abaca5]'}`}>
+                        {group.status}
+                      </span>
+                    </div>
+                    <div className="p-3 space-y-1">
+                      {(group.services && group.services.length > 0) ? (
+                        group.services.map((s, sIdx) => (
+                          <div key={sIdx} className="flex justify-between text-sm">
+                            <span className="text-[#fdfdf6]">{s.serviceName}</span>
+                            <span className="text-[#ffc864]">{formatPrice(s.price)} {s.quantity > 1 && `x${s.quantity}`}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-[#abaca5] italic">No services booked</p>
+                      )}
+                    </div>
+                    {group.services && group.services.length > 0 && (
+                      <div className="p-2 bg-[#121410] flex justify-between">
+                        <span className="text-xs text-[#abaca5]">Total</span>
+                        <span className="font-headline text-sm font-bold text-[#8eff71]">{formatPrice(group.totalPrice)}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              
+              {servicesList.length > itemsPerPage && (
+                <div className="flex justify-center items-center gap-4 mt-6">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 rounded bg-[#242721] text-[#abaca5] disabled:opacity-50"
+                  >
+                    ← Prev
+                  </button>
+                  <span className="font-headline text-sm text-[#abaca5]">
+                    Page {currentPage} of {Math.ceil(servicesList.length / itemsPerPage)}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(Math.ceil(servicesList.length / itemsPerPage), p + 1))}
+                    disabled={currentPage >= Math.ceil(servicesList.length / itemsPerPage)}
+                    className="px-3 py-1 rounded bg-[#242721] text-[#abaca5] disabled:opacity-50"
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
       {bookings.length === 0 ? (
         <div className="rounded-xl bg-[#181a16] p-12 text-center">
           <span className="material-symbols-outlined text-6xl text-[#474944]">sports_soccer</span>
@@ -195,18 +339,15 @@ export default function ServicePage() {
                 <h4 className="font-headline text-sm font-bold text-[#88f6ff] mb-3">Available Slots</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                   {booking.allDates?.flatMap(dateObj =>
-                    dateObj.slots.map((slot, idx) => {
-                      const slotId = `${booking.id}-${dateObj.date}-${idx}`;
-                      return {
-                        id: slotId,
-                        date: dateObj.date,
-                        start: slot.start,
-                        end: slot.end,
-                        bookingId: booking.id,
-                        fieldName: booking.fieldName,
-                        status: booking.status,
-                      };
-                    })
+                    dateObj.slots.map((slot, idx) => ({
+                      id: slot.id || `${booking.id}-${dateObj.date}-${idx}`,
+                      date: dateObj.date,
+                      start: slot.start,
+                      end: slot.end,
+                      bookingId: booking.id,
+                      fieldName: booking.fieldName,
+                      status: booking.status,
+                    }))
                   ).filter(slot => isUpcoming(slot.date) && isActive(slot.status)).map((slot) => (
                     <button
                       key={slot.id}
@@ -227,6 +368,8 @@ export default function ServicePage() {
             </div>
           ))}
         </div>
+      )}
+      </>
       )}
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={`Services for ${selectedSlot?.fieldName}`}>
@@ -310,19 +453,45 @@ export default function ServicePage() {
               </div>
 
               {selectedServices.length > 0 && (
-                <div className="rounded-lg bg-[#121410] p-4 border border-[#8eff71]/20">
-                  <div className="flex justify-between items-center">
-                    <span className="font-headline font-bold text-[#fdfdf6]">Total</span>
-                    <span className="font-headline text-xl font-black text-[#8eff71]">
-                      {formatPrice(totalServicesPrice)}
-                    </span>
+                <div className="space-y-3">
+                  <div className="rounded-lg bg-[#121410] p-4 border border-[#8eff71]/20">
+                    <div className="flex justify-between items-center">
+                      <span className="font-headline font-bold text-[#fdfdf6]">Total</span>
+                      <span className="font-headline text-xl font-black text-[#8eff71]">
+                        {formatPrice(totalServicesPrice)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border-2 border-[#8eff71] bg-[#8eff71]/10 p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined text-[#8eff71]">
+                          account_balance_wallet
+                        </span>
+                        <div>
+                          <p className="font-headline text-sm font-bold text-[#8eff71]">
+                            Wallet Balance
+                          </p>
+                          <p className="font-headline text-xs text-[#abaca5]">
+                            Số dư: {formatPrice(walletBalance)}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="material-symbols-outlined text-[#8eff71]">check_circle</span>
+                    </div>
+                    {!walletSufficient && (
+                      <p className="mt-3 font-headline text-xs text-[#ff4d6d]">
+                        Số dư không đủ. Vui lòng nạp thêm tiền.
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
 
               <button
                 onClick={handleBookServices}
-                disabled={selectedServices.length === 0 || submitting}
+                disabled={selectedServices.length === 0 || submitting || !walletSufficient}
                 className="w-full rounded-xl bg-gradient-to-r from-[#8eff71] to-[#2ff801] py-4 font-headline text-sm font-black text-[#0d6100] transition-all hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(142,255,113,0.3)] disabled:scale-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {submitting ? 'Processing...' : 'Book Services'}
@@ -331,6 +500,19 @@ export default function ServicePage() {
           )}
         </div>
       </Modal>
+
+      {showSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="animate-[bounce-in_0.5s_ease-out] mx-4 max-w-sm rounded-2xl bg-[#181a16] p-8 text-center shadow-2xl border border-[#8eff71]/30">
+            <div className="mb-4 flex h-20 w-20 mx-auto items-center justify-center rounded-full bg-[#8eff71]/20">
+              <span className="material-symbols-outlined text-6xl text-[#8eff71]">check_circle</span>
+            </div>
+            <h2 className="font-headline text-2xl font-black text-[#fdfdf6]">Thành công!</h2>
+            <p className="mt-2 font-headline text-sm text-[#abaca5]">Dịch vụ đã được đặt thành công</p>
+            <p className="mt-1 font-headline text-xs text-[#8eff71]">Đang chuyển hướng...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
