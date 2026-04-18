@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FIELDS } from '../../../data/fields';
+import axiosInstance from '../../../services/axios';
 
 const UTILITY_LABELS = {
   parking: 'Parking',
@@ -15,6 +15,13 @@ const UTILITY_ICONS = {
   wifi: 'wifi',
   shower: 'shower',
 };
+
+const timeSlots = [
+  '06:00 - 07:00', '07:00 - 08:00', '08:00 - 09:00', '09:00 - 10:00',
+  '10:00 - 11:00', '11:00 - 12:00', '12:00 - 13:00', '13:00 - 14:00',
+  '14:00 - 15:00', '15:00 - 16:00', '16:00 - 17:00', '17:00 - 18:00',
+  '18:00 - 19:00', '19:00 - 20:00', '20:00 - 21:00', '21:00 - 22:00',
+];
 
 function CalendarPicker({ selectedDate, onSelectDate }) {
   const today = new Date();
@@ -127,13 +134,48 @@ function CalendarPicker({ selectedDate, onSelectDate }) {
 export default function FieldDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const field = FIELDS.find((f) => f.id === Number(id));
+  const [field, setField] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedSlots, setSelectedSlots] = useState([]);
+  const [bookedSlots, setBookedSlots] = useState([]);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
-  const bookedSlots = ['08:00 - 09:00', '09:00 - 10:00', '19:00 - 20:00'];
+  useEffect(() => {
+    const fetchField = async () => {
+      try {
+        const response = await axiosInstance.get(`/api/fields/${id}/full`);
+        if (response.data.success) {
+          setField(response.data.data);
+        } else {
+          setError('Field not found');
+        }
+      } catch (err) {
+        console.error('Error fetching field:', err);
+        setError('Failed to load field data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchField();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchBookedSlots = async () => {
+      if (!selectedDate || !id) return;
+      try {
+        const response = await axiosInstance.get(`/api/bookings/field/${id}/slots?date=${selectedDate}`);
+        if (response.data.success) {
+          setBookedSlots(response.data.bookedSlots || []);
+        }
+      } catch (err) {
+        console.error('Error fetching booked slots:', err);
+      }
+    };
+    fetchBookedSlots();
+  }, [selectedDate, id]);
 
   const toggleSlot = (slot) => {
     if (bookedSlots.includes(slot)) return;
@@ -142,7 +184,15 @@ export default function FieldDetailPage() {
     );
   };
 
-  if (!field) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8eff71]"></div>
+      </div>
+    );
+  }
+
+  if (error || !field) {
     return (
       <div className="mx-auto max-w-4xl px-6 py-20 text-center">
         <h1 className="font-headline text-2xl font-bold text-[#ff4d6d]">Field not found</h1>
@@ -156,12 +206,15 @@ export default function FieldDetailPage() {
     );
   };
 
+  const fieldData = field.field || field;
+  const services = field.services || [];
+
   const parsePrice = (priceText) => {
     const digits = String(priceText ?? '').replace(/[^\d]/g, '');
     return Number(digits) || 0;
   };
 
-  const fieldPricePerHour = parsePrice(field.price);
+  const fieldPricePerHour = fieldData.hourlyPrice || parsePrice(fieldData.price);
   const totalHours = selectedSlots.length;
   const fieldTotal = fieldPricePerHour * totalHours;
   const grandTotal = fieldTotal;
@@ -180,7 +233,7 @@ export default function FieldDetailPage() {
       setBookingSuccess(false);
       navigate('/booking-confirm', {
         state: {
-          field,
+          field: fieldData,
           date: selectedDate,
           time: selectedSlots.join(', '),
           total: grandTotal,
@@ -188,13 +241,6 @@ export default function FieldDetailPage() {
       });
     }, 2000);
   };
-
-  const timeSlots = [
-    '06:00 - 07:00', '07:00 - 08:00', '08:00 - 09:00', '09:00 - 10:00',
-    '10:00 - 11:00', '11:00 - 12:00', '12:00 - 13:00', '13:00 - 14:00',
-    '14:00 - 15:00', '15:00 - 16:00', '16:00 - 17:00', '17:00 - 18:00',
-    '18:00 - 19:00', '19:00 - 20:00', '20:00 - 21:00', '21:00 - 22:00',
-  ];
 
   return (
     <div className="mx-auto w-full max-w-7xl px-6 py-8">
@@ -210,46 +256,46 @@ export default function FieldDetailPage() {
         <div className="lg:col-span-2 space-y-5">
           <div className="relative overflow-hidden rounded-2xl shadow-lg">
             <img
-              src={field.image}
-              alt={field.imageAlt}
+              src={fieldData.image?.[0] || 'https://via.placeholder.com/800x400'}
+              alt={fieldData.fieldName}
               className="h-72 w-full object-cover"
             />
             <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-[#0d0f0b]/80 px-3 py-1 backdrop-blur-md">
               <span className="material-symbols-outlined fill-icon text-xs text-[#8eff71]">star</span>
-              <span className="font-headline text-xs font-bold text-white">{field.rating}</span>
+              <span className="font-headline text-xs font-bold text-white">4.9</span>
             </div>
             <div className="absolute bottom-4 right-4 rounded-lg bg-[#8eff71] px-3 py-1">
-              <span className="font-headline text-xs font-black text-[#0d6100]">{field.size}</span>
+              <span className="font-headline text-xs font-black text-[#0d6100]">{fieldData.fieldType}</span>
             </div>
           </div>
 
           <div className="rounded-2xl bg-[#181a16] p-5 shadow-lg">
             <div className="flex items-start justify-between gap-4 mb-4">
               <div className="flex-1">
-                <h1 className="font-headline text-2xl font-black text-[#fdfdf6] leading-tight">{field.name}</h1>
+                <h1 className="font-headline text-2xl font-black text-[#fdfdf6] leading-tight">{fieldData.fieldName}</h1>
                 <div className="mt-2 flex items-center gap-1 text-[#abaca5]">
                   <span className="material-symbols-outlined text-sm">location_on</span>
-                  <span className="font-headline text-sm">{field.address}, {field.city}</span>
+                  <span className="font-headline text-sm">{fieldData.address}, {fieldData.city}</span>
                 </div>
               </div>
               <div className="text-right">
                 <span className="font-headline text-xs text-[#88f6ff] block">Price</span>
-                <span className="font-headline text-2xl font-black text-[#8eff71]">{field.price}</span>
+                <span className="font-headline text-2xl font-black text-[#8eff71]">{formatPrice(fieldPricePerHour)}</span>
                 <span className="font-headline text-xs text-[#abaca5]">/hour</span>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-2 mb-4">
-              {field.utilities.map((util) => (
+              {(fieldData.utilities || []).map((util) => (
                 <div
                   key={util}
                   className="inline-flex items-center gap-1.5 rounded-full bg-[#242721] px-3 py-1.5"
                 >
                   <span className="material-symbols-outlined text-sm text-[#8eff71]">
-                    {UTILITY_ICONS[util]}
+                    {UTILITY_ICONS[util] || 'check_circle'}
                   </span>
                   <span className="font-headline text-xs font-medium text-[#fdfdf6]">
-                    {UTILITY_LABELS[util]}
+                    {UTILITY_LABELS[util] || util}
                   </span>
                 </div>
               ))}
@@ -258,10 +304,26 @@ export default function FieldDetailPage() {
             <div className="border-t border-[#474944]/30 pt-4">
               <h3 className="font-headline text-sm font-bold text-[#8eff71] mb-2">About this field</h3>
               <p className="font-headline text-sm text-[#abaca5] leading-relaxed">
-                {field.name} là một trong những sân cỏ nhân tạo chất lượng cao tại {field.city}.
-                Mặt cỏ đạt tiêu chuẩn quốc tế, phù hợp cho các trận đấu {field.size.toLowerCase()}.
+                {fieldData.description || `${fieldData.fieldName} là một trong những sân cỏ nhân tạo chất lượng cao tại ${fieldData.city}.`}
               </p>
             </div>
+
+            {services.length > 0 && (
+              <div className="border-t border-[#474944]/30 pt-4 mt-4">
+                <h3 className="font-headline text-sm font-bold text-[#8eff71] mb-2">Services</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {services.map((service) => (
+                    <div key={service._id} className="flex items-center justify-between rounded-lg bg-[#242721] p-3">
+                      <div>
+                        <p className="font-headline text-sm font-bold text-[#fdfdf6]">{service.serviceName}</p>
+                        <p className="font-headline text-xs text-[#abaca5]">{service.description}</p>
+                      </div>
+                      <span className="font-headline text-sm font-bold text-[#8eff71]">{formatPrice(service.price)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -274,7 +336,7 @@ export default function FieldDetailPage() {
                   <p className="font-headline text-sm font-bold text-[#fdfdf6]">Select your schedule</p>
                 </div>
                 <div className="text-right">
-                  <span className="font-headline text-2xl font-black text-[#8eff71]">{field.price}</span>
+                  <span className="font-headline text-2xl font-black text-[#8eff71]">{formatPrice(fieldPricePerHour)}</span>
                   <span className="font-headline text-xs text-[#abaca5]">/hr</span>
                 </div>
               </div>

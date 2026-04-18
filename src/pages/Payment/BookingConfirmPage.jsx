@@ -15,6 +15,9 @@ export default function BookingConfirmPage() {
   const [loading, setLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [walletBalance, setWalletBalance] = useState(0);
+  const [voucherCode, setVoucherCode] = useState('');
+  const [voucherApplied, setVoucherApplied] = useState(null);
+  const [voucherDiscount, setVoucherDiscount] = useState(0);
 
   useEffect(() => {
     const fetchWallet = async () => {
@@ -49,6 +52,7 @@ export default function BookingConfirmPage() {
   const { field, date, time, total: grandTotal } = bookingData;
 
   const timeSlots = time.split(', ');
+  const fieldPrice = field.hourlyPrice || field.price || 0;
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
@@ -78,18 +82,23 @@ export default function BookingConfirmPage() {
         setAuthToken(auth.accessToken);
       }
 
+      const fieldId = field._id || field.id;
+      const fieldImage = field.image?.[0] || field.image || '';
+      const timeSlotsArray = timeSlots.map(slot => {
+        const [start] = slot.split(' - ');
+        return start;
+      });
+
       const bookingPayload = {
-        fieldId: field.id,
-        fieldName: field.name,
-        fieldImage: field.image,
+        fieldId: fieldId,
+        fieldName: field.fieldName || field.name,
+        fieldImage: fieldImage,
         date: date,
-        timeSlots: timeSlots,
+        timeSlots: timeSlotsArray,
         grandTotal: grandTotal,
         paymentMethod: 'wallet',
       };
 
-      bookingPayload.status = 'confirmed';
-      bookingPayload.deductWallet = true;
       await bookingService.createBooking(bookingPayload);
       setBookingSuccess(true);
       setTimeout(() => {
@@ -128,23 +137,19 @@ export default function BookingConfirmPage() {
               <h2 className="font-headline text-xl font-bold text-[#8eff71] mb-4">Field Information</h2>
               <div className="flex gap-4">
                 <img
-                  src={field.image}
-                  alt={field.imageAlt}
+                  src={field.image?.[0] || field.image}
+                  alt={field.fieldName || field.name}
                   className="h-24 w-32 rounded-lg object-cover"
                 />
                 <div className="flex-1">
-                  <h3 className="font-headline text-lg font-bold text-[#fdfdf6]">{field.name}</h3>
+                  <h3 className="font-headline text-lg font-bold text-[#fdfdf6]">{field.fieldName || field.name}</h3>
                   <div className="mt-1 flex items-center gap-1 text-[#abaca5]">
                     <span className="material-symbols-outlined text-sm">location_on</span>
                     <span className="text-sm">{field.address}, {field.city}</span>
                   </div>
                   <div className="mt-2 flex items-center gap-3">
-                    <span className="flex items-center gap-1 rounded-full bg-[#8eff71]/20 px-3 py-1">
-                      <span className="material-symbols-outlined fill-icon text-xs text-[#8eff71]">star</span>
-                      <span className="font-headline text-xs font-bold text-[#8eff71]">{field.rating}</span>
-                    </span>
                     <span className="rounded-full bg-[#242721] px-3 py-1">
-                      <span className="font-headline text-xs font-bold text-[#abaca5]">{field.size}</span>
+                      <span className="font-headline text-xs font-bold text-[#abaca5]">{field.fieldType}</span>
                     </span>
                   </div>
                 </div>
@@ -187,11 +192,43 @@ export default function BookingConfirmPage() {
               <div className="rounded-xl bg-[#181a16] p-6 shadow-[0_0_20px_rgba(0,0,0,0.3)]">
                 <h2 className="font-headline text-xl font-bold text-[#fdfdf6] mb-4">Payment Summary</h2>
 
+                <div className="mb-4 p-3 rounded-lg bg-[#242721]">
+                  <label className="font-headline text-xs font-bold uppercase text-[#abaca5] mb-2 block">
+                    Voucher Code
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter voucher code"
+                      value={voucherCode}
+                      onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                      className="flex-1 px-3 py-2 rounded-lg bg-[#121410] border border-[#474944] text-[#fdfdf6] font-headline text-sm placeholder-[#abaca5]"
+                    />
+                    <button
+                      onClick={() => {
+                        if (!voucherCode) {
+                          alert('Please enter a voucher code');
+                          return;
+                        }
+                        // TODO: Call API to validate voucher
+                        setVoucherApplied(voucherCode);
+                        setVoucherDiscount(20000); // Example discount
+                      }}
+                      className="px-3 py-2 rounded-lg font-headline text-xs font-bold bg-[#8eff71] text-[#0d6100]"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                  {voucherApplied && (
+                    <p className="mt-2 text-sm text-[#8eff71]">✓ Voucher {voucherApplied} applied! -{formatPrice(voucherDiscount)}</p>
+                  )}
+                </div>
+
                 <div className="border-t border-[#474944]/30 pt-3">
                   <div className="flex justify-between items-center">
                     <span className="font-headline font-bold text-[#fdfdf6]">Total</span>
                     <span className="font-headline text-2xl font-black text-[#8eff71]">
-                      {formatPrice(grandTotal)}
+                      {formatPrice(grandTotal - voucherDiscount)}
                     </span>
                   </div>
                 </div>

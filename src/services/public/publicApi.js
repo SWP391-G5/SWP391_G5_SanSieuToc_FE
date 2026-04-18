@@ -25,6 +25,11 @@ const publicApi = {
     const { data } = await axiosInstance.get(`/api/public/fields${buildQuery(params)}`);
     return data;
   },
+
+  async getFieldById(fieldId) {
+    const { data } = await axiosInstance.get(`/api/fields/${fieldId}/full`);
+    return data;
+  },
 };
 
 export default publicApi;
