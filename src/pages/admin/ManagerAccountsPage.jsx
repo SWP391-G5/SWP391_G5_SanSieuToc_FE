@@ -175,6 +175,17 @@ export default function ManagerAccountsPage() {
     }
   };
 
+  const onRestore = async (id) => {
+    if (!id) return;
+    try {
+      await adminService.restoreManager(id);
+      notifySuccess('Đã khôi phục tài khoản.');
+      await load();
+    } catch (e) {
+      notifyError(e?.response?.data?.message || 'Thao tác thất bại.');
+    }
+  };
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       <div className="space-y-5">
@@ -371,18 +382,23 @@ export default function ManagerAccountsPage() {
                       </td>
                       <td className="px-5 py-4 text-[#fdfdf6]/70">{formatDate(it.createdAt)}</td>
                       <td className="px-5 py-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => onDelete(it.id)}
-                          disabled={it.status === 'Deleted'}
-                          className={
-                            it.status === 'Deleted'
-                              ? 'rounded-md bg-white/10 px-3 py-2 text-xs text-[#fdfdf6]/40'
-                              : 'rounded-md bg-white/10 px-3 py-2 text-xs text-[#fdfdf6]/80 hover:text-[#8eff71]'
-                          }
-                        >
-                          Delete
-                        </button>
+                        {it.status === 'Deleted' ? (
+                          <button
+                            type="button"
+                            onClick={() => onRestore(it.id)}
+                            className="rounded-md bg-white/10 px-3 py-2 text-xs text-[#8eff71] hover:bg-[#8eff71]/10"
+                          >
+                            Restore
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => onDelete(it.id)}
+                            className="rounded-md bg-white/10 px-3 py-2 text-xs text-[#fdfdf6]/80 hover:text-[#8eff71]"
+                          >
+                            Delete
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

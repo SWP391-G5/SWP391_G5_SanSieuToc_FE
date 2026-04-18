@@ -18,6 +18,10 @@ const adminService = {
     const res = await axios.patch(`/api/admin/accounts/managers/${id}/delete`);
     return res.data;
   },
+  restoreManager: async (id) => {
+    const res = await axios.patch(`/api/admin/accounts/managers/${id}/restore`);
+    return res.data;
+  },
 
   // Owners (UserAccount)
   listOwners: async () => {
@@ -40,6 +44,10 @@ const adminService = {
   },
   banCustomer: async (id) => {
     const res = await axios.patch(`/api/admin/accounts/customers/${id}/ban`);
+    return res.data;
+  },
+  unbanCustomer: async (id) => {
+    const res = await axios.patch(`/api/admin/accounts/customers/${id}/unban`);
     return res.data;
   },
 

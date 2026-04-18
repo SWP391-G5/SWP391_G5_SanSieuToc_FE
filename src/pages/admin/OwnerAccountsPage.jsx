@@ -89,6 +89,11 @@ export default function OwnerAccountsPage() {
   const [form, setForm] = useState({ managerID: '', username: '', email: '', name: '', phone: '', address: '' });
   const [submitting, setSubmitting] = useState(false);
 
+  const activeManagers = useMemo(
+    () => (managers || []).filter((m) => String(m.status || '').trim() === 'Active'),
+    [managers]
+  );
+
   const canSubmit = useMemo(() => {
     const managerID = String(form.managerID || '').trim();
     const username = normalizeUsername(form.username);
@@ -277,8 +282,14 @@ export default function OwnerAccountsPage() {
                   onChange={(e) => setForm((p) => ({ ...p, managerID: e.target.value }))}
                   className="mt-1 w-full rounded-md border border-white/10 bg-[#0d0f0b] px-3 py-2 text-sm outline-none focus:border-[#8eff71]/40"
                 >
-                  <option value="">{managersLoading ? 'Loading managers...' : 'Select a manager'}</option>
-                  {(managers || []).map((m) => (
+                  <option value="">
+                    {managersLoading
+                      ? 'Loading managers...'
+                      : activeManagers.length
+                        ? 'Select a manager'
+                        : 'No active managers available'}
+                  </option>
+                  {activeManagers.map((m) => (
                     <option key={m.id} value={m.id}>
                       {m.name || m.username} ({m.email})
                     </option>

@@ -123,6 +123,17 @@ export default function CustomerAccountsPage() {
     }
   };
 
+  const onUnban = async (id) => {
+    if (!id) return;
+    try {
+      await adminService.unbanCustomer(id);
+      notifySuccess('Đã mở khóa tài khoản Customer.');
+      await load();
+    } catch (e) {
+      notifyError(e?.response?.data?.message || 'Thao tác thất bại.');
+    }
+  };
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       <div className="space-y-5">
@@ -226,18 +237,23 @@ export default function CustomerAccountsPage() {
                       </td>
                       <td className="px-5 py-4 text-[#fdfdf6]/70">{formatDate(it.createdAt)}</td>
                       <td className="px-5 py-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => onBan(it.id)}
-                          disabled={it.status === 'Banned'}
-                          className={
-                            it.status === 'Banned'
-                              ? 'rounded-md bg-white/10 px-3 py-2 text-xs text-[#fdfdf6]/40'
-                              : 'rounded-md bg-white/10 px-3 py-2 text-xs text-red-300 hover:bg-red-500/10'
-                          }
-                        >
-                          Ban
-                        </button>
+                        {it.status === 'Banned' ? (
+                          <button
+                            type="button"
+                            onClick={() => onUnban(it.id)}
+                            className="rounded-md bg-white/10 px-3 py-2 text-xs text-[#8eff71] hover:bg-[#8eff71]/10"
+                          >
+                            Unban
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => onBan(it.id)}
+                            className="rounded-md bg-white/10 px-3 py-2 text-xs text-red-300 hover:bg-red-500/10"
+                          >
+                            Ban
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
