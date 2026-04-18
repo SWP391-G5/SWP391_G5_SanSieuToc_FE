@@ -1,81 +1,109 @@
 /**
  * ManagerPostsPage.jsx
  * Manager page for system posts/blog moderation and creation.
+ * Business logic (load, approve, delete, draft actions, form submit) lives here.
+ * Presentation is delegated to PostsToolbar, PostsTable, and PostsPagination.
  */
 
+// 2. Third-party
 import { useEffect, useMemo, useState } from 'react';
 
+// 3. Internal — services & context
 import managerApi from '../../services/manager/managerApi';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 
+// 3. Internal — sub-components (posts feature folder)
 import PostConfirmModal from './posts/PostConfirmModal';
 import PostFormModal from './posts/PostFormModal';
 import PostPreviewModal from './posts/PostPreviewModal';
+import PostsPagination from './posts/PostsPagination';
 import PostsTable from './posts/PostsTable';
+import PostsToolbar from './posts/PostsToolbar';
 
+// 3. Internal — posts utilities
 import { createConfirmAction } from './posts/postConfirmActions';
 import { filterPostLikeList } from './posts/postFilters';
-import { isLocalDraftPost } from './posts/postFormatters';
-import { addOrUpdateDraft, deleteDraftById, getDraftById, loadDraftItems } from './posts/postsDraftsAdapter';
+import { isLocalDraftPost, getPostImages } from './posts/postFormatters';
 import { canEditPost as canEditPostPermission } from './posts/postsPermissions';
-
-const STATUS = ['Pending', 'Posted', 'Rejected', 'Deleted'];
 
 export default function ManagerPostsPage() {
   const notify = useNotification();
   const { user } = useAuth();
-
   const userId = String(user?._id || user?.id || '');
 
-  const [loading, setLoading] = useState(false);
+  // ── Loading / error ──────────────────────────────────────────────────────
+  // NOTE: We intentionally do NOT toggle loading for filter/pagination changes,
+  // because the loading UI was causing pagination to jump back to page 1.
+  const [loading] = useState(false);
   const [error, setError] = useState('');
 
+  // ── Data ─────────────────────────────────────────────────────────────────
   const [items, setItems] = useState([]);
   const [draftItems, setDraftItems] = useState([]);
 
+  // Pagination metadata (we derive from the merged list to avoid page-size mismatch)
+  const [totalPages, setTotalPages] = useState(1);
+
+  // ── Filter / pagination state ────────────────────────────────────────────
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const limit = 10; // fixed 10 items per page
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
-
   const [tableOwner, setTableOwner] = useState(''); // '' | 'Draft' | 'AdminAccount' | 'UserAccount'
+  const [sortBy, setSortBy] = useState('created_desc'); // created_desc | created_asc | updated_desc | updated_asc
 
+  // ── Modal / action state ─────────────────────────────────────────────────
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [previewing, setPreviewing] = useState(null);
+  const [draftAction, setDraftAction] = useState(null); // { type: 'publish'|'delete', id }
+  const [confirmAction, setConfirmAction] = useState(null); // { title, message, variant, confirmText, onConfirm }
 
-  const [draftAction, setDraftAction] = useState(null); // { type: 'publish'|'delete', id: string }
-  const [confirmAction, setConfirmAction] = useState(null); // {title,message,variant,confirmText,onConfirm}
-
+  // ── Form state ───────────────────────────────────────────────────────────
   const [form, setForm] = useState({ title: '', content: '', images: [] });
   const [formBusy, setFormBusy] = useState(false);
   const [formError, setFormError] = useState('');
 
+  // ── Query memo ───────────────────────────────────────────────────────────
+  // NOTE: Pagination is fully handled client-side (fixed 10/page) to avoid
+  // autoloading/page-jump issues caused by mixing server paging with local drafts.
   const query = useMemo(
     () => ({
-      page,
-      limit,
       status: status && status !== 'Draft' ? status : undefined,
       q: search || undefined,
+      sort: sortBy,
     }),
-    [page, limit, status, search]
+    [status, search, sortBy]
   );
 
+  // Client-side search needle for draft filtering
+  const clientSearchNeedle = useMemo(() => String(search || '').trim().toLowerCase(), [search]);
+
+  // ── Effects ──────────────────────────────────────────────────────────────
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query.page, query.limit, query.status, query.search]);
-
-  const clientSearchNeedle = useMemo(() => String(search || '').trim().toLowerCase(), [search]);
+  }, [query.status, query.q, query.sort]);
 
   useEffect(() => {
-    refreshDraftItems();
+    loadDrafts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [userId, query.q, query.sort]);
 
-  const refreshDraftItems = () => {
-    setDraftItems(loadDraftItems({ userId }));
+  // ── Draft helpers (DB) ───────────────────────────────────────────────────
+
+  const loadDrafts = async () => {
+    if (!userId) return;
+    try {
+      // Drafts are persisted in DB as status=Draft
+      const data = await managerApi.getPosts({ status: 'Draft', q: query.q, sort: query.sort });
+      const list = data?.items || data?.data || data || [];
+      setDraftItems(Array.isArray(list) ? list : []);
+    } catch {
+      // keep drafts empty if API fails
+      setDraftItems([]);
+    }
   };
 
   const openCreate = () => {
@@ -86,17 +114,95 @@ export default function ManagerPostsPage() {
   };
 
   const openEditDraft = (draftId) => {
-    const draft = getDraftById({ userId, draftId: String(draftId) });
+    const draft = (draftItems || []).find((x) => String(x?._id || x?.id) === String(draftId));
     if (!draft) {
       notify.notifyWarning('Draft not found.');
       return;
     }
-
-    setEditing({ ...draft, __localDraft: true });
-    setForm({ title: draft.postName || '', content: draft.postContent || '', images: [] });
+    setEditing({ ...draft, __dbDraft: true });
+    setForm({
+      title: draft.postName || '',
+      content: draft.postContent || '',
+      // IMPORTANT: always hydrate from postImage via helper
+      images: getPostImages(draft),
+    });
     setFormError('');
     setShowForm(true);
   };
+
+  const saveDraftFromForm = async () => {
+    // Business rule: only Draft posts can be saved as Draft
+    if (editing && String(editing?.status) !== 'Draft') {
+      notify.notifyWarning('Bài đăng không ở trạng thái Draft nên không thể Save Draft.');
+      return;
+    }
+
+    const title = String(form?.title || '').trim();
+    if (!title) {
+      notify.notifyWarning('Title is required to save draft.');
+      return;
+    }
+
+    setFormBusy(true);
+    setFormError('');
+    try {
+      const fd = new FormData();
+      fd.set('postName', title);
+      const contentStr = form?.content ? String(form.content) : '';
+      fd.set('postContent', contentStr);
+      fd.set('status', 'Draft');
+
+      const stringImages = (form?.images || []).filter((x) => typeof x === 'string' && x.trim());
+      stringImages.slice(0, 6).forEach((url) => fd.append('postImage', url));
+
+      (form?.images || [])
+        .filter((x) => x && typeof x === 'object' && x.file instanceof File)
+        .slice(0, Math.max(0, 6 - stringImages.length))
+        .forEach((x) => fd.append('images', x.file));
+
+      const editId = editing?._id || editing?.id;
+      if (editId && editing?.__dbDraft) {
+        await managerApi.updatePost(editId, fd);
+      } else {
+        await managerApi.createPost(fd);
+      }
+
+      await loadDrafts();
+      setShowForm(false);
+      setEditing(null);
+      notify.notifySuccess('Đã lưu draft vào DB');
+    } catch (e) {
+      const msg = e?.response?.data?.message || e?.message || 'Save draft failed';
+      setFormError(msg);
+      notify.notifyError(msg);
+    } finally {
+      setFormBusy(false);
+    }
+  };
+
+  const publishDraft = async (draftId) => {
+    const draft = (draftItems || []).find((x) => String(x?._id || x?.id) === String(draftId));
+    if (!draft) {
+      notify.notifyWarning('Draft not found.');
+      return;
+    }
+    setFormBusy(true);
+    setFormError('');
+    try {
+      await managerApi.updatePost(draft._id || draft.id, { status: 'Posted' });
+      await loadDrafts();
+      await load();
+      notify.notifySuccess('Đã publish draft thành công');
+    } catch (e) {
+      const msg = e?.response?.data?.message || e?.message || 'Publish draft failed';
+      setFormError(msg);
+      notify.notifyError(msg);
+    } finally {
+      setFormBusy(false);
+    }
+  };
+
+  // ── Confirm helpers ──────────────────────────────────────────────────────
 
   const requestDraftPublish = (draftId) => setDraftAction({ type: 'publish', id: String(draftId) });
   const requestDraftDelete = (draftId) => setDraftAction({ type: 'delete', id: String(draftId) });
@@ -109,82 +215,39 @@ export default function ManagerPostsPage() {
     const action = confirmAction;
     if (!action) return;
     setConfirmAction(null);
-
     try {
       await action.onConfirm();
     } catch {
-      // onConfirm is responsible for notifying
-    }
-  };
-
-  const publishDraft = async (draftId) => {
-    const draft = getDraftById({ userId, draftId: String(draftId) });
-    if (!draft) {
-      notify.notifyWarning('Draft not found.');
-      return;
-    }
-
-    setFormBusy(true);
-    setFormError('');
-    try {
-      const fd = new FormData();
-      fd.set('postName', draft.postName || '');
-      fd.set('postContent', draft.postContent || '');
-      await managerApi.createPost(fd);
-
-      deleteDraftById({ userId, draftId: String(draftId) });
-      refreshDraftItems();
-      await load();
-      notify.notifySuccess('Đã publish draft thành công');
-    } catch (e) {
-      const msg = e?.response?.data?.message || e?.message || 'Publish draft failed';
-      setFormError(msg);
-      notify.notifyError(msg);
-    } finally {
-      setFormBusy(false);
+      /* onConfirm handles notification */
     }
   };
 
   const confirmDraftAction = async () => {
     const action = draftAction;
     if (!action?.id) return;
-
     if (action.type === 'delete') {
-      deleteDraftById({ userId, draftId: String(action.id) });
-      refreshDraftItems();
-      notify.notifySuccess('Draft deleted');
-      setDraftAction(null);
+      try {
+        await managerApi.deletePost(String(action.id));
+        await loadDrafts();
+        notify.notifySuccess('Draft deleted');
+      } catch (e) {
+        const msg = e?.response?.data?.message || e?.message || 'Delete draft failed';
+        notify.notifyError(msg);
+      } finally {
+        setDraftAction(null);
+      }
       return;
     }
-
     if (action.type === 'publish') {
       await publishDraft(action.id);
       setDraftAction(null);
     }
   };
 
-  const saveDraftFromForm = () => {
-    const title = String(form?.title || '').trim();
-    if (!title) {
-      notify.notifyWarning('Title is required to save draft.');
-      return;
-    }
-
-    const existingId = editing?.__localDraft ? editing?._id || editing?.id : null;
-    const savedId = addOrUpdateDraft({
-      userId,
-      draftId: existingId,
-      postName: title,
-      postContent: form?.content || '',
-    });
-
-    refreshDraftItems();
-    setEditing((prev) => (prev?.__localDraft ? { ...prev, _id: savedId } : prev));
-    notify.notifySuccess('Đã lưu draft vào danh sách');
-  };
+  // ── API actions ──────────────────────────────────────────────────────────
 
   const load = async () => {
-    setLoading(true);
+    // IMPORTANT: do not set loading=true/false here (see note above)
     setError('');
     try {
       const data = await managerApi.getPosts(query);
@@ -193,16 +256,12 @@ export default function ManagerPostsPage() {
     } catch (e) {
       const statusCode = e?.response?.status;
       const isUnauthorized = statusCode === 401 || statusCode === 403;
-
       const msg = isUnauthorized
         ? 'Unauthorized: API requires login token.'
         : e?.response?.data?.message || e?.message || 'Failed to load posts';
-
       setError(msg);
       setItems([]);
       notify.notifyError(msg);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -210,9 +269,14 @@ export default function ManagerPostsPage() {
 
   const openEdit = (post) => {
     if (!post) return;
-
     if (!canEditPost(post)) {
       notify.notifyWarning('Bạn chỉ được sửa bài đăng do chính bạn tạo.');
+      return;
+    }
+
+    // If user clicks Edit on a Draft row (rare), route to draft edit logic
+    if (String(post?.status) === 'Draft') {
+      openEditDraft(post?._id || post?.id);
       return;
     }
 
@@ -220,7 +284,8 @@ export default function ManagerPostsPage() {
     setForm({
       title: post?.postName || post?.title || '',
       content: post?.postContent || post?.content || '',
-      images: [],
+      // show existing saved urls for edit consistency
+      images: getPostImages(post),
     });
     setFormError('');
     setShowForm(true);
@@ -234,16 +299,16 @@ export default function ManagerPostsPage() {
       fd.set('postName', form.title);
       fd.set('postContent', form.content);
 
-      // images are appended inside BE form parser; UI adds previews only
-      // Keep backward compatible with current managerApi which expects multipart/form-data
+      const stringImages = (form?.images || []).filter((x) => typeof x === 'string' && x.trim());
+      stringImages.slice(0, 6).forEach((url) => fd.append('postImage', url));
+
       (form?.images || [])
         .filter((x) => x && typeof x === 'object' && x.file instanceof File)
-        .slice(0, 6)
+        .slice(0, Math.max(0, 6 - stringImages.length))
         .forEach((x) => fd.append('images', x.file));
 
       if (editing?._id || editing?.id) {
-        const id = editing._id || editing.id;
-        await managerApi.updatePost(id, fd);
+        await managerApi.updatePost(editing._id || editing.id, fd);
       } else {
         await managerApi.createPost(fd);
       }
@@ -265,7 +330,6 @@ export default function ManagerPostsPage() {
   const approve = async (post) => {
     const id = post?._id || post?.id;
     if (!id) return;
-
     requestConfirm(
       createConfirmAction({
         type: 'approve',
@@ -289,7 +353,6 @@ export default function ManagerPostsPage() {
   const remove = async (post) => {
     const id = post?._id || post?.id;
     if (!id) return;
-
     requestConfirm(
       createConfirmAction({
         type: 'delete',
@@ -300,9 +363,11 @@ export default function ManagerPostsPage() {
           try {
             await managerApi.deletePost(id);
             await load();
+            await loadDrafts();
             notify.notifySuccess('Post deleted successfully');
           } catch (e) {
-            notify.notifyError(e?.response?.data?.message || e?.message || 'Delete failed');
+            const msg = e?.response?.data?.message || e?.message || 'Delete failed';
+            notify.notifyError(msg);
             throw e;
           }
         },
@@ -310,40 +375,83 @@ export default function ManagerPostsPage() {
     );
   };
 
-  const displayedItems = useMemo(() => {
+  // ── Derived display list ─────────────────────────────────────────────────
+  const filteredAndSortedItems = useMemo(() => {
     const merged = [...(draftItems || []), ...(items || [])];
-
-    return filterPostLikeList({
+    const filtered = filterPostLikeList({
       merged,
       status,
       tableOwner,
       searchNeedle: clientSearchNeedle,
-      isLocalDraft: isLocalDraftPost,
+      // Draft is in DB now
+      isLocalDraft: (p) => String(p?.status) === 'Draft',
       getTitle: (p) => p?.postName || p?.title || '',
       getContent: (p) => p?.postContent || p?.content || '',
     });
-  }, [draftItems, items, status, tableOwner, clientSearchNeedle]);
+
+    // Client-side sort (keeps drafts + server items consistent)
+    filtered.sort((a, b) => {
+      let valA = 0;
+      let valB = 0;
+      if (sortBy.startsWith('created_')) {
+        valA = new Date(a.createdAt || 0).getTime();
+        valB = new Date(b.createdAt || 0).getTime();
+      } else {
+        valA = new Date(a.updatedAt || 0).getTime();
+        valB = new Date(b.updatedAt || 0).getTime();
+      }
+      return sortBy.endsWith('_desc') ? valB - valA : valA - valB;
+    });
+
+    return filtered;
+  }, [draftItems, items, status, tableOwner, sortBy, clientSearchNeedle]);
+
+  // Keep totalPages in sync with the actual displayed list (after filters)
+  useEffect(() => {
+    const count = filteredAndSortedItems.length;
+    const nextTotal = Math.max(1, Math.ceil(count / Math.max(1, limit)));
+    setTotalPages(nextTotal);
+
+    // Clamp only when out of range (do NOT force-reset to page 1)
+    if (page > nextTotal) setPage(nextTotal);
+    else if (page < 1) setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredAndSortedItems.length, limit, page]);
+
+  const displayedItems = useMemo(() => {
+    const start = (page - 1) * limit;
+    return filteredAndSortedItems.slice(start, start + limit);
+  }, [filteredAndSortedItems, page, limit]);
 
   const resetFilters = () => {
     setStatus('');
     setTableOwner('');
     setSearch('');
+    setSortBy('created_desc');
     setPage(1);
   };
 
-  const openPreview = (post) => {
-    if (!post) return;
-    setPreviewing(post);
-  };
-
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
+      {/* Page header */}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-headline font-bold">Posts</h1>
+          <h1 className="text-2xl font-headline font-bold text-on-surface">Posts</h1>
           <p className="text-sm text-on-surface-variant">Manage all system posts and approve owner submissions.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={async () => {
+              setPage(1);
+              await Promise.all([load(), loadDrafts()]);
+              notify.notifyInfo('Đã làm mới dữ liệu');
+            }}
+            className="rounded-lg border border-outline-variant px-4 py-2 text-xs font-extrabold uppercase tracking-widest text-on-surface hover:bg-surface transition-all"
+          >
+            Refresh
+          </button>
           <button
             type="button"
             onClick={openCreate}
@@ -354,55 +462,19 @@ export default function ManagerPostsPage() {
         </div>
       </header>
 
+      {/* Main panel */}
       <section className="bg-surface-container p-4 sm:p-6 rounded-xl space-y-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
-            <label className="space-y-1">
-              <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Search</div>
-              <input
-                className="h-10 w-full sm:w-80 rounded-lg bg-surface px-3 text-sm border border-outline-variant text-black placeholder:text-gray-500"
-                placeholder="Title/content..."
-                value={search}
-                onChange={(e) => {
-                  setPage(1);
-                  setSearch(e.target.value);
-                }}
-              />
-            </label>
-
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="h-10 rounded-lg px-4 text-sm font-bold border border-outline-variant hover:bg-surface"
-              title="Reset Status/Owner/Search"
-            >
-              Reset
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <label className="space-y-1">
-              <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Page size</div>
-              <select
-                className="h-10 rounded-lg bg-surface px-3 text-sm border border-outline-variant text-black"
-                value={limit}
-                onChange={(e) => {
-                  setPage(1);
-                  setLimit(Number(e.target.value));
-                }}
-              >
-                {[5, 10, 20, 50].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </div>
+        <PostsToolbar
+          search={search}
+          onSearchChange={(v) => {
+            setPage(1);
+            setSearch(v);
+          }}
+          onReset={resetFilters}
+        />
 
         {error ? <div className="text-sm text-error">{error}</div> : null}
-        {loading ? <div className="text-sm text-on-surface-variant">Loading...</div> : null}
+        {/* Loading UI removed to avoid pagination side-effects */}
 
         <PostsTable
           loading={loading}
@@ -419,7 +491,11 @@ export default function ManagerPostsPage() {
             setPage(1);
             setTableOwner(v);
           }}
-          onPreview={openPreview}
+          sortBy={sortBy}
+          onChangeSort={(v) => {
+            setSortBy(v);
+          }}
+          onPreview={(post) => setPreviewing(post)}
           onEditDraft={openEditDraft}
           onPublishDraft={requestDraftPublish}
           onDeleteDraft={requestDraftDelete}
@@ -429,27 +505,13 @@ export default function ManagerPostsPage() {
           onDelete={remove}
         />
 
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            className="h-10 rounded-lg px-3 text-sm border border-outline-variant hover:bg-surface disabled:opacity-50"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page <= 1 || loading}
-          >
-            Prev
-          </button>
-          <div className="text-sm text-on-surface-variant">Page {page}</div>
-          <button
-            type="button"
-            className="h-10 rounded-lg px-3 text-sm border border-outline-variant hover:bg-surface disabled:opacity-50"
-            onClick={() => setPage((p) => p + 1)}
-            disabled={loading}
-          >
-            Next
-          </button>
+        {/* Numeric pagination */}
+        <div className="pt-2 flex justify-center">
+          <PostsPagination page={page} totalPages={totalPages} loading={false} onPageChange={setPage} />
         </div>
       </section>
 
+      {/* Modals */}
       <PostFormModal
         open={showForm}
         editing={editing}
@@ -465,6 +527,7 @@ export default function ManagerPostsPage() {
 
       <PostPreviewModal open={!!previewing} post={previewing} onClose={() => setPreviewing(null)} />
 
+      {/* Draft action confirm */}
       <PostConfirmModal
         open={!!draftAction}
         title="Confirm"
@@ -476,6 +539,7 @@ export default function ManagerPostsPage() {
         zIndexClassName="z-[60]"
       />
 
+      {/* Server action confirm (approve / delete) */}
       <PostConfirmModal
         open={!!confirmAction}
         title={confirmAction?.title || 'Confirm'}
