@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 export default function FieldFormModal({ isOpen, onClose, onSave, initialData, isLoading }) {
   const [formData, setFormData] = useState({
     fieldName: '',
-    fieldType: '5v5',
+    fieldType: 'Sân 5 người',
     address: '',
     description: '',
     slotDuration: 60,
@@ -27,7 +27,7 @@ export default function FieldFormModal({ isOpen, onClose, onSave, initialData, i
     } else {
       setFormData({
         fieldName: '',
-        fieldType: '5v5',
+        fieldType: 'Sân 5 người',
         address: '',
         description: '',
         slotDuration: 60,
@@ -133,9 +133,9 @@ export default function FieldFormModal({ isOpen, onClose, onSave, initialData, i
                   onChange={handleChange}
                   className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-on-surface focus:border-primary focus:outline-none select-none appearance-none"
                 >
-                  <option value="5v5">5 vs 5</option>
-                  <option value="7v7">7 vs 7</option>
-                  <option value="11v11">11 vs 11</option>
+                  <option value="Sân 5 người">Sân 5 người</option>
+                  <option value="Sân 7 người">Sân 7 người</option>
+                  <option value="Sân 11 người">Sân 11 người</option>
                 </select>
               </div>
               <div className="space-y-2">
