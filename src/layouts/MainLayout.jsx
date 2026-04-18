@@ -130,6 +130,51 @@ function UserMenu({ auth, navigate }) {
 
           <div className="my-1 h-px bg-white/10" />
 
+          {auth.user?.role === 'Owner' && (
+             <>
+               <button
+                 type="button"
+                 role="menuitem"
+                 onClick={() => { setUserMenuOpen(false); navigate('/owner/fields'); }}
+                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-tertiary hover:bg-white/5 hover:text-[#8eff71]"
+               >
+                 <span className="material-symbols-outlined text-[18px] leading-none">dashboard</span>
+                 <span className="font-bold">Owner Hub</span>
+               </button>
+               <div className="my-1 h-px bg-white/10" />
+             </>
+          )}
+
+          {auth.user?.role === 'Manager' && (
+             <>
+               <button
+                 type="button"
+                 role="menuitem"
+                 onClick={() => { setUserMenuOpen(false); navigate('/manager'); }}
+                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#8eff71] hover:bg-white/5 hover:text-white"
+               >
+                 <span className="material-symbols-outlined text-[18px] leading-none">manage_accounts</span>
+                 <span className="font-bold">Manager Hub</span>
+               </button>
+               <div className="my-1 h-px bg-white/10" />
+             </>
+          )}
+
+          {auth.user?.role === 'Admin' && (
+             <>
+               <button
+                 type="button"
+                 role="menuitem"
+                 onClick={() => { setUserMenuOpen(false); navigate('/admin'); }}
+                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-error hover:bg-white/5 hover:text-white"
+               >
+                 <span className="material-symbols-outlined text-[18px] leading-none">admin_panel_settings</span>
+                 <span className="font-bold">Admin Control</span>
+               </button>
+               <div className="my-1 h-px bg-white/10" />
+             </>
+          )}
+
           <button
             type="button"
             role="menuitem"
