@@ -7,24 +7,30 @@ const AuthContext = createContext(null);
 const STORAGE_KEY = 'sst_auth';
 
 export function AuthProvider({ children }) {
-  const [accessToken, setAccessToken] = useState(null);
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
+  // Đọc từ LocalStorage ĐỒNG BỘ ở lần render đầu tiên (tránh page bị chớp)
+  const [accessToken, setAccessToken] = useState(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (parsed?.accessToken) {
-        setAccessToken(parsed.accessToken);
-        setUser(parsed.user || null);
-        setAuthToken(parsed.accessToken);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.accessToken) {
+          setAuthToken(parsed.accessToken); // Gắn header ngay lập tức
+          return parsed.accessToken;
+        }
       }
-    } catch {
-      // ignore
-    }
-  }, []);
+    } catch {}
+    return null;
+  });
 
+  const [user, setUser] = useState(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw)?.user || null;
+    } catch {}
+    return null;
+  });
+
+  // Khi login state thay đổi
   useEffect(() => {
     if (accessToken) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ accessToken, user }));
@@ -34,6 +40,9 @@ export function AuthProvider({ children }) {
       setAuthToken(null);
     }
   }, [accessToken, user]);
+
+  // Track login success for navigation
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
 
   const value = useMemo(
     () => ({
@@ -47,15 +56,18 @@ export function AuthProvider({ children }) {
       logout: () => {
         setAccessToken(null);
         setUser(null);
+        setAuthToken(null);
       },
       loginAdmin: async ({ username, password, role }) => {
         const data = await authService.loginAdmin({ username, password, role });
+        setAuthToken(data.accessToken); // Bắt buộc set sync trước khi UI tự động điều hướng
         setAccessToken(data.accessToken);
         setUser(data.user);
         return data;
       },
       loginUser: async ({ username, password, role }) => {
         const data = await authService.loginUser({ username, password, role });
+        setAuthToken(data.accessToken); // Bắt buộc set sync
         setAccessToken(data.accessToken);
         setUser(data.user);
         return data;
@@ -66,12 +78,14 @@ export function AuthProvider({ children }) {
       },
       verifyEmail: async ({ email, code }) => {
         const data = await authService.verifyEmailUser({ email, code });
+        setAuthToken(data.accessToken);
         setAccessToken(data.accessToken);
         setUser(data.user);
         return data;
       },
       verifyEmailAdmin: async ({ email, code }) => {
         const data = await authService.verifyEmailAdmin({ email, code });
+        setAuthToken(data.accessToken);
         setAccessToken(data.accessToken);
         setUser(data.user);
         return data;

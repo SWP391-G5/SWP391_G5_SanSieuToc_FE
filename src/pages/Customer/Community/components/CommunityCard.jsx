@@ -1,6 +1,9 @@
+import { Link } from 'react-router-dom';
+
 export default function CommunityCard({ item }) {
   return (
-    <article className="group overflow-hidden rounded-xl border border-[#474944]/20 bg-[#121410] transition-all duration-300 hover:scale-[1.01]">
+    <Link to={`/community/${item.id}`} state={{ item }} className="block">
+      <article className="group overflow-hidden rounded-xl border border-[#474944]/20 bg-[#121410] transition-all duration-300 hover:scale-[1.01]">
       <div className="relative h-40 overflow-hidden">
         <img
           alt={item.imageAlt}
@@ -31,6 +34,7 @@ export default function CommunityCard({ item }) {
           </div>
         </div>
       </div>
-    </article>
+      </article>
+    </Link>
   );
 }
