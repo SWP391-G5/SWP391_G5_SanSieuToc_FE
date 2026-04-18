@@ -27,5 +27,36 @@ export const API_CONFIG = {
       EMAIL_CHANGE_REQUEST: '/api/admin/profile/email/request',
       EMAIL_CHANGE_VERIFY: '/api/admin/profile/email/verify',
     },
+    MANAGER: {
+      // Posts
+      POSTS: '/api/manager/posts',
+      POST_BY_ID: (id) => `/api/manager/posts/${id}`,
+      POST_APPROVE: (id) => `/api/manager/posts/${id}/approve`,
+      // Banners & Ads (MarketingResource type='banner')
+      BANNERS: '/api/manager/banners',
+      BANNER_BY_ID: (id) => `/api/manager/banners/${id}`,
+      // Privacy
+      PRIVACY: '/api/manager/privacy',
+      PRIVACY_BY_ID: (id) => `/api/manager/privacy/${id}`,
+      // Deferred modules
+      // STATISTICS: '/api/manager/statistics',
+    },
+    BOOKING: {
+      GET_MY_BOOKINGS: '/api/bookings/my',
+      CREATE: '/api/bookings',
+      CANCEL: '/api/bookings/cancel',
+    },
+    WALLET: {
+      TOP_UP: '/api/wallets/topup',
+      GET_BALANCE: '/api/wallets/balance',
+      GET_TRANSACTIONS: '/api/wallets/transactions',
+    },
+    SERVICE: {
+      GET_BY_BOOKING_DETAIL: '/api/services/booking-detail',
+      BOOK: '/api/services',
+    },
+    UPLOADS: {
+      UPLOAD_IMAGES: '/api/uploads/images',
+    },
   },
 };

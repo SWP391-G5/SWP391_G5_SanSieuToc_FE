@@ -3,7 +3,12 @@
  * Table list for banners/ads.
  */
 
-export default function BannersAdsTable({ loading, items, onEdit, onDelete, onToggleActive }) {
+function openPreview(url) {
+  if (!url) return;
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+export default function BannersAdsTable({ loading, items, onEdit, onDelete, onToggleActive, onUpdateOrder }) {
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full text-sm">
@@ -24,7 +29,21 @@ export default function BannersAdsTable({ loading, items, onEdit, onDelete, onTo
               <td className="py-3 pr-4 text-on-surface-variant">{idx + 1}</td>
               <td className="py-3 pr-4 text-black font-semibold">{b?.title || '-'}</td>
               <td className="py-3 pr-4 text-on-surface-variant">{b?.placement || '-'}</td>
-              <td className="py-3 pr-4 text-on-surface-variant">{Number(b?.order) || 0}</td>
+              <td className="py-3 pr-4">
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  defaultValue={Number(b?.order) || 0}
+                  className="h-9 w-24 rounded-lg bg-surface px-2 text-sm border border-outline-variant text-black"
+                  onBlur={(e) => {
+                    const next = Number(e.target.value);
+                    if (Number.isNaN(next)) return;
+                    if (next === Number(b?.order || 0)) return;
+                    onUpdateOrder?.(b, next);
+                  }}
+                />
+              </td>
               <td className="py-3 pr-4">
                 <button
                   type="button"
@@ -39,16 +58,27 @@ export default function BannersAdsTable({ loading, items, onEdit, onDelete, onTo
                 </button>
               </td>
               <td className="py-3 pr-4">
-                {b?.imageUrl ? (
-                  <img
-                    src={b.imageUrl}
-                    alt="banner"
-                    className="h-12 w-24 object-cover rounded border border-outline-variant"
-                    loading="lazy"
-                  />
-                ) : (
-                  '-'
-                )}
+                <div className="flex items-center gap-3">
+                  {b?.imageUrl ? (
+                    <img
+                      src={b.imageUrl}
+                      alt="banner"
+                      className="h-12 w-24 object-cover rounded border border-outline-variant"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="h-12 w-24 rounded border border-outline-variant bg-surface" />
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => openPreview(b?.imageUrl)}
+                    disabled={!b?.imageUrl}
+                    className="h-9 rounded-lg px-3 text-xs font-bold border border-outline-variant hover:bg-surface disabled:opacity-50"
+                  >
+                    Open
+                  </button>
+                </div>
               </td>
               <td className="py-3 text-right">
                 <div className="inline-flex gap-2 justify-end">

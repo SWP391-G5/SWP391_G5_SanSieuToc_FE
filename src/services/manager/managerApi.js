@@ -4,6 +4,9 @@
  */
 
 import axiosInstance from '../axios';
+import { API_CONFIG } from '../../config/api.config';
+
+const ENDPOINTS = API_CONFIG.ENDPOINTS;
 
 function buildQuery(params = {}) {
   const sp = new URLSearchParams();
@@ -20,14 +23,14 @@ const managerApi = {
   // Posts (Manager)
   // =========================
   async getPosts(params) {
-    const { data } = await axiosInstance.get(`/api/manager/posts${buildQuery(params)}`);
+    const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.POSTS}${buildQuery(params)}`);
     return data;
   },
 
   async createPost(payload) {
     const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
     const { data } = await axiosInstance.post(
-      '/api/manager/posts',
+      ENDPOINTS.MANAGER.POSTS,
       payload,
       isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined
     );
@@ -37,7 +40,7 @@ const managerApi = {
   async updatePost(id, payload) {
     const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
     const { data } = await axiosInstance.put(
-      `/api/manager/posts/${id}`,
+      ENDPOINTS.MANAGER.POST_BY_ID(id),
       payload,
       isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined
     );
@@ -45,12 +48,12 @@ const managerApi = {
   },
 
   async approvePost(id) {
-    const { data } = await axiosInstance.patch(`/api/manager/posts/${id}/approve`);
+    const { data } = await axiosInstance.patch(ENDPOINTS.MANAGER.POST_APPROVE(id));
     return data;
   },
 
   async deletePost(id) {
-    const { data } = await axiosInstance.delete(`/api/manager/posts/${id}`);
+    const { data } = await axiosInstance.delete(ENDPOINTS.MANAGER.POST_BY_ID(id));
     return data;
   },
 
@@ -58,14 +61,14 @@ const managerApi = {
   // Banners (Manager)
   // =========================
   async getBanners(params) {
-    const { data } = await axiosInstance.get(`/api/manager/banners${buildQuery(params)}`);
+    const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.BANNERS}${buildQuery(params)}`);
     return data;
   },
 
   async createBanner(payload) {
     const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
     const { data } = await axiosInstance.post(
-      '/api/manager/banners',
+      ENDPOINTS.MANAGER.BANNERS,
       payload,
       isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined
     );
@@ -75,7 +78,7 @@ const managerApi = {
   async updateBanner(id, payload) {
     const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
     const { data } = await axiosInstance.put(
-      `/api/manager/banners/${id}`,
+      ENDPOINTS.MANAGER.BANNER_BY_ID(id),
       payload,
       isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined
     );
@@ -83,7 +86,7 @@ const managerApi = {
   },
 
   async deleteBanner(id) {
-    const { data } = await axiosInstance.delete(`/api/manager/banners/${id}`);
+    const { data } = await axiosInstance.delete(ENDPOINTS.MANAGER.BANNER_BY_ID(id));
     return data;
   },
 
@@ -91,22 +94,22 @@ const managerApi = {
   // Privacy (Manager)
   // =========================
   async getPrivacies(params) {
-    const { data } = await axiosInstance.get(`/api/manager/privacy${buildQuery(params)}`);
+    const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.PRIVACY}${buildQuery(params)}`);
     return data;
   },
 
   async createPrivacy(payload) {
-    const { data } = await axiosInstance.post('/api/manager/privacy', payload);
+    const { data } = await axiosInstance.post(ENDPOINTS.MANAGER.PRIVACY, payload);
     return data;
   },
 
   async updatePrivacyItem(id, payload) {
-    const { data } = await axiosInstance.put(`/api/manager/privacy/${id}`, payload);
+    const { data } = await axiosInstance.put(ENDPOINTS.MANAGER.PRIVACY_BY_ID(id), payload);
     return data;
   },
 
   async deletePrivacy(id) {
-    const { data } = await axiosInstance.delete(`/api/manager/privacy/${id}`);
+    const { data } = await axiosInstance.delete(ENDPOINTS.MANAGER.PRIVACY_BY_ID(id));
     return data;
   },
 
