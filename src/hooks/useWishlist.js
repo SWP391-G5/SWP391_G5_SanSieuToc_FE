@@ -8,7 +8,9 @@ function loadWishlist() {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((x) => x && typeof x.id === 'number');
+    return parsed
+      .filter((x) => x && (typeof x.id === 'string' || typeof x.id === 'number'))
+      .map((x) => ({ ...x, id: String(x.id) }));
   } catch {
     return [];
   }
@@ -24,7 +26,7 @@ function saveWishlist(items) {
 
 function toWishlistItem(field) {
   return {
-    id: field.id,
+    id: String(field.id),
     name: field.name,
     address: field.address,
     city: field.city,
@@ -45,8 +47,9 @@ export function useWishlist() {
 
   const toggleWishlist = (field) => {
     setWishlist((prev) => {
-      const exists = prev.some((x) => x.id === field.id);
-      const next = exists ? prev.filter((x) => x.id !== field.id) : [...prev, toWishlistItem(field)];
+      const id = String(field?.id);
+      const exists = prev.some((x) => String(x.id) === id);
+      const next = exists ? prev.filter((x) => String(x.id) !== id) : [...prev, toWishlistItem({ ...field, id })];
       saveWishlist(next);
       return next;
     });

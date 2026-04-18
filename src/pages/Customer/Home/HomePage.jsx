@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import footballImg from '../../assets/images/football.jpg';
-import volleyballImg from '../../assets/images/volleyball.jpg';
-import { FIELDS, getFieldSuggestions, getTopRatedFields } from '../../features/fields';
+import footballImg from '../../../assets/images/football.jpg';
+import volleyballImg from '../../../assets/images/volleyball.jpg';
+import { FIELDS, getFieldSuggestions, getTopRatedFields } from '../../../features/fields';
 
 import FeaturedFieldsSection from './components/FeaturedFieldsSection';
 import HeroSection from './components/HeroSection';
