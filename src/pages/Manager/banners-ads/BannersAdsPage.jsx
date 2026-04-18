@@ -15,7 +15,6 @@ import BannersAdsFormModal from './BannersAdsFormModal';
 import BannersAdsTable from './BannersAdsTable';
 import useManagerBannersAds from './useManagerBannersAds';
 
-import BannersAdsGrid from './BannersAdsGrid';
 import { PLACEMENTS, DEFAULT_PLACEMENT, placementLabel } from './placementsMeta';
 import { normalizeBannerItem } from './bannerDto';
 
@@ -31,7 +30,6 @@ export default function BannersAdsPage() {
   const placementMeta = useMemo(() => PLACEMENTS.find((p) => p.key === placement) || null, [placement]);
 
   const [activeOnly, setActiveOnly] = useState(false);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
 
   const { loading, error, items: rawItems, reload } = useManagerBannersAds({ placement });
 
@@ -186,33 +184,6 @@ export default function BannersAdsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex overflow-hidden rounded-lg border border-outline-variant">
-            <button
-              type="button"
-              onClick={() => setViewMode('grid')}
-              className={
-                viewMode === 'grid'
-                  ? 'h-10 px-4 text-xs font-extrabold uppercase tracking-widest bg-primary text-on-primary'
-                  : 'h-10 px-4 text-xs font-extrabold uppercase tracking-widest bg-surface text-on-surface-variant hover:bg-surface-container'
-              }
-              title="Grid view"
-            >
-              Modules
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('table')}
-              className={
-                viewMode === 'table'
-                  ? 'h-10 px-4 text-xs font-extrabold uppercase tracking-widest bg-primary text-on-primary'
-                  : 'h-10 px-4 text-xs font-extrabold uppercase tracking-widest bg-surface text-on-surface-variant hover:bg-surface-container'
-              }
-              title="Table view"
-            >
-              Table
-            </button>
-          </div>
-
           <button
             type="button"
             onClick={() => openPreview(placementMeta?.previewPath)}
@@ -271,26 +242,16 @@ export default function BannersAdsPage() {
 
       {error ? <div className="rounded-lg border border-error/60 bg-error/10 p-3 text-sm text-error">{error}</div> : null}
 
-      {viewMode === 'grid' ? (
-        <BannersAdsGrid
+      <div className="rounded-xl border border-outline-variant bg-surface-container p-4 sm:p-6">
+        <BannersAdsTable
+          loading={loading}
           items={items}
-          placementLabel={placementLabel(placement)}
           onEdit={openEdit}
           onDelete={requestDelete}
           onToggleActive={toggleActive}
           onUpdateOrder={updateOrder}
         />
-      ) : (
-        <div className="rounded-xl border border-outline-variant bg-surface-container p-4 sm:p-6">
-          <BannersAdsTable
-            loading={loading}
-            items={items}
-            onEdit={openEdit}
-            onDelete={requestDelete}
-            onToggleActive={toggleActive}
-          />
-        </div>
-      )}
+      </div>
 
       <BannersAdsFormModal
         open={showForm}

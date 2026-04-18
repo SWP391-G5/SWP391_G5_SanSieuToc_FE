@@ -15,12 +15,12 @@ export default function PostPreviewModal({ open, post, onClose }) {
       <div className="w-full max-w-4xl rounded-2xl bg-white border border-outline-variant shadow-2xl my-10 overflow-hidden">
         <div className="flex items-start justify-between gap-4 border-b border-outline-variant px-5 py-4 sm:px-6 bg-surface-container-high">
           <div>
-            <h2 className="text-xl font-headline font-bold">Preview (Khách hàng sẽ thấy)</h2>
-            <p className="text-sm text-on-surface-variant mt-1">Đây là preview theo dữ liệu hiện tại của bài đăng. (Không thay đổi dữ liệu)</p>
+            <h2 className="text-xl font-headline font-bold text-black">Preview Bài đăng</h2>
+            <p className="text-sm text-black mt-1">Đây là preview theo dữ liệu hiện tại của bài đăng.</p>
           </div>
           <button
             type="button"
-            className="h-10 rounded-lg px-4 text-sm font-bold border border-outline-variant hover:bg-surface"
+            className="h-10 rounded-lg px-4 text-sm font-bold text-black border border-outline-variant hover:bg-surface"
             onClick={onClose}
           >
             Close
@@ -32,7 +32,7 @@ export default function PostPreviewModal({ open, post, onClose }) {
             <div className="space-y-1">
               <h3 className="text-2xl font-bold text-black break-words">{getPostTitle(post) || '(no title)'}</h3>
               <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="inline-flex rounded-full border border-outline-variant px-2 py-1">Status: {post?.status || '-'}</span>
+                <span className="inline-flex rounded-full border border-outline-variant px-2 py-1 text-black">Status: {post?.status || '-'}</span>
                 {post?.updatedAt ? <span className="text-gray-600">Updated: {formatDateTime(post.updatedAt)}</span> : null}
               </div>
             </div>

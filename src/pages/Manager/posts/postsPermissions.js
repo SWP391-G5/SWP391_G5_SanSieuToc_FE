@@ -14,7 +14,15 @@
  */
 export function canEditPost({ post, user }) {
   const myId = String(user?._id || user?.id || '');
-  const ownerId = String(post?.postOwnerID || post?.postOwnerId || post?.ownerId || post?.postOwner?._id || '');
+  
+  let rawOwner = post?.postOwnerID || post?.postOwnerId || post?.ownerId || post?.postOwner || '';
+  let ownerId = '';
+  
+  if (typeof rawOwner === 'object' && rawOwner !== null) {
+    ownerId = String(rawOwner._id || rawOwner.id || '');
+  } else {
+    ownerId = String(rawOwner);
+  }
 
   if (!myId || !ownerId) return false;
   // manager-created posts are stored under AdminAccount; enforce both id + model when available

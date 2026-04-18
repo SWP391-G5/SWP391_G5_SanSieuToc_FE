@@ -5,6 +5,7 @@
 
 import { useEffect } from 'react';
 import { MAX_IMAGES_PER_POST, buildPickedImagePreviews, revokePreviewUrl } from './postUploadHelpers';
+import uploadService from '../../../services/uploadService';
 
 export default function PostFormModal({
   open,
@@ -66,6 +67,12 @@ export default function PostFormModal({
       return { ...prev, images: (prev?.images || []).filter((_, i) => i !== idx) };
     });
   };
+
+  const handleSaveDraft = () => {
+    onSaveDraft?.();
+  };
+
+  const canSaveDraft = !editing || String(editing?.status) === 'Draft' || !!editing?.__dbDraft;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
@@ -174,15 +181,17 @@ export default function PostFormModal({
               Cancel
             </button>
 
-            <button
-              type="button"
-              onClick={onSaveDraft}
-              className="h-11 rounded-lg px-5 text-sm font-bold border border-outline-variant hover:bg-surface disabled:opacity-50"
-              disabled={formBusy}
-              title="Lưu nháp vào danh sách Draft (localStorage)"
-            >
-              Save Draft
-            </button>
+            {canSaveDraft ? (
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                className="h-11 rounded-lg px-5 text-sm font-bold border border-outline-variant hover:bg-surface disabled:opacity-50"
+                disabled={formBusy}
+                title="Lưu nháp vào DB (status=Draft)"
+              >
+                {formBusy ? 'Saving...' : 'Save Draft'}
+              </button>
+            ) : null}
 
             <button
               type="button"
