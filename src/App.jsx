@@ -37,6 +37,7 @@ import RequireOwner from './components/owner/RequireOwner';
 import OwnerLayout from './layouts/owner/OwnerLayout';
 import OwnerDashboardPage from './pages/owner/OwnerDashboardPage';
 import OwnerFieldsPage from './pages/owner/OwnerFieldsPage';
+import OwnerBookingsPage from './pages/owner/OwnerBookingsPage';
 
 import { useAuth } from './context/AuthContext';
 
@@ -133,6 +134,7 @@ function App() {
           <Route index element={<Navigate to="/owner/fields" replace />} />
           <Route path="dashboard" element={<OwnerDashboardPage />} />
           <Route path="fields" element={<OwnerFieldsPage />} />
+          <Route path="bookings" element={<OwnerBookingsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
 
