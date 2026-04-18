@@ -17,6 +17,11 @@ const TopUpPage = () => {
       return;
     }
 
+    if (parseFloat(amount) > 10000000) {
+      setError('Maximum top-up amount is 10,000,000 VND');
+      return;
+    }
+
     // Navigate to checkout page with amount
     navigate('/checkout', { state: { amount: parseFloat(amount) } });
   };
@@ -39,6 +44,7 @@ const TopUpPage = () => {
             setError('');
           }}
           min="10000"
+          max="10000000"
           required
         />
 
@@ -62,7 +68,7 @@ const TopUpPage = () => {
           </ul>
         </div>
 
-        <p className="topup-info">Minimum: 10,000 VND</p>
+        <p className="topup-info">Minimum: 10,000 VND | Maximum: 10,000,000 VND</p>
       </div>
     </div>
   );

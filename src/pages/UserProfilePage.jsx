@@ -145,15 +145,26 @@ function BookingCard({ booking, onCancel }) {
             </div>
 
             {booking.services && booking.services.length > 0 && (
-              <div className="booking-detail-row">
-                <span className="booking-detail-label">Dịch vụ:</span>
-                <div className="booking-services-list">
+              <div className="booking-detail-row" style={{ display: 'block' }}>
+                <span className="booking-detail-label" style={{ display: 'block', marginBottom: '4px' }}>Dịch vụ:</span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                   {booking.services.map((service, idx) => (
-                    <span key={idx} className="booking-service-badge">
-                      {service.serviceName}: {formatVnd(service.price)}đ
+                    <span key={idx} style={{ 
+                      background: 'rgba(255, 200, 100, 0.2)', 
+                      color: '#ffc864',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '12px'
+                    }}>
+                      {service.serviceName}: {formatVnd(service.price)}đ {service.quantity > 1 && `(x${service.quantity})`}
                     </span>
                   ))}
                 </div>
+                {booking.servicesTotal > 0 && (
+                  <div style={{ marginTop: '4px', color: '#8eff71', fontWeight: 'bold' }}>
+                    Tổng dịch vụ: {formatVnd(booking.servicesTotal)}đ
+                  </div>
+                )}
               </div>
             )}
 
@@ -209,6 +220,8 @@ export default function UserProfilePage() {
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [transactions, setTransactions] = useState([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const [txPage, setTxPage] = useState(1);
+  const TX_PER_PAGE = 10;
   const accountType = auth.user?.accountType;
   const isAdminAccount = String(accountType || '').trim().toLowerCase() === 'admin';
 
@@ -712,7 +725,6 @@ export default function UserProfilePage() {
               className="booking-type-dropdown"
             >
               <option value="field">Field Booking History</option>
-              <option value="service">Service Booking History</option>
             </select>
           </div>
         )}
@@ -919,7 +931,9 @@ export default function UserProfilePage() {
                   </div>
                 ) : (
                   <div className="bank-transaction-list">
-                    {transactions.map((tx) => {
+                    {transactions
+                      .slice((txPage - 1) * TX_PER_PAGE, txPage * TX_PER_PAGE)
+                      .map((tx) => {
                       const isCredit = tx.isCredit;
                       const isDebit = tx.isDebit;
                       const amountClass = isCredit ? 'tx-credit' : isDebit ? 'tx-debit' : '';
@@ -958,6 +972,27 @@ export default function UserProfilePage() {
                         </div>
                       );
                     })}
+                    {transactions.length > TX_PER_PAGE && (
+                      <div className="flex justify-center items-center gap-4 mt-4 pt-4 border-t border-[#474944]">
+                        <button
+                          onClick={() => setTxPage(p => Math.max(1, p - 1))}
+                          disabled={txPage === 1}
+                          className="px-3 py-1 rounded bg-[#242721] text-[#abaca5] disabled:opacity-50"
+                        >
+                          ← Prev
+                        </button>
+                        <span className="text-sm text-[#abaca5]">
+                          Page {txPage} of {Math.ceil(transactions.length / TX_PER_PAGE)}
+                        </span>
+                        <button
+                          onClick={() => setTxPage(p => Math.min(Math.ceil(transactions.length / TX_PER_PAGE), p + 1))}
+                          disabled={txPage >= Math.ceil(transactions.length / TX_PER_PAGE)}
+                          className="px-3 py-1 rounded bg-[#242721] text-[#abaca5] disabled:opacity-50"
+                        >
+                          Next →
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </section>
