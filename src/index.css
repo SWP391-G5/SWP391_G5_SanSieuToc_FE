@@ -137,4 +137,17 @@ body {
   .line-clamp-2 {
     -webkit-line-clamp: 2;
   }
+
+  /* Owner Hub Utilities */
+  .glass-nav {
+    background: rgba(13, 15, 11, 0.7);
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+  }
+  .impact-gradient {
+    background: linear-gradient(135deg, #8eff71 0%, #2ff801 100%);
+  }
+  .neon-glow:focus-within {
+    box-shadow: 0 0 15px rgba(142, 255, 113, 0.15);
+  }
 }

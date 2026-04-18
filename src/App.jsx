@@ -32,6 +32,10 @@ import {
 
 import ManagerMarketingImagesPage from './pages/Manager/ManagerMarketingImagesPage';
 
+import RequireOwner from './components/owner/RequireOwner';
+import OwnerLayout from './layouts/owner/OwnerLayout';
+import OwnerFieldsPage from './pages/owner/OwnerFieldsPage';
+
 import { useAuth } from './context/AuthContext';
 
 function RequireAuth({ children }) {
@@ -107,9 +111,24 @@ function App() {
             <Route path="customers" element={<CustomerAccountsPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="profile" element={<UserProfilePage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
 
-          {/* 404 Not Found */}
+          {/* 404 Not Found for Main Layout */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+
+        {/* Owner Area */}
+        <Route
+          path="/owner"
+          element={
+            <RequireOwner>
+              <OwnerLayout />
+            </RequireOwner>
+          }
+        >
+          <Route index element={<Navigate to="/owner/fields" replace />} />
+          <Route path="fields" element={<OwnerFieldsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
 
@@ -125,14 +144,12 @@ function App() {
           <Route index element={<Navigate to="/manager/statistics" replace />} />
           <Route path="statistics" element={<ManagerStatisticsPage />} />
           <Route path="posts" element={<ManagerPostsPage />} />
-
-          {/* Unified marketing images management */}
           <Route path="banners-ads" element={<ManagerMarketingImagesPage />} />
-
           <Route path="wallet" element={<ManagerWalletPage />} />
           <Route path="privacy" element={<ManagerPrivacyPage />} />
           <Route path="feedback" element={<ManagerFeedbackPage />} />
           <Route path="profile" element={<UserProfilePage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
     </Router>
