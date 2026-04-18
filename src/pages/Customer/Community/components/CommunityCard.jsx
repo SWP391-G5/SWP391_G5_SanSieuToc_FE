@@ -33,6 +33,7 @@ export default function CommunityCard({ item }) {
             <span className="material-symbols-outlined text-base">account_circle</span>
             <span className="font-medium text-[#fdfdf6]/80">{item.author}</span>
           </div>
+
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-base">schedule</span>
             <span>{item.time}</span>

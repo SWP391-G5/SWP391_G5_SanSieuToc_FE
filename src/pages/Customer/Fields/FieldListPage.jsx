@@ -11,6 +11,30 @@ import useFields from '../../../hooks/useFields';
 
 import FieldCard from './components/FieldCard';
 
+function cleanAddressPart(s) {
+  return String(s || '')
+    .replace(/\s+/g, ' ')
+    .replace(/^[,\s.-]+|[,\s.-]+$/g, '')
+    .trim();
+}
+
+function inferStreetFromField(field) {
+  const direct = cleanAddressPart(field?.street);
+  if (direct) return direct;
+
+  const rawAddress = String(field?.address || '').trim();
+  if (!rawAddress) return '';
+
+  const firstPart = cleanAddressPart(rawAddress.split(',')[0] || '');
+  if (!firstPart) return '';
+
+  const alreadyStreetLike = /^(?:duong|đường|street|thon|thôn|xom|xóm|ap|ấp|to|tổ|ngo|ngõ|hem|hẻm)\b/iu.test(firstPart);
+  if (alreadyStreetLike) return firstPart;
+
+  const withoutHouseNumber = cleanAddressPart(firstPart.replace(/^(?:so\s*)?\d+[\p{L}\p{N}/.-]*\s+/iu, ''));
+  return withoutHouseNumber || firstPart;
+}
+
 export default function FieldListPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -49,8 +73,10 @@ export default function FieldListPage() {
 
   const { wishlistIds, toggleWishlist } = useWishlist();
   const [selectedCity, setSelectedCity] = useState('All');
+  const [selectedDistrict, setSelectedDistrict] = useState('All');
+  const [selectedStreet, setSelectedStreet] = useState('All');
   const [selectedSize, setSelectedSize] = useState(null);
-  const [priceMaxK, setPriceMaxK] = useState(5000);
+  const [priceMaxK, setPriceMaxK] = useState(350);
   const [utilities, setUtilities] = useState({
     parking: false,
     lighting: false,
@@ -66,20 +92,60 @@ export default function FieldListPage() {
     return {
       q: searchText.trim() || undefined,
       city: selectedCity === 'All' ? undefined : selectedCity,
+      district: selectedCity === 'All' || selectedDistrict === 'All' ? undefined : selectedDistrict,
+      street: selectedCity === 'All' || selectedDistrict === 'All' || selectedStreet === 'All' ? undefined : selectedStreet,
       sizeKey: selectedSize || undefined,
       priceMin: 0,
       priceMax: priceMaxK * 1000,
       utilities: selectedUtilities.length ? selectedUtilities.join(',') : undefined,
       sortBy,
     };
-  }, [priceMaxK, searchText, selectedCity, selectedSize, sortBy, utilities]);
+  }, [priceMaxK, searchText, selectedCity, selectedDistrict, selectedSize, selectedStreet, sortBy, utilities]);
 
   const { loading: fieldsLoading, error: fieldsError, items: fields } = useFields(fieldsParams);
 
+  const areaParams = useMemo(
+    () => ({
+      city: selectedCity === 'All' ? undefined : selectedCity,
+    }),
+    [selectedCity]
+  );
+
+  const { items: areaFields } = useFields(areaParams);
+
+  const districtOptions = useMemo(() => {
+    if (selectedCity === 'All') return [];
+
+    const source = Array.isArray(areaFields) ? areaFields : [];
+    const set = new Set(
+      source
+        .map((f) => String(f?.district || '').trim())
+        .filter(Boolean)
+    );
+
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
+  }, [areaFields, selectedCity]);
+
+  const streetOptions = useMemo(() => {
+    if (selectedCity === 'All' || selectedDistrict === 'All') return [];
+
+    const source = Array.isArray(areaFields) ? areaFields : [];
+    const set = new Set(
+      source
+        .filter((f) => String(f?.district || '').trim() === selectedDistrict)
+        .map((f) => inferStreetFromField(f))
+        .filter(Boolean)
+    );
+
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
+  }, [areaFields, selectedCity, selectedDistrict]);
+
   const clearFilters = () => {
     setSelectedCity('All');
+    setSelectedDistrict('All');
+    setSelectedStreet('All');
     setSelectedSize(null);
-    setPriceMaxK(5000);
+    setPriceMaxK(350);
     setUtilities({ parking: false, lighting: false, wifi: false, shower: false });
   };
 
@@ -128,6 +194,8 @@ export default function FieldListPage() {
                   value={selectedCity}
                   onChange={(e) => {
                     setSelectedCity(e.target.value);
+                    setSelectedDistrict('All');
+                    setSelectedStreet('All');
                     setPage(1);
                   }}
                   className="w-full appearance-none rounded-lg border border-[#474944]/20 bg-[#181a16] px-3 py-2 pr-10 text-sm outline-none transition-all focus:border-[#8eff71] focus:ring-1 focus:ring-[#8eff71]"
@@ -135,6 +203,77 @@ export default function FieldListPage() {
                   <option value="All">All</option>
                   <option value="TP.HCM">TP.HCM</option>
                   <option value="Ha Noi">Ha Noi</option>
+                </select>
+                <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#abaca5]">
+                  expand_more
+                </span>
+              </div>
+            </div>
+
+            {/* District */}
+            <div className="space-y-2">
+              <label className="font-headline flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#abaca5]">
+                <span className="material-symbols-outlined text-sm">map</span>
+                District
+              </label>
+
+              <div className="relative">
+                <select
+                  value={selectedDistrict}
+                  onChange={(e) => {
+                    setSelectedDistrict(e.target.value);
+                    setSelectedStreet('All');
+                    setPage(1);
+                  }}
+                  disabled={selectedCity === 'All' || districtOptions.length === 0}
+                  className="w-full appearance-none rounded-lg border border-[#474944]/20 bg-[#181a16] px-3 py-2 pr-10 text-sm outline-none transition-all focus:border-[#8eff71] focus:ring-1 focus:ring-[#8eff71] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="All">
+                    {selectedCity === 'All' ? 'Choose city first' : 'All districts'}
+                  </option>
+                  {districtOptions.map((district) => (
+                    <option key={district} value={district}>
+                      {district}
+                    </option>
+                  ))}
+                </select>
+                <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#abaca5]">
+                  expand_more
+                </span>
+              </div>
+            </div>
+
+            {/* Street */}
+            <div className="space-y-2">
+              <label className="font-headline flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#abaca5]">
+                <span className="material-symbols-outlined text-sm">place</span>
+                Street
+              </label>
+
+              <div className="relative">
+                <select
+                  value={selectedStreet}
+                  onChange={(e) => {
+                    setSelectedStreet(e.target.value);
+                    setPage(1);
+                  }}
+                  disabled={selectedCity === 'All' || selectedDistrict === 'All'}
+                  className="w-full appearance-none rounded-lg border border-[#474944]/20 bg-[#181a16] px-3 py-2 pr-10 text-sm outline-none transition-all focus:border-[#8eff71] focus:ring-1 focus:ring-[#8eff71] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="All">
+                    {selectedCity === 'All'
+                      ? 'Choose city first'
+                      : selectedDistrict === 'All'
+                        ? 'Choose district first'
+                        : streetOptions.length
+                          ? 'All streets'
+                          : 'No street data in database'}
+                  </option>
+                  {streetOptions.map((street) => (
+                    <option key={street} value={street}>
+                      {street}
+                    </option>
+                  ))}
                 </select>
                 <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#abaca5]">
                   expand_more
@@ -158,8 +297,8 @@ export default function FieldListPage() {
                 className="w-full accent-[#8eff71]"
                 type="range"
                 min="0"
-                max="5000"
-                step="50"
+                max="350"
+                step="10"
                 value={priceMaxK}
                 onChange={(e) => {
                   setPriceMaxK(Number(e.target.value));
@@ -331,7 +470,7 @@ export default function FieldListPage() {
                   setSearchText(e.target.value);
                   setPage(1);
                 }}
-                placeholder=""
+                placeholder="Search by field name"
                 className="font-headline w-full rounded-xl border border-[#474944]/30 bg-[#121410] py-3 pl-12 pr-12 text-sm font-medium outline-none transition-all placeholder:text-[#abaca5]/50 focus:border-[#8eff71] focus:ring-2 focus:ring-[#8eff71]"
               />
               {searchText ? (
@@ -434,15 +573,6 @@ export default function FieldListPage() {
           <Pagination page={effectivePage} totalPages={totalPages} onPageChange={setPage} />
         </section>
       </div>
-
-      {/* FAB */}
-      <button
-        type="button"
-        className="fixed bottom-8 right-8 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#8eff71] to-[#2ff801] text-[#0d6100] shadow-[0_0_20px_rgba(142,255,113,0.3)] transition-all hover:scale-110"
-        aria-label="Open search"
-      >
-        <span className="material-symbols-outlined font-black">search</span>
-      </button>
     </div>
   );
 }

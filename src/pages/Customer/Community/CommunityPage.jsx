@@ -18,6 +18,7 @@ export default function CommunityPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [totalPages, setTotalPages] = useState(1);
+  const [searchText, setSearchText] = useState('');
 
   const safePage = clamp(page, 1, totalPages);
 
@@ -28,7 +29,11 @@ export default function CommunityPage() {
       setLoading(true);
       setError('');
       try {
-        const data = await publicApi.getPosts({ page: safePage, limit: itemsPerPage });
+        const data = await publicApi.getPosts({
+          page: safePage,
+          limit: itemsPerPage,
+          q: searchText.trim() || undefined,
+        });
         if (!alive) return;
 
         const list = Array.isArray(data?.items) ? data.items : [];
@@ -55,7 +60,7 @@ export default function CommunityPage() {
     return () => {
       alive = false;
     };
-  }, [itemsPerPage, safePage]);
+  }, [itemsPerPage, safePage, searchText]);
 
   const pageItems = useMemo(() => items, [items]);
 
@@ -83,12 +88,47 @@ export default function CommunityPage() {
             cta="Xem ưu đãi"
           />
 
-          <div className="mb-8 flex items-end justify-between gap-6">
+          <div className="mb-8 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <h1 className="font-headline text-4xl font-black tracking-tight">
                 Community <span className="italic text-[#8eff71]">Hub</span>
               </h1>
               <div className="mt-2 text-sm text-[#abaca5]">Bài viết / kèo đá / review từ cộng đồng.</div>
+              {searchText.trim() ? (
+                <div className="mt-2 text-xs text-[#abaca5]">
+                  Search result for: <span className="text-[#fdfdf6]">{searchText}</span>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="group relative w-full xl:max-w-sm">
+              <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#abaca5] transition-colors group-focus-within:text-[#8eff71]">
+                search
+              </span>
+              <input
+                type="text"
+                value={searchText}
+                onChange={(e) => {
+                  setSearchText(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search posts"
+                className="w-full rounded-xl border border-[#474944]/30 bg-[#121410] py-2.5 pl-10 pr-10 text-sm text-[#fdfdf6] outline-none transition-all placeholder:text-[#abaca5]/50 focus:border-[#8eff71] focus:ring-2 focus:ring-[#8eff71]/40"
+              />
+
+              {searchText ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchText('');
+                    setPage(1);
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-[#abaca5] transition-colors hover:bg-[#242721] hover:text-[#fdfdf6]"
+                  aria-label="Clear post search"
+                >
+                  <span className="material-symbols-outlined text-base">close</span>
+                </button>
+              ) : null}
             </div>
           </div>
 
@@ -104,8 +144,14 @@ export default function CommunityPage() {
             </div>
           ) : pageItems.length === 0 ? (
             <div className="rounded-xl border border-[#474944]/20 bg-[#121410] p-10 text-center">
-              <div className="font-headline text-xl font-black">Chưa có bài viết</div>
-              <div className="mt-2 text-sm text-[#abaca5]">Hiện chưa có bài nào ở trạng thái Posted.</div>
+              <div className="font-headline text-xl font-black">
+                {searchText.trim() ? 'Không tìm thấy bài viết phù hợp' : 'Chưa có bài viết'}
+              </div>
+              <div className="mt-2 text-sm text-[#abaca5]">
+                {searchText.trim()
+                  ? 'Thử từ khóa khác để tìm bài viết cộng đồng.'
+                  : 'Hiện chưa có bài nào ở trạng thái Posted.'}
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">

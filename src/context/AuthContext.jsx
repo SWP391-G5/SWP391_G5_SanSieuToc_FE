@@ -1,14 +1,35 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import authService from '../services/authService';
 import { setAuthToken } from '../services/axios';
+import wishlistService from '../services/wishlistService';
 
 const AuthContext = createContext(null);
 
 const STORAGE_KEY = 'sst_auth';
+const GUEST_WISHLIST_KEY = 'sst_wishlist';
+
+function getGuestWishlistFieldIds() {
+  try {
+    const raw = localStorage.getItem(GUEST_WISHLIST_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+
+    const ids = parsed
+      .map((item) => String(item?.id ?? item?.fieldID ?? item?.fieldId ?? '').trim())
+      .filter(Boolean);
+
+    return Array.from(new Set(ids));
+  } catch {
+    return [];
+  }
+}
 
 export function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(null);
   const [user, setUser] = useState(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
 
   useEffect(() => {
     try {
@@ -22,10 +43,14 @@ export function AuthProvider({ children }) {
       }
     } catch {
       // ignore
+    } finally {
+      setIsAuthReady(true);
     }
   }, []);
 
   useEffect(() => {
+    if (!isAuthReady) return;
+
     if (accessToken) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ accessToken, user }));
       setAuthToken(accessToken);
@@ -33,12 +58,13 @@ export function AuthProvider({ children }) {
       localStorage.removeItem(STORAGE_KEY);
       setAuthToken(null);
     }
-  }, [accessToken, user]);
+  }, [accessToken, user, isAuthReady]);
 
   const value = useMemo(
     () => ({
       accessToken,
       user,
+      isAuthReady,
       isAuthenticated: Boolean(accessToken),
       updateUser: (patch) => {
         if (!patch || typeof patch !== 'object') return;
@@ -52,12 +78,29 @@ export function AuthProvider({ children }) {
         const data = await authService.loginAdmin({ username, password, role });
         setAccessToken(data.accessToken);
         setUser(data.user);
+        setAuthToken(data.accessToken);
         return data;
       },
       loginUser: async ({ username, password, role }) => {
         const data = await authService.loginUser({ username, password, role });
         setAccessToken(data.accessToken);
         setUser(data.user);
+
+        // Ensure authenticated calls can run immediately in this tick.
+        setAuthToken(data.accessToken);
+
+        if (String(data?.user?.role || '').trim().toLowerCase() === 'customer') {
+          const guestFieldIds = getGuestWishlistFieldIds();
+          if (guestFieldIds.length > 0) {
+            try {
+              await wishlistService.mergeGuestWishlist(guestFieldIds);
+              localStorage.removeItem(GUEST_WISHLIST_KEY);
+            } catch {
+              // ignore merge failure to avoid blocking login
+            }
+          }
+        }
+
         return data;
       },
       registerCustomer: async ({ name, email, username, password }) => {
@@ -68,12 +111,14 @@ export function AuthProvider({ children }) {
         const data = await authService.verifyEmailUser({ email, code });
         setAccessToken(data.accessToken);
         setUser(data.user);
+        setAuthToken(data.accessToken);
         return data;
       },
       verifyEmailAdmin: async ({ email, code }) => {
         const data = await authService.verifyEmailAdmin({ email, code });
         setAccessToken(data.accessToken);
         setUser(data.user);
+        setAuthToken(data.accessToken);
         return data;
       },
       resendVerification: async ({ email }) => {
@@ -85,7 +130,7 @@ export function AuthProvider({ children }) {
         return data;
       },
     }),
-    [accessToken, user]
+    [accessToken, isAuthReady, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

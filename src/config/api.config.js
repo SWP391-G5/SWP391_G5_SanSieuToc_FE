@@ -27,6 +27,12 @@ export const API_CONFIG = {
       EMAIL_CHANGE_REQUEST: '/api/admin/profile/email/request',
       EMAIL_CHANGE_VERIFY: '/api/admin/profile/email/verify',
     },
+    WISHLIST: {
+      GET_MY: '/api/user/wishlist',
+      ADD: '/api/user/wishlist',
+      REMOVE: '/api/user/wishlist',
+      MERGE: '/api/user/wishlist/merge',
+    },
     BOOKING: {
       GET_MY_BOOKINGS: '/api/bookings/my',
       CREATE: '/api/bookings',

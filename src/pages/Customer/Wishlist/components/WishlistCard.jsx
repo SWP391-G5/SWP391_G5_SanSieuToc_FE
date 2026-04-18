@@ -1,4 +1,12 @@
-export default function WishlistCard({ field, wished, onToggleWishlist, onViewInList }) {
+export default function WishlistCard({
+  field,
+  wished,
+  onToggleWishlist,
+  onViewInList,
+  onToggleCompare,
+  isCompared = false,
+  compareDisabled = false,
+}) {
   const f = field;
 
   const imageUrl = (() => {
@@ -116,19 +124,34 @@ export default function WishlistCard({ field, wished, onToggleWishlist, onViewIn
           ) : null}
         </div>
 
-        <div className="mt-auto flex items-end justify-between">
+        <div className="mt-auto flex items-end justify-between gap-3">
           <div>
             <span className="font-headline block text-[10px] font-bold uppercase text-[#88f6ff]">Price per hour</span>
             <span className="font-headline text-2xl font-black tracking-tighter text-[#8eff71]">{f.price}</span>
           </div>
 
-          <button
-            type="button"
-            onClick={onViewInList}
-            className="font-headline rounded-lg bg-[#242721] px-4 py-2 text-xs font-bold transition-all hover:bg-[#8eff71] hover:text-[#0d6100]"
-          >
-            View in list
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onToggleCompare?.(f)}
+              disabled={compareDisabled && !isCompared}
+              className={
+                isCompared
+                  ? 'font-headline rounded-lg border border-[#8eff71]/60 bg-[#8eff71]/20 px-4 py-2 text-xs font-bold text-[#8eff71]'
+                  : 'font-headline rounded-lg bg-[#242721] px-4 py-2 text-xs font-bold transition-all hover:bg-[#8eff71] hover:text-[#0d6100] disabled:cursor-not-allowed disabled:opacity-50'
+              }
+            >
+              {isCompared ? 'Compared' : 'Compare'}
+            </button>
+
+            <button
+              type="button"
+              onClick={onViewInList}
+              className="font-headline rounded-lg bg-[#242721] px-4 py-2 text-xs font-bold transition-all hover:bg-[#8eff71] hover:text-[#0d6100]"
+            >
+              View in list
+            </button>
+          </div>
         </div>
       </div>
     </div>

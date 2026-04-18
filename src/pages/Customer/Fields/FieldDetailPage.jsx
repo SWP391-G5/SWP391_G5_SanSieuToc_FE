@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '../../../services/axios';
+import DEFAULT_FIELD_IMAGE_URL from '../../../utils/defaultFieldImage';
 
 const UTILITY_LABELS = {
   parking: 'Parking',
@@ -131,6 +132,19 @@ function CalendarPicker({ selectedDate, onSelectDate }) {
   );
 }
 
+function getPrimaryFieldImage(imageValue) {
+  if (Array.isArray(imageValue)) {
+    const firstValid = imageValue.find((img) => typeof img === 'string' && img.trim());
+    return firstValid || DEFAULT_FIELD_IMAGE_URL;
+  }
+
+  if (typeof imageValue === 'string' && imageValue.trim()) {
+    return imageValue;
+  }
+
+  return DEFAULT_FIELD_IMAGE_URL;
+}
+
 export default function FieldDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -208,6 +222,7 @@ export default function FieldDetailPage() {
 
   const fieldData = field.field || field;
   const services = field.services || [];
+  const heroImage = getPrimaryFieldImage(fieldData?.image);
 
   const parsePrice = (priceText) => {
     const digits = String(priceText ?? '').replace(/[^\d]/g, '');
@@ -256,8 +271,12 @@ export default function FieldDetailPage() {
         <div className="lg:col-span-2 space-y-5">
           <div className="relative overflow-hidden rounded-2xl shadow-lg">
             <img
-              src={fieldData.image?.[0] || 'https://via.placeholder.com/800x400'}
+              src={heroImage}
               alt={fieldData.fieldName}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = DEFAULT_FIELD_IMAGE_URL;
+              }}
               className="h-72 w-full object-cover"
             />
             <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-[#0d0f0b]/80 px-3 py-1 backdrop-blur-md">

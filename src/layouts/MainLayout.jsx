@@ -259,7 +259,7 @@ export default function MainLayout() {
                 onClick={() => scrollToId('privacy')}
                 className="text-[#fdfdf6]/70 transition-colors duration-300 hover:text-[#8eff71]"
               >
-                Privacy
+                Policy
               </button>
               <button type="button" onClick={() => navigate('/wishlist')} className={navItemClass(isWishlist)}>
                 Wishlist
