@@ -8,7 +8,7 @@ import ServiceFormModal from '../../components/owner/ServiceFormModal';
 export default function OwnerFieldsPage() {
   const [fields, setFields] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { showNotification } = useNotification();
+  const { notifySuccess, notifyError } = useNotification();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingField, setEditingField] = useState(null);
@@ -27,7 +27,7 @@ export default function OwnerFieldsPage() {
       const res = await ownerFieldService.getMyFields();
       setFields(res.fields || []);
     } catch (error) {
-      showNotification('Lỗi khi tải danh sách sân', 'error');
+      notifyError();
     } finally {
       setLoading(false);
     }
@@ -41,11 +41,11 @@ export default function OwnerFieldsPage() {
     if (!window.confirm('Bạn có chắc chắn muốn xóa sân này không? (Soft Delete)')) return;
     try {
       await ownerFieldService.deleteField(id);
-      showNotification('Đã xóa sân thành công!', 'success');
+      notifySuccess();
       // Tối ưu UX: Cập nhật state trực tiếp không cần GET lại tốn thời gian
       setFields((prev) => prev.filter((f) => f._id !== id));
     } catch (error) {
-      showNotification(error.response?.data?.message || 'Lỗi khi xóa sân', 'error');
+      notifyError();
     }
   };
 
@@ -64,15 +64,15 @@ export default function OwnerFieldsPage() {
       setSaving(true);
       if (editingField) {
         await ownerFieldService.updateField(editingField._id, formData);
-        showNotification('Cập nhật thông tin sân thành công!', 'success');
+        notifySuccess();
       } else {
         await ownerFieldService.createField(formData);
-        showNotification('Thêm sân bóng mới thành công!', 'success');
+        notifySuccess();
       }
       setIsModalOpen(false);
       fetchFields();
     } catch (error) {
-      showNotification(error.response?.data?.message || 'Có lỗi xảy ra', 'error');
+      notifyError();
     } finally {
       setSaving(false);
     }
@@ -85,13 +85,13 @@ export default function OwnerFieldsPage() {
       const res = await ownerServiceAPI.getServices(field._id);
       setServices(res.services || []);
     } catch (err) {
-      showNotification('Không tải được danh sách dịch vụ', 'error');
+      notifyError();
     }
   };
 
   const handleAddService = () => {
     if (!selectedFieldForServices) {
-       showNotification('Vui lòng chọn 1 sân trước khi thêm dịch vụ', 'error');
+       notifyError();
        return;
     }
     setEditingService(null);
@@ -108,9 +108,9 @@ export default function OwnerFieldsPage() {
     try {
       await ownerServiceAPI.deleteService(id);
       setServices(prev => prev.filter(s => s._id !== id));
-      showNotification('Đã xóa dịch vụ', 'success');
+      notifySuccess();
     } catch (err) {
-      showNotification('Lỗi khi xóa dịch vụ', 'error');
+      notifyError();
     }
   };
 
@@ -120,16 +120,16 @@ export default function OwnerFieldsPage() {
       if (editingService) {
         const res = await ownerServiceAPI.updateService(editingService._id, formData);
         setServices(prev => prev.map(s => s._id === editingService._id ? res.service : s));
-        showNotification('Cập nhật dịch vụ thành công!', 'success');
+        notifySuccess();
       } else {
         const payload = { ...formData, fieldID: selectedFieldForServices._id };
         const res = await ownerServiceAPI.createService(payload);
         setServices([res.service, ...services]);
-        showNotification('Thêm dịch vụ thành công!', 'success');
+        notifySuccess();
       }
       setIsServiceModalOpen(false);
     } catch (err) {
-      showNotification(err.response?.data?.message || 'Có lỗi xảy ra', 'error');
+      notifyError();
     } finally {
       setSavingService(false);
     }
