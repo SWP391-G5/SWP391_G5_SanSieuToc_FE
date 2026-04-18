@@ -75,6 +75,16 @@ export default function AuthPage() {
       navigate('/manager/statistics', { replace: true });
       return;
     }
+    if (roleKey === 'owner') {
+      navigate('/owner/fields', { replace: true });
+      return;
+    }
+    if (role === 'Owner') {
+      navigate('/owner/fields', { replace: true });
+      return;
+    }
+    
+    // Luồng mặc định cho Customer
     navigate('/', { replace: true });
   }, [auth.isAuthenticated, auth.user, navigate]);
 
