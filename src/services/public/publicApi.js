@@ -25,6 +25,16 @@ const publicApi = {
     const { data } = await axiosInstance.get(`/api/public/fields${buildQuery(params)}`);
     return data;
   },
+
+  async getPosts(params) {
+    const { data } = await axiosInstance.get(`/api/public/posts${buildQuery(params)}`);
+    return data;
+  },
+
+  async getPostById(id) {
+    const { data } = await axiosInstance.get(`/api/public/posts/${id}`);
+    return data;
+  },
 };
 
 export default publicApi;

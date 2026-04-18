@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import DEFAULT_FIELD_IMAGE_URL from '../../../../utils/defaultFieldImage';
 
 export default function CommunityCard({ item }) {
   return (
@@ -7,7 +8,11 @@ export default function CommunityCard({ item }) {
       <div className="relative h-40 overflow-hidden">
         <img
           alt={item.imageAlt}
-          src={item.image}
+          src={item.image || DEFAULT_FIELD_IMAGE_URL}
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = DEFAULT_FIELD_IMAGE_URL;
+          }}
           loading="lazy"
           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
         />

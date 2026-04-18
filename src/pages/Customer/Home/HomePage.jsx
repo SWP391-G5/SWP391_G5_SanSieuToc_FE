@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import footballImg from '../../../assets/images/football.jpg';
 import volleyballImg from '../../../assets/images/volleyball.jpg';
-import { FIELDS, getFieldSuggestions, getTopRatedFields } from '../../../features/fields';
+import { FIELDS, getFieldSuggestions } from '../../../features/fields';
+import useFields from '../../../hooks/useFields';
 
 import FeaturedFieldsSection from './components/FeaturedFieldsSection';
 import HeroSection from './components/HeroSection';
@@ -92,7 +93,20 @@ export default function HomePage() {
     submitHeroSearch();
   };
 
-  const topRatedFields = useMemo(() => getTopRatedFields(FIELDS, 3), []);
+  const featuredFieldsParams = useMemo(
+    () => ({
+      priceMin: 0,
+      priceMax: 5000000,
+      sortBy: 'topRated',
+    }),
+    []
+  );
+
+  const { items: featuredFields } = useFields(featuredFieldsParams);
+  const topRatedFields = useMemo(() => {
+    return Array.isArray(featuredFields) ? featuredFields.slice(0, 3) : [];
+  }, [featuredFields]);
+
   const [largeField, smallField1, smallField2] = topRatedFields;
 
   const featured = {
