@@ -3,12 +3,19 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import AuthPage from './pages/auth/AuthPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import MainLayout from './layouts/MainLayout';
-import FieldListPage from './pages/FieldListPage';
-import AdminLayout from './layouts/AdminLayout';
-import HomePage from './pages/HomePage';
-import WishlistPage from './pages/WishlistPage';
+import FieldListPage from './pages/Customer/Fields/FieldListPage';
+import HomePage from './pages/Customer/Home/HomePage';
+import WishlistPage from './pages/Customer/Wishlist/WishlistPage';
+import CommunityPage from './pages/Customer/Community/CommunityPage';
+import CommunityPostDetailPage from './pages/Customer/Community/CommunityPostDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
 import UserProfilePage from './pages/UserProfilePage';
+import TopUpPage from './pages/Payment/TopUpPage';
+import CheckoutPage from './pages/Payment/CheckoutPage';
+import FieldDetailPage from './pages/Customer/Fields/FieldDetailPage';
+import BookingConfirmPage from './pages/Payment/BookingConfirmPage';
+import ServicePage from './pages/Services/ServicePage';
+import AdminLayout from './layouts/AdminLayout';
 import ManagerAccountsPage from './pages/admin/ManagerAccountsPage';
 import OwnerAccountsPage from './pages/admin/OwnerAccountsPage';
 import CustomerAccountsPage from './pages/admin/CustomerAccountsPage';
@@ -25,6 +32,10 @@ import {
 } from './pages/Manager';
 
 import ManagerMarketingImagesPage from './pages/Manager/ManagerMarketingImagesPage';
+
+import RequireOwner from './components/owner/RequireOwner';
+import OwnerLayout from './layouts/owner/OwnerLayout';
+import OwnerFieldsPage from './pages/owner/OwnerFieldsPage';
 
 import { useAuth } from './context/AuthContext';
 
@@ -43,12 +54,16 @@ function RequireAdmin({ children }) {
 
 function App() {
   return (
-    <Router>
+    <Router basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<HomePage />} />
           <Route path="fields" element={<FieldListPage />} />
+          <Route path="fields/:id" element={<FieldDetailPage />} />
+          <Route path="booking-confirm" element={<BookingConfirmPage />} />
           <Route path="wishlist" element={<WishlistPage />} />
+          <Route path="community" element={<CommunityPage />} />
+          <Route path="community/:id" element={<CommunityPostDetailPage />} />
           <Route path="auth" element={<AuthPage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
           <Route
@@ -56,6 +71,30 @@ function App() {
             element={
               <RequireAuth>
                 <UserProfilePage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="top-up"
+            element={
+              <RequireAuth>
+                <TopUpPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="checkout"
+            element={
+              <RequireAuth>
+                <CheckoutPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="services"
+            element={
+              <RequireAuth>
+                <ServicePage />
               </RequireAuth>
             }
           />
@@ -73,9 +112,25 @@ function App() {
             <Route path="owners" element={<OwnerAccountsPage />} />
             <Route path="customers" element={<CustomerAccountsPage />} />
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="profile" element={<UserProfilePage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
 
-          {/* 404 Not Found */}
+          {/* 404 Not Found for Main Layout */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+
+        {/* Owner Area */}
+        <Route
+          path="/owner"
+          element={
+            <RequireOwner>
+              <OwnerLayout />
+            </RequireOwner>
+          }
+        >
+          <Route index element={<Navigate to="/owner/fields" replace />} />
+          <Route path="fields" element={<OwnerFieldsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
 
@@ -91,13 +146,12 @@ function App() {
           <Route index element={<Navigate to="/manager/statistics" replace />} />
           <Route path="statistics" element={<ManagerStatisticsPage />} />
           <Route path="posts" element={<ManagerPostsPage />} />
-
-          {/* Unified marketing images management */}
           <Route path="banners-ads" element={<ManagerMarketingImagesPage />} />
-
           <Route path="wallet" element={<ManagerWalletPage />} />
           <Route path="privacy" element={<ManagerPrivacyPage />} />
           <Route path="feedback" element={<ManagerFeedbackPage />} />
+          <Route path="profile" element={<UserProfilePage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
     </Router>

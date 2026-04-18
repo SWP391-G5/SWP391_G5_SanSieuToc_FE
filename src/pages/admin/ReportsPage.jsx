@@ -31,6 +31,20 @@ function formatUser(u) {
   return [name || username || '-', email ? `(${email})` : ''].filter(Boolean).join(' ');
 }
 
+function isImageEvidenceUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return false;
+
+  const lower = raw.toLowerCase();
+  if (lower.startsWith('data:image/')) return true;
+  const looksLikeUrl = lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('/');
+  if (!looksLikeUrl) return false;
+
+  // Accept common image extensions; ignore query/hash.
+  const base = lower.split('#')[0].split('?')[0];
+  return base.endsWith('.png') || base.endsWith('.jpg') || base.endsWith('.jpeg') || base.endsWith('.gif') || base.endsWith('.webp');
+}
+
 export default function ReportsPage() {
   const { notifyError, notifySuccess } = useNotification();
 
@@ -39,6 +53,16 @@ export default function ReportsPage() {
   const [search, setSearch] = useState('');
   const [noteById, setNoteById] = useState({});
   const [submittingId, setSubmittingId] = useState('');
+  const [zoomEvidenceUrl, setZoomEvidenceUrl] = useState('');
+
+  useEffect(() => {
+    if (!zoomEvidenceUrl) return undefined;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setZoomEvidenceUrl('');
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [zoomEvidenceUrl]);
 
   const load = async () => {
     setLoading(true);
@@ -122,8 +146,8 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-      <div className="space-y-5">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="min-w-0 space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#8eff71]/80">Trust & Safety</div>
@@ -144,7 +168,7 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-white/5">
+        <div className="min-w-0 rounded-xl border border-white/10 bg-white/5">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
             <div>
               <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#fdfdf6]/50">Reports</div>
@@ -162,7 +186,7 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="min-w-0 max-w-full overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="text-[11px] font-black uppercase tracking-widest text-[#fdfdf6]/50">
                 <tr className="border-b border-white/10">
@@ -208,14 +232,32 @@ export default function ReportsPage() {
                       </td>
                       <td className="px-5 py-4">
                         {Array.isArray(it.evidence) && it.evidence.length ? (
-                          <div className="space-y-1">
-                            {it.evidence.slice(0, 2).map((ev) => (
-                              <div key={ev} className="max-w-[260px] truncate text-xs text-[#fdfdf6]/70">
-                                {ev}
+                          <div className="flex flex-wrap gap-2">
+                            {it.evidence
+                              .filter((ev) => isImageEvidenceUrl(ev))
+                              .slice(0, 2)
+                              .map((ev) => (
+                                <button
+                                  key={ev}
+                                  type="button"
+                                  onClick={() => setZoomEvidenceUrl(ev)}
+                                  className="overflow-hidden rounded-md border border-white/10 bg-white/5 hover:border-[#8eff71]/40"
+                                  title="Click to zoom"
+                                >
+                                  <img
+                                    src={ev}
+                                    alt="Evidence"
+                                    className="h-12 w-16 object-cover"
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                </button>
+                              ))}
+
+                            {it.evidence.filter((ev) => isImageEvidenceUrl(ev)).length > 2 ? (
+                              <div className="flex h-12 items-center rounded-md border border-white/10 bg-[#0d0f0b] px-2 text-xs text-[#fdfdf6]/50">
+                                +{it.evidence.filter((ev) => isImageEvidenceUrl(ev)).length - 2}
                               </div>
-                            ))}
-                            {it.evidence.length > 2 ? (
-                              <div className="text-xs text-[#fdfdf6]/50">+{it.evidence.length - 2} more</div>
                             ) : null}
                           </div>
                         ) : (
@@ -316,6 +358,34 @@ export default function ReportsPage() {
           </div>
         </div>
       </div>
+
+      {zoomEvidenceUrl ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4"
+          role="dialog"
+          aria-modal="true"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setZoomEvidenceUrl('');
+          }}
+        >
+          <div className="relative max-h-[90vh] max-w-[92vw] overflow-hidden rounded-xl border border-white/10 bg-[#0d0f0b] shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
+            <button
+              type="button"
+              onClick={() => setZoomEvidenceUrl('')}
+              className="absolute right-2 top-2 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-[#fdfdf6]/80 hover:text-[#8eff71]"
+            >
+              Close
+            </button>
+
+            <img
+              src={zoomEvidenceUrl}
+              alt="Evidence zoom"
+              className="block max-h-[90vh] max-w-[92vw] object-contain"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

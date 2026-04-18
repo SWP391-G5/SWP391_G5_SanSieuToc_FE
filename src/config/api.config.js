@@ -53,10 +53,16 @@ export const API_CONFIG = {
     },
     SERVICE: {
       GET_BY_BOOKING_DETAIL: '/api/services/booking-detail',
+<<<<<<< HEAD
       BOOK: '/api/services',
     },
     UPLOADS: {
       UPLOAD_IMAGES: '/api/uploads/images',
     },
+=======
+      GET_MY_HISTORY: '/api/services/my',
+      BOOK: '/api/services',
+    },
+>>>>>>> 53bd7900fa8076051f0471ce8b70835df03cb874
   },
 };

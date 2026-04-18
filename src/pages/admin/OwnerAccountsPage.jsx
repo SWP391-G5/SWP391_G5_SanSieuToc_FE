@@ -83,18 +83,27 @@ export default function OwnerAccountsPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('All');
 
-  const [form, setForm] = useState({ username: '', email: '', name: '', phone: '', address: '' });
+  const [managers, setManagers] = useState([]);
+  const [managersLoading, setManagersLoading] = useState(false);
+
+  const [form, setForm] = useState({ managerID: '', username: '', email: '', name: '', phone: '', address: '' });
   const [submitting, setSubmitting] = useState(false);
 
+  const activeManagers = useMemo(
+    () => (managers || []).filter((m) => String(m.status || '').trim() === 'Active'),
+    [managers]
+  );
+
   const canSubmit = useMemo(() => {
+    const managerID = String(form.managerID || '').trim();
     const username = normalizeUsername(form.username);
     const email = normalizeEmail(form.email);
     const name = String(form.name || '').trim();
-    return isValidUsername(username) && isValidEmail(email) && isValidName(name);
+    return !!managerID && isValidUsername(username) && isValidEmail(email) && isValidName(name);
   }, [form]);
 
   const availableStatuses = useMemo(() => {
-    const set = new Set(['Active', 'InActive']);
+    const set = new Set(['Active', 'InActive', 'Deleted']);
     for (const it of items || []) {
       const s = String(it.status || '').trim();
       if (s) set.add(s);
@@ -126,13 +135,32 @@ export default function OwnerAccountsPage() {
     }
   };
 
+  const loadManagers = async () => {
+    setManagersLoading(true);
+    try {
+      const data = await adminService.listManagers();
+      setManagers(data?.items || []);
+    } catch (e) {
+      notifyError(e?.response?.data?.message || 'Tải danh sách Manager thất bại.');
+    } finally {
+      setManagersLoading(false);
+    }
+  };
+
   useEffect(() => {
     load();
+    loadManagers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onCreate = async (e) => {
     e.preventDefault();
+
+    const managerID = String(form.managerID || '').trim();
+    if (!managerID) {
+      notifyError('Vui lòng chọn Manager phụ trách Owner này.');
+      return;
+    }
 
     const username = normalizeUsername(form.username);
     const email = normalizeEmail(form.email);
@@ -146,6 +174,7 @@ export default function OwnerAccountsPage() {
     setSubmitting(true);
     try {
       await adminService.createOwner({
+        managerID,
         username,
         email,
         name,
@@ -153,7 +182,7 @@ export default function OwnerAccountsPage() {
         address: String(form.address || ''),
       });
       notifySuccess('Đã tạo Owner và gửi email tài khoản.');
-      setForm({ username: '', email: '', name: '', phone: '', address: '' });
+      setForm({ managerID: '', username: '', email: '', name: '', phone: '', address: '' });
       await load();
     } catch (e2) {
       notifyError(e2?.response?.data?.message || 'Tạo Owner thất bại.');
@@ -162,11 +191,22 @@ export default function OwnerAccountsPage() {
     }
   };
 
-  const onDeactivate = async (id) => {
+  const onRequestDelete = async (id) => {
     if (!id) return;
     try {
-      await adminService.deactivateOwner(id);
-      notifySuccess('Đã vô hiệu hóa tài khoản.');
+      const data = await adminService.requestDeleteOwner(id);
+      notifySuccess(data?.message || 'Đã gửi email. Tài khoản sẽ được xóa sau 3 ngày.');
+      await load();
+    } catch (e) {
+      notifyError(e?.response?.data?.message || 'Thao tác thất bại.');
+    }
+  };
+
+  const onRestore = async (id) => {
+    if (!id) return;
+    try {
+      const data = await adminService.restoreOwner(id);
+      notifySuccess(data?.message || 'Đã khôi phục tài khoản.');
       await load();
     } catch (e) {
       notifyError(e?.response?.data?.message || 'Thao tác thất bại.');
@@ -246,6 +286,27 @@ export default function OwnerAccountsPage() {
             </div>
 
             <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label className="text-xs text-[#fdfdf6]/60">Manager (required)</label>
+                <select
+                  value={form.managerID}
+                  onChange={(e) => setForm((p) => ({ ...p, managerID: e.target.value }))}
+                  className="mt-1 w-full rounded-md border border-white/10 bg-[#0d0f0b] px-3 py-2 text-sm outline-none focus:border-[#8eff71]/40"
+                >
+                  <option value="">
+                    {managersLoading
+                      ? 'Loading managers...'
+                      : activeManagers.length
+                        ? 'Select a manager'
+                        : 'No active managers available'}
+                  </option>
+                  {activeManagers.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name || m.username} ({m.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className="text-xs text-[#fdfdf6]/60">Username</label>
                 <input
@@ -297,7 +358,7 @@ export default function OwnerAccountsPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setForm({ username: '', email: '', name: '', phone: '', address: '' });
+                  setForm({ managerID: '', username: '', email: '', name: '', phone: '', address: '' });
                 }}
                 className="rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm text-[#fdfdf6]/80 hover:text-[#8eff71]"
               >
@@ -367,11 +428,29 @@ export default function OwnerAccountsPage() {
                       <td className="px-5 py-4">
                         <StatusBadge status={it.status} />
                       </td>
-                      <td className="px-5 py-4 text-[#fdfdf6]/70">{formatDate(it.createdAt)}</td>
+                      <td className="px-5 py-4 text-[#fdfdf6]/70">{formatDate(it.deletion?.requestedAt || it.createdAt)}</td>
                       <td className="px-5 py-4 text-right">
+                        {it.status === 'Deleted' ? (
+                          <button
+                            type="button"
+                            onClick={() => onRestore(it.id)}
+                            className="rounded-md bg-white/10 px-3 py-2 text-xs text-[#fdfdf6]/80 hover:text-[#8eff71]"
+                          >
+                            Restore
+                          </button>
+                        ) : it.deletion?.scheduledAt ? (
+                          <button
+                            type="button"
+                            onClick={() => onRestore(it.id)}
+                            className="rounded-md bg-white/10 px-3 py-2 text-xs text-[#fdfdf6]/80 hover:text-[#8eff71]"
+                            title={`Scheduled at ${formatDate(it.deletion?.scheduledAt)}`}
+                          >
+                            Cancel delete
+                          </button>
+                        ) : (
                         <button
                           type="button"
-                          onClick={() => onDeactivate(it.id)}
+                          onClick={() => onRequestDelete(it.id)}
                           disabled={it.status !== 'Active'}
                           className={
                             it.status !== 'Active'
@@ -381,6 +460,7 @@ export default function OwnerAccountsPage() {
                         >
                           Delete
                         </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -417,6 +497,12 @@ export default function OwnerAccountsPage() {
               <div className="text-[#fdfdf6]/50">Inactive</div>
               <div className="mt-1 text-lg font-black text-yellow-200">
                 {items.filter((x) => x.status === 'InActive').length}
+              </div>
+            </div>
+            <div className="rounded-lg bg-[#0d0f0b] p-3">
+              <div className="text-[#fdfdf6]/50">Deleted</div>
+              <div className="mt-1 text-lg font-black text-[#fdfdf6]/60">
+                {items.filter((x) => x.status === 'Deleted').length}
               </div>
             </div>
           </div>
