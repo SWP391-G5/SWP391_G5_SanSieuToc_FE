@@ -1,9 +1,26 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useState, useEffect } from 'react';
+import axiosInstance from '../../services/axios';
 
 export default function OwnerLayout() {
-  const { user, logout } = useAuth();
+  const { user, logout, accessToken } = useAuth();
   const location = useLocation();
+  const [refundCount, setRefundCount] = useState(0);
+
+  useEffect(() => {
+    const fetchRefundCount = async () => {
+      try {
+        const res = await axiosInstance.get('/api/bookings/owner/refund-requests');
+        setRefundCount(res.data.count || 0);
+      } catch (err) {
+        console.log('No refund API');
+      }
+    };
+    fetchRefundCount();
+    const interval = setInterval(fetchRefundCount, 10000);
+    return () => clearInterval(interval);
+  }, [accessToken]);
 
   const handleLogout = () => {
     logout();
@@ -13,6 +30,8 @@ export default function OwnerLayout() {
     { name: 'Dashboard', path: '/owner/dashboard', icon: 'dashboard' },
     { name: 'Fields', path: '/owner/fields', icon: 'stadium', endIconAttr: { style: { fontVariationSettings: "'FILL' 1" } } },
     { name: 'Bookings', path: '/owner/bookings', icon: 'event_available' },
+    { name: 'Refund Request', path: '/owner/refunds', icon: 'replay', badge: true },
+    { name: 'Wallet', path: '/owner/wallet', icon: 'account_balance_wallet' },
     { name: 'Marketing', path: '/owner/marketing', icon: 'rss_feed' },
     { name: 'Vouchers', path: '/owner/vouchers', icon: 'confirmation_number' },
     { name: 'Revenue', path: '/owner/revenue', icon: 'insights' },
@@ -43,6 +62,11 @@ export default function OwnerLayout() {
                   {item.icon}
                 </span>
                 <span className="font-label text-sm">{item.name}</span>
+                {item.badge && refundCount > 0 && (
+                  <span className="ml-auto bg-error text-on-primary text-xs font-bold px-2 py-0.5 rounded-full">
+                    {refundCount}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -112,6 +136,10 @@ export default function OwnerLayout() {
         <button className="bg-primary text-on-primary p-3 rounded-full -mt-10 shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
           <span className="material-symbols-outlined">add</span>
         </button>
+        <Link to="/owner/wallet" className="flex flex-col items-center gap-1 text-on-surface/40">
+          <span className="material-symbols-outlined">account_balance_wallet</span>
+          <span className="text-[10px] font-label">Wallet</span>
+        </Link>
         <Link to="/owner/bookings" className="flex flex-col items-center gap-1 text-on-surface/40">
           <span className="material-symbols-outlined">event_available</span>
           <span className="text-[10px] font-label">Bookings</span>

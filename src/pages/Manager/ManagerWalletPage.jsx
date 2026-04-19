@@ -1,6 +1,65 @@
-import { MOCK_WALLET_DATA, MOCK_TRANSACTIONS, formatVnd } from '../../data/wallet/walletData';
+import { useEffect, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+
+function formatVnd(amount) {
+  return new Intl.NumberFormat('vi-VN').format(amount || 0);
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleDateString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
 
 export default function ManagerWalletPage() {
+  const { accessToken } = useAuth();
+  const [wallet, setWallet] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = accessToken || localStorage.getItem('accessToken');
+        console.log('Fetching with token:', token ? token.substring(0, 20) + '...' : 'none');
+        
+        const [walletRes, txRes] = await Promise.all([
+          fetch('/api/manager/wallet', { headers: { Authorization: `Bearer ${token}` } }),
+          fetch('/api/manager/wallet/transactions?limit=50', { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
+        
+        console.log('Wallet response status:', walletRes.status);
+        console.log('Transactions response status:', txRes.status);
+        
+        if (!walletRes.ok) {
+          const errText = await walletRes.text();
+          console.error('Wallet API error:', walletRes.status, errText);
+        }
+        if (!txRes.ok) {
+          const errText = await txRes.text();
+          console.error('Transactions API error:', txRes.status, errText);
+        }
+        
+        const walletData = await walletRes.json();
+        const txData = await txRes.json();
+        setWallet(walletData.wallet);
+        setTransactions(txData.transactions || []);
+      } catch (err) {
+        console.error('Failed to load wallet data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (accessToken) fetchData();
+  }, [accessToken]);
+
+  if (loading) {
+    return <div className="p-6 text-[#abaca5]">Đang tải...</div>;
+  }
+
   return (
     <div className="space-y-6">
       <header>
@@ -23,7 +82,7 @@ export default function ManagerWalletPage() {
             </span>
           </div>
           <div className="mt-2 text-2xl font-black text-[#fdfdf6]">
-            {formatVnd(MOCK_WALLET_DATA.availableBalance)}
+            {formatVnd(wallet?.balance || 0)}
           </div>
         </div>
 
@@ -37,7 +96,7 @@ export default function ManagerWalletPage() {
             </span>
           </div>
           <div className="mt-2 text-2xl font-black text-[#fdfdf6]">
-            {formatVnd(MOCK_WALLET_DATA.pendingBalance)}
+            {formatVnd(0)}
           </div>
         </div>
 
@@ -51,7 +110,7 @@ export default function ManagerWalletPage() {
             </span>
           </div>
           <div className="mt-2 text-2xl font-black text-[#fdfdf6]">
-            {formatVnd(MOCK_WALLET_DATA.totalEarnings)}
+            {formatVnd(wallet?.balance || 0)}
           </div>
         </div>
 
@@ -65,7 +124,7 @@ export default function ManagerWalletPage() {
             </span>
           </div>
           <div className="mt-2 text-2xl font-black text-[#fdfdf6]">
-            {(MOCK_WALLET_DATA.commissionRate * 100).toFixed(0)}%
+            10%
           </div>
         </div>
       </div>
@@ -99,7 +158,7 @@ export default function ManagerWalletPage() {
               </tr>
             </thead>
             <tbody>
-              {MOCK_TRANSACTIONS.length === 0 ? (
+              {transactions.length === 0 ? (
                 <tr>
                   <td
                     colSpan={5}
@@ -109,15 +168,15 @@ export default function ManagerWalletPage() {
                   </td>
                 </tr>
               ) : (
-                MOCK_TRANSACTIONS.map((t) => (
+                transactions.map((t) => (
                   <tr
-                    key={t.id}
+                    key={t._id}
                     className="border-b border-[#474944]/20 text-[#fdfdf6]"
                   >
-                    <td className="py-4 text-sm">{formatDate(t.date)}</td>
-                    <td className="py-4 text-sm">{t.description}</td>
+                    <td className="py-4 text-sm">{formatDate(t.createdAt)}</td>
+                    <td className="py-4 text-sm">{t.description || 'Hoa hồng sân'}</td>
                     <td className="py-4 text-sm text-[#abaca5]">
-                      {t.fieldName}
+                      -
                     </td>
                     <td className="py-4 text-sm font-bold text-[#8eff71]">
                       +{formatVnd(t.amount)}
@@ -125,12 +184,12 @@ export default function ManagerWalletPage() {
                     <td className="py-4">
                       <span
                         className={`inline-flex rounded-full px-2 py-1 text-xs font-bold ${
-                          t.status === 'completed'
+                          t.balanceAfter > t.balanceBefore
                             ? 'bg-[#8eff71]/10 text-[#8eff71]'
                             : 'bg-[#fbff2e]/10 text-[#fbff2e]'
                         }`}
                       >
-                        {t.status === 'completed' ? 'Hoàn thành' : 'Chờ xử lý'}
+                        Hoàn thành
                       </span>
                     </td>
                   </tr>
