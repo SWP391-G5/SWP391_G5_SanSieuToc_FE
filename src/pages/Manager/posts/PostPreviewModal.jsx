@@ -15,12 +15,12 @@ export default function PostPreviewModal({ open, post, onClose }) {
       <div className="w-full max-w-4xl rounded-2xl bg-white border border-outline-variant shadow-2xl my-10 overflow-hidden">
         <div className="flex items-start justify-between gap-4 border-b border-outline-variant px-5 py-4 sm:px-6 bg-surface-container-high">
           <div>
-            <h2 className="text-xl font-headline font-bold text-black">Preview Bài đăng</h2>
-            <p className="text-sm text-black mt-1">Đây là preview theo dữ liệu hiện tại của bài đăng.</p>
+            <h2 className="text-xl font-headline font-bold text-on-surface-variant">Preview Bài đăng</h2>
+            <p className="text-sm text-on-surface-variant mt-1">Đây là preview theo dữ liệu hiện tại của bài đăng.</p>
           </div>
           <button
             type="button"
-            className="h-10 rounded-lg px-4 text-sm font-bold text-black border border-outline-variant hover:bg-surface"
+            className="h-10 rounded-lg px-4 text-sm font-bold text-on-surface-variant border border-outline-variant hover:bg-surface"
             onClick={onClose}
           >
             Close
