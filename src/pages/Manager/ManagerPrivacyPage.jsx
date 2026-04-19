@@ -232,25 +232,25 @@ export default function ManagerPrivacyPage() {
             className="h-10 rounded-lg px-4 text-sm font-bold border border-outline-variant hover:bg-surface disabled:opacity-50"
             disabled={loading}
           >
-            Refresh
+            Làm mới
           </button>
           <button
             type="button"
             onClick={openCreate}
             className="h-10 rounded-lg bg-primary/20 px-4 text-xs font-extrabold uppercase tracking-widest text-primary hover:bg-primary hover:text-on-primary transition-all"
           >
-            Add Privacy
+            Thêm chính sách
           </button>
         </div>
       </header>
 
       <section className="bg-surface-container p-4 sm:p-6 rounded-xl space-y-3">
         {error ? <div className="text-sm text-error">{error}</div> : null}
-        {loading ? <div className="text-sm text-on-surface-variant">Loading...</div> : null}
+        {loading ? <div className="text-sm text-on-surface-variant">Đang tải...</div> : null}
 
         {!loading && normalized.length === 0 ? (
           <div className="rounded-xl border border-outline-variant bg-surface px-4 py-6 text-sm text-on-surface-variant">
-            No privacy policies yet.
+            Chưa có chính sách nào.
           </div>
         ) : null}
 
@@ -268,7 +268,7 @@ export default function ManagerPrivacyPage() {
                   <div className="min-w-0">
                     <div className="text-sm font-black text-on-surface truncate">{p.title || '—'}</div>
                     <div className="mt-1 text-xs text-on-surface-variant">
-                      {p.updatedAt ? `Updated: ${new Date(p.updatedAt).toLocaleString()}` : ''}
+                      {p.updatedAt ? `Cập nhật: ${new Date(p.updatedAt).toLocaleString()}` : ''}
                     </div>
                   </div>
                   <span className="material-symbols-outlined text-on-surface-variant">
@@ -288,14 +288,14 @@ export default function ManagerPrivacyPage() {
                         onClick={() => openEdit(p)}
                         className="h-9 rounded-lg px-3 text-xs font-bold border border-outline-variant hover:bg-surface"
                       >
-                        Edit
+                        Sửa
                       </button>
                       <button
                         type="button"
                         onClick={() => requestDelete(p)}
                         className="h-9 rounded-lg px-3 text-xs font-bold border border-error text-error hover:bg-error hover:text-on-error"
                       >
-                        Delete
+                        Xóa
                       </button>
                     </div>
                   </div>

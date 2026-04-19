@@ -54,11 +54,11 @@ function CurrencyTooltip({ active, payload, label }) {
 }
 
 const PRESETS = [
-  { value: 'today', label: 'Today' },
-  { value: 'last7days', label: 'Last 7 days' },
-  { value: 'thisWeek', label: 'This week' },
-  { value: 'thisMonth', label: 'This month' },
-  { value: 'lastMonth', label: 'Last month' },
+  { value: 'today', label: 'Hôm nay' },
+  { value: 'last7days', label: '7 ngày gần đây' },
+  { value: 'thisWeek', label: 'Tuần này' },
+  { value: 'thisMonth', label: 'Tháng này' },
+  { value: 'lastMonth', label: 'Tháng trước' },
 ];
 
 /**
@@ -153,7 +153,7 @@ export default function ManagerStatisticsPage() {
       setError('');
       return;
     }
-    setError(firstError?.response?.data?.message || firstError?.message || 'Load statistics failed');
+    setError(firstError?.response?.data?.message || firstError?.message || 'Tải thống kê thất bại');
   }, [anyLoading, firstError]);
 
   // Sync query results into local state (minimizes JSX edits)
@@ -188,7 +188,7 @@ export default function ManagerStatisticsPage() {
         setManagedOwners(data?.items || []);
       } catch (e) {
         if (cancelled) return;
-        setScopeError(e?.response?.data?.message || e?.message || 'Load managed owners failed');
+        setScopeError(e?.response?.data?.message || e?.message || 'Tải danh sách owner được quản lý thất bại');
       } finally {
         if (!cancelled) setScopeLoading(false);
       }
@@ -211,7 +211,7 @@ export default function ManagerStatisticsPage() {
       const data = await managerApi.getManagedOwners();
       setManagedOwners(data?.items || []);
     } catch (e) {
-      setScopeError(e?.response?.data?.message || e?.message || 'Load managed owners failed');
+      setScopeError(e?.response?.data?.message || e?.message || 'Tải danh sách owner được quản lý thất bại');
     } finally {
       setScopeLoading(false);
     }
@@ -308,14 +308,14 @@ export default function ManagerStatisticsPage() {
                       disabled={loading}
                       className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/80 hover:text-[#8eff71] hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Change owner
+                      Đổi Owner
                     </button>
                     <button
                       type="button"
                       onClick={clearOwnerFocus}
                       className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/80 hover:text-[#ff4d4d] hover:bg-white/10"
                     >
-                      Clear
+                      Bỏ lọc
                     </button>
                   </div>
                 </div>
@@ -363,7 +363,7 @@ export default function ManagerStatisticsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {loading ? <div className="text-xs text-on-surface-variant">Loading…</div> : null}
+          {loading ? <div className="text-xs text-on-surface-variant">Đang tải…</div> : null}
           {error ? <div className="text-xs text-error">{error}</div> : null}
 
           {!ownerId ? (
@@ -389,9 +389,9 @@ export default function ManagerStatisticsPage() {
           <div className="w-full max-w-3xl rounded-2xl border border-white/10 bg-[#0d0f0b]/95 shadow-[0_20px_80px_rgba(0,0,0,0.6)]">
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
               <div className="min-w-0">
-                <div className="text-sm font-black uppercase tracking-widest text-[#fdfdf6]/70">Field details</div>
+                <div className="text-sm font-black uppercase tracking-widest text-[#fdfdf6]/70">Chi tiết sân</div>
                 <div className="text-lg font-bold text-[#fdfdf6] truncate">
-                  {displayField?.fieldName || displayField?.name || 'Field'}
+                  {displayField?.fieldName || displayField?.name || 'Sân'}
                 </div>
                 {fieldDetailQ.isFetching ? (
                   <div className="mt-1 text-[11px] text-[#fdfdf6]/50">Loading full details…</div>
@@ -407,7 +407,7 @@ export default function ManagerStatisticsPage() {
                 onClick={closeFieldView}
                 className="rounded-lg bg-white/5 px-3 py-1.5 text-xs text-[#fdfdf6]/70 hover:text-[#8eff71]"
               >
-                Close
+                Đóng
               </button>
             </div>
 
@@ -502,11 +502,11 @@ export default function ManagerStatisticsPage() {
 
                     {fieldServices.length ? (
                       <div className="md:col-span-2 rounded-xl border border-white/10 bg-white/5 p-4">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-[#fdfdf6]/60">Services</div>
+                        <div className="text-[10px] font-black uppercase tracking-widest text-[#fdfdf6]/60">Dịch vụ</div>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {fieldServices.slice(0, 30).map((s, idx) => (
                             <span key={String(s?._id || s?.id || idx)} className="rounded-full border border-white/10 bg-[#0d0f0b] px-3 py-1 text-[11px] text-[#fdfdf6]/70">
-                              {String(s?.serviceName || s?.name || 'Service')}
+                              {String(s?.serviceName || s?.name || 'Dịch vụ')}
                             </span>
                           ))}
                         </div>
@@ -529,20 +529,20 @@ export default function ManagerStatisticsPage() {
           <div className="w-full max-w-3xl rounded-2xl border border-white/10 bg-[#0d0f0b]/95 shadow-[0_20px_80px_rgba(0,0,0,0.6)]">
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
               <div>
-                <div className="text-sm font-black uppercase tracking-widest text-[#fdfdf6]/70">Managed scope</div>
-                <div className="text-lg font-bold text-[#fdfdf6]">Owners & Fields you are assigned to</div>
+                <div className="text-sm font-black uppercase tracking-widest text-[#fdfdf6]/70">Phạm vi quản lý</div>
+                <div className="text-lg font-bold text-[#fdfdf6]">Owner & sân bạn được phân công</div>
               </div>
               <button
                 type="button"
                 onClick={() => setScopeOpen(false)}
                 className="rounded-lg bg-white/5 px-3 py-1.5 text-xs text-[#fdfdf6]/70 hover:text-[#8eff71]"
               >
-                Close
+                Đóng
               </button>
             </div>
 
             <div className="max-h-[70vh] overflow-auto p-5">
-              {scopeLoading ? <div className="text-sm text-on-surface-variant">Loading…</div> : null}
+              {scopeLoading ? <div className="text-sm text-on-surface-variant">Đang tải…</div> : null}
               {scopeError ? <div className="text-sm text-error">{scopeError}</div> : null}
 
               {!scopeLoading && !managedOwners.length ? (
@@ -592,30 +592,30 @@ export default function ManagerStatisticsPage() {
       {/* Quick Stats */}
       <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         <div className="bg-surface-container p-6 rounded-xl relative overflow-hidden">
-          <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Field Revenue</p>
+          <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Doanh thu sân</p>
           <div className="flex items-end gap-2">
             <h3 className="text-4xl font-headline font-black text-primary">{formatCompactNumber(stats.fieldRevenue)}</h3>
             <span className="text-xs font-bold text-tertiary pb-1 mb-1">VND</span>
           </div>
-          <div className="mt-4 text-[10px] text-on-surface-variant">Sum of Transaction type = Field Payment</div>
+          <div className="mt-4 text-[10px] text-on-surface-variant">Tổng giao dịch loại = Thanh toán sân</div>
         </div>
 
         <div className="bg-surface-container p-6 rounded-xl relative overflow-hidden">
-          <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Service Revenue</p>
+          <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Doanh thu dịch vụ</p>
           <div className="flex items-end gap-2">
             <h3 className="text-4xl font-headline font-black text-primary">{formatCompactNumber(stats.serviceRevenue)}</h3>
             <span className="text-xs font-bold text-tertiary pb-1 mb-1">VND</span>
           </div>
-          <div className="mt-4 text-[10px] text-on-surface-variant">Sum of Transaction type = Service Payment</div>
+          <div className="mt-4 text-[10px] text-on-surface-variant">Tổng giao dịch loại = Thanh toán dịch vụ</div>
         </div>
 
         <div className="bg-surface-container p-6 rounded-xl">
-          <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Gross Revenue</p>
+          <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Tổng doanh thu (Gross)</p>
           <div className="flex items-end gap-2">
             <h3 className="text-4xl font-headline font-black text-primary">{formatCompactNumber(stats.grossRevenue)}</h3>
             <span className="text-xs font-bold text-tertiary pb-1 mb-1">VND</span>
           </div>
-          <div className="mt-4 text-[10px] text-on-surface-variant">Field Payment + Service Payment</div>
+          <div className="mt-4 text-[10px] text-on-surface-variant">Thanh toán sân + thanh toán dịch vụ</div>
         </div>
 
         <div className="bg-surface-container p-6 rounded-xl">
@@ -653,11 +653,11 @@ export default function ManagerStatisticsPage() {
         </div>
 
         <div className="bg-surface-container p-6 rounded-xl">
-          <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Fields</p>
+          <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Sân</p>
           <div className="flex items-end gap-2">
             <h3 className="text-4xl font-headline font-black text-primary">{formatCompactNumber(stats.fieldsCount)}</h3>
           </div>
-          <div className="mt-4 text-[10px] text-on-surface-variant">Fields under assigned owners</div>
+          <div className="mt-4 text-[10px] text-on-surface-variant">Sân thuộc các owner được phân công</div>
         </div>
       </section>
 
@@ -666,7 +666,7 @@ export default function ManagerStatisticsPage() {
         <div className="lg:col-span-8 space-y-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="text-xl font-headline font-bold">Revenue Trend</h2>
+              <h2 className="text-xl font-headline font-bold">Xu hướng doanh thu</h2>
               <p className="text-sm text-on-surface-variant">Field / Service / Gross / Refund / Net grouped by {groupBy}.</p>
             </div>
 
@@ -688,7 +688,7 @@ export default function ManagerStatisticsPage() {
               </div>
 
               <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-                <label className="mr-2 text-xs uppercase tracking-widest text-on-surface-variant">Group by</label>
+                <label className="mr-2 text-xs uppercase tracking-widest text-on-surface-variant">Nhóm theo</label>
                 <select
                   value={groupBy}
                   onChange={(e) => setGroupBy(e.target.value)}
@@ -696,9 +696,9 @@ export default function ManagerStatisticsPage() {
                   className="bg-transparent text-sm text-on-surface outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   { [
-                    { value: 'day', label: 'Day' },
-                    { value: 'week', label: 'Week' },
-                    { value: 'month', label: 'Month' },
+                    { value: 'day', label: 'Ngày' },
+                    { value: 'week', label: 'Tuần' },
+                    { value: 'month', label: 'Tháng' },
                   ].map((g) => (
                     <option key={g.value} value={g.value} className="bg-[#0d0f0b]">
                       {g.label}
@@ -708,14 +708,14 @@ export default function ManagerStatisticsPage() {
               </div>
 
               <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-                <label className="mr-2 text-xs uppercase tracking-widest text-on-surface-variant">View</label>
+                <label className="mr-2 text-xs uppercase tracking-widest text-on-surface-variant">Chế độ xem</label>
                 <select
                   value={trendViewMode}
                   onChange={(e) => setTrendViewMode(e.target.value)}
                   disabled={loading}
                   className="bg-transparent text-sm text-on-surface outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {[{ value: 'chart', label: 'Chart' }, { value: 'list', label: 'List' }].map((x) => (
+                  {[{ value: 'chart', label: 'Biểu đồ' }, { value: 'list', label: 'Danh sách' }].map((x) => (
                     <option key={x.value} value={x.value} className="bg-[#0d0f0b]">
                       {x.label}
                     </option>
@@ -784,7 +784,7 @@ export default function ManagerStatisticsPage() {
                           return (
                             <div className="rounded-lg border border-white/10 bg-[#0d0f0b]/95 px-3 py-2 shadow-lg">
                               <div className="text-xs font-black text-[#fdfdf6]">{label}</div>
-                              <div className="mt-1 text-[11px] text-[#fdfdf6]/80">Bookings: {formatCompactNumber(payload[0].value)}</div>
+                              <div className="mt-1 text-[11px] text-[#fdfdf6]/80">Lượt đặt sân: {formatCompactNumber(payload[0].value)}</div>
                             </div>
                           );
                         }}

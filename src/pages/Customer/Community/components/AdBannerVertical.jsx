@@ -22,7 +22,7 @@ export default function AdBannerVertical({ banner, title, subtitle, cta, to }) {
         <div className="text-sm leading-relaxed text-[#abaca5]">{subtitle}</div>
         <button
           type="button"
-          onClick={() => to ? navigate(to) : null}
+          onClick={() => (to ? navigate(to) : null)}
           className="font-headline w-full rounded-lg bg-[#242721] px-4 py-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6] transition-colors hover:bg-[#8eff71] hover:text-[#0d6100]"
         >
           {cta || 'Learn more'}

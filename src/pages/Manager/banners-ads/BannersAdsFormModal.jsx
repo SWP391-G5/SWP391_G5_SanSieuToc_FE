@@ -3,11 +3,17 @@
  * Create/Edit modal for banner/ad item.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { buildPickedImagePreview, revokePreviewUrl } from './bannerUploadHelpers';
+import { PLACEMENTS } from './placementsMeta';
 
 export default function BannersAdsFormModal({ open, initial, busy, error, onClose, onSubmit, notify }) {
   const [form, setForm] = initial;
+
+  const placementMeta = useMemo(
+    () => (PLACEMENTS || []).find((p) => p.key === form?.placement) || null,
+    [form?.placement]
+  );
 
   useEffect(() => {
     if (open) return;
@@ -15,6 +21,14 @@ export default function BannersAdsFormModal({ open, initial, busy, error, onClos
     if (img && typeof img === 'object' && img.previewUrl) revokePreviewUrl(img.previewUrl);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const max = placementMeta?.maxItems;
+    if (typeof max === 'number' && max > 0 && Number(form?.order) >= max) {
+      setForm((p) => ({ ...p, order: Math.max(0, max - 1) }));
+    }
+  }, [open, placementMeta?.maxItems]);
 
   if (!open) return null;
 
@@ -26,13 +40,15 @@ export default function BannersAdsFormModal({ open, initial, busy, error, onClos
     setForm((p) => ({ ...p, image: preview }));
   };
 
+  const isHomeHero = (form?.placement || '').toLowerCase() === 'home_hero';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="w-full max-w-2xl rounded-2xl bg-surface-container-high border border-outline-variant shadow-2xl my-10">
         <div className="flex items-start justify-between gap-4 border-b border-outline-variant px-5 py-4 sm:px-6">
           <div>
-            <h2 className="text-xl font-headline font-bold">{form?.id ? 'Edit Item' : 'New Item'}</h2>
-            <p className="text-sm text-on-surface-variant mt-1">Upload 1 image and control placement/order/active.</p>
+            <h2 className="text-xl font-headline font-bold">{form?.id ? 'Chỉnh sửa' : 'Thêm mới'}</h2>
+            <p className="text-sm text-on-surface-variant mt-1">Tải 1 ảnh và cấu hình vị trí / thứ tự / bật tắt.</p>
           </div>
           <button
             type="button"
@@ -40,7 +56,7 @@ export default function BannersAdsFormModal({ open, initial, busy, error, onClos
             onClick={onClose}
             disabled={busy}
           >
-            Close
+            Đóng
           </button>
         </div>
 
@@ -48,26 +64,49 @@ export default function BannersAdsFormModal({ open, initial, busy, error, onClos
           <label className="space-y-1 block">
             <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Title</div>
             <input
-              className="h-11 w-full rounded-lg bg-white px-4 text-sm border border-outline-variant text-on-surface-variant"
+              className="h-11 w-full rounded-lg bg-surface px-4 text-sm border border-outline-variant text-on-surface outline-none focus:ring-2 focus:ring-primary/30"
               value={form?.title || ''}
               onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
               disabled={busy}
             />
           </label>
 
+          {isHomeHero ? (
+            <div className="rounded-lg border border-outline-variant bg-surface px-4 py-3 text-sm text-on-surface">
+              Trang Chủ (Home) hiện tại chỉ chạy slider ảnh.
+            </div>
+          ) : null}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="space-y-1 block">
               <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Placement</div>
               <select
-                className="h-11 w-full rounded-lg bg-surface px-4 text-sm border border-outline-variant text-on-surface-variant"
+                className="h-11 w-full rounded-lg bg-surface px-4 text-sm border border-outline-variant text-on-surface outline-none focus:ring-2 focus:ring-primary/30"
                 value={form?.placement || 'home_hero'}
-                onChange={(e) => setForm((p) => ({ ...p, placement: e.target.value }))}
+                onChange={(e) => {
+                  const nextPlacement = e.target.value;
+                  const nextMeta = (PLACEMENTS || []).find((p) => p.key === nextPlacement) || null;
+                  const max = nextMeta?.maxItems;
+
+                  setForm((p) => {
+                    const proposedOrder = Number.isFinite(Number(p?.order)) ? Number(p.order) : 0;
+                    const safeOrder =
+                      typeof max === 'number' && max > 0 ? Math.min(Math.max(0, proposedOrder), max - 1) : proposedOrder;
+
+                    return { ...p, placement: nextPlacement, order: safeOrder };
+                  });
+
+                  if (typeof max === 'number' && max > 0) {
+                    notify?.notifyInfo?.(`Placement \"${nextMeta?.label || nextPlacement}\" allows up to ${max} images.`);
+                  }
+                }}
                 disabled={busy}
               >
-                {/* Keep full list in placementsMeta to avoid duplicating here */}
-                <option value="home_hero">Home Hero</option>
-                <option value="home_promo">Home Promo</option>
-                <option value="fields_list_ads">Fields List Ads</option>
+                {(PLACEMENTS || []).map((p) => (
+                  <option key={p.key} value={p.key}>
+                    {p.label}
+                  </option>
+                ))}
               </select>
             </label>
 
@@ -75,11 +114,26 @@ export default function BannersAdsFormModal({ open, initial, busy, error, onClos
               <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Order</div>
               <input
                 type="number"
-                className="h-11 w-full rounded-lg bg-white px-4 text-sm border border-outline-variant text-on-surface-variant"
+                className="h-11 w-full rounded-lg bg-surface px-4 text-sm border border-outline-variant text-on-surface outline-none focus:ring-2 focus:ring-primary/30"
                 value={form?.order ?? 0}
-                onChange={(e) => setForm((p) => ({ ...p, order: Number(e.target.value) }))}
+                onChange={(e) => {
+                  const raw = Number(e.target.value);
+                  const max = placementMeta?.maxItems;
+                  const nextOrder =
+                    typeof max === 'number' && max > 0
+                      ? Math.min(Math.max(0, Number.isFinite(raw) ? raw : 0), max - 1)
+                      : Number.isFinite(raw)
+                      ? raw
+                      : 0;
+                  setForm((p) => ({ ...p, order: nextOrder }));
+                }}
                 disabled={busy}
               />
+              {typeof placementMeta?.maxItems === 'number' ? (
+                <div className="text-[11px] text-on-surface-variant">
+                  Range: 0 → {Math.max(0, placementMeta.maxItems - 1)}
+                </div>
+              ) : null}
             </label>
           </div>
 
@@ -104,7 +158,7 @@ export default function BannersAdsFormModal({ open, initial, busy, error, onClos
                 onChange={(e) => pickFile(e.target.files)}
                 disabled={busy}
               />
-              Pick image
+              Chọn ảnh
             </label>
 
             <div className="rounded-xl border border-outline-variant bg-surface p-4">
@@ -115,7 +169,7 @@ export default function BannersAdsFormModal({ open, initial, busy, error, onClos
                   className="w-full max-h-64 object-cover rounded-lg"
                 />
               ) : (
-                <div className="text-sm text-on-surface-variant">No image selected.</div>
+                <div className="text-sm text-on-surface-variant">Chưa chọn ảnh.</div>
               )}
             </div>
           </div>
@@ -129,7 +183,7 @@ export default function BannersAdsFormModal({ open, initial, busy, error, onClos
               className="h-11 rounded-lg px-5 text-sm font-bold border border-outline-variant hover:bg-surface"
               disabled={busy}
             >
-              Cancel
+              Hủy
             </button>
             <button
               type="button"
@@ -138,12 +192,18 @@ export default function BannersAdsFormModal({ open, initial, busy, error, onClos
                   notify?.notifyWarning?.('Image is required.');
                   return;
                 }
+
+                const max = placementMeta?.maxItems;
+                if (typeof max === 'number' && max > 0 && Number(form?.order) >= max) {
+                  notify?.notifyWarning?.(`Order must be between 0 and ${max - 1} for this placement.`);
+                  return;
+                }
                 onSubmit?.();
               }}
               className="h-11 rounded-lg px-6 text-sm font-bold bg-primary text-on-primary hover:opacity-90 disabled:opacity-50"
               disabled={busy}
             >
-              {busy ? 'Saving...' : 'Save'}
+              {busy ? 'Đang lưu...' : 'Lưu'}
             </button>
           </div>
         </div>

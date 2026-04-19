@@ -14,12 +14,12 @@ import { useEffect, useRef, useState } from 'react';
  * Sidebar navigation definition for manager area.
  */
 const NAV_ITEMS = [
-  { key: 'statistics', label: 'Statistics', to: '/manager/statistics', icon: 'bar_chart' },
-  { key: 'posts', label: 'Blog', to: '/manager/posts', icon: 'edit_note' },
-  { key: 'marketing', label: 'Banners & Ads', to: '/manager/banners-ads', icon: 'branding_watermark' },
-  { key: 'wallet', label: 'Wallet', to: '/manager/wallet', icon: 'account_balance_wallet' },
-  { key: 'privacy', label: 'Privacy', to: '/manager/privacy', icon: 'shield' },
-  { key: 'feedback', label: 'Feedback', to: '/manager/feedback', icon: 'rate_review' },
+  { key: 'statistics', label: 'Thống kê', to: '/manager/statistics', icon: 'bar_chart' },
+  { key: 'posts', label: 'Bài viết', to: '/manager/posts', icon: 'edit_note' },
+  { key: 'marketing', label: 'Banner / Quảng cáo', to: '/manager/banners-ads', icon: 'branding_watermark' },
+  { key: 'wallet', label: 'Ví', to: '/manager/wallet', icon: 'account_balance_wallet' },
+  { key: 'privacy', label: 'Chính sách', to: '/manager/privacy', icon: 'shield' },
+  { key: 'feedback', label: 'Phản hồi', to: '/manager/feedback', icon: 'rate_review' },
 ];
 
 /**
@@ -78,7 +78,7 @@ export default function ManagerLayout() {
       <aside className="bg-[#121410] dark:bg-[#121410] h-screen w-64 fixed left-0 top-0 flex flex-col py-8 z-50">
         <div className="px-6 mb-12">
           <h1 className="text-2xl font-black tracking-tight text-[#fdfdf6] font-headline">San Sieu Toc HQ</h1>
-          <p className="text-xs uppercase tracking-widest text-primary/60 font-bold mt-1">Platform Manager</p>
+          <p className="text-xs uppercase tracking-widest text-primary/60 font-bold mt-1">Khu vực Manager</p>
         </div>
 
         <nav className="flex-1 space-y-1">
@@ -134,7 +134,7 @@ export default function ManagerLayout() {
                   onClick={() => setSettingsOpen((v) => !v)}
                   className="rounded-lg p-2 text-on-surface-variant hover:text-[#8eff71] hover:bg-white/5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8eff71]/40"
                   aria-haspopup="menu"
-                  aria-label="Account settings"
+                  aria-label="Cài đặt tài khoản"
                   aria-expanded={settingsOpen}
                 >
                   <span className="material-symbols-outlined" data-icon="settings">
@@ -168,7 +168,7 @@ export default function ManagerLayout() {
                         className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71] transition-colors"
                       >
                         <span className="material-symbols-outlined text-[18px] leading-none">account_circle</span>
-                        <span className="flex-1 text-left">Profile</span>
+                        <span className="flex-1 text-left">Hồ sơ</span>
                       </button>
 
                       <div className="h-px bg-white/10 my-1" />
@@ -182,7 +182,7 @@ export default function ManagerLayout() {
                         className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-[#fdfdf6]/80 hover:bg-red-500/10 hover:text-red-200 transition-colors"
                       >
                         <span className="material-symbols-outlined text-[18px] leading-none">logout</span>
-                        <span className="flex-1 text-left">Logout</span>
+                        <span className="flex-1 text-left">Đăng xuất</span>
                       </button>
                     </div>
                   </div>

@@ -438,7 +438,7 @@ export default function ManagerPostsPage() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-headline font-bold text-on-surface">Posts</h1>
-          <p className="text-sm text-on-surface-variant">Manage all system posts and approve owner submissions.</p>
+          <p className="text-sm text-on-surface-variant">Quản lý bài viết hệ thống và duyệt bài do Owner gửi.</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -450,14 +450,14 @@ export default function ManagerPostsPage() {
             }}
             className="rounded-lg border border-outline-variant px-4 py-2 text-xs font-extrabold uppercase tracking-widest text-on-surface hover:bg-surface transition-all"
           >
-            Refresh
+            Làm mới
           </button>
           <button
             type="button"
             onClick={openCreate}
             className="rounded-lg bg-primary/20 px-4 py-2 text-xs font-extrabold uppercase tracking-widest text-primary hover:bg-primary hover:text-on-primary transition-all"
           >
-            New Post
+            Thêm bài viết
           </button>
         </div>
       </header>

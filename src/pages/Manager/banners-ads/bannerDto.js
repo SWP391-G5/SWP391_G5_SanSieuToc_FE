@@ -17,6 +17,7 @@ export function normalizeBannerItem(x) {
     order: toNumber(x?.order, 0),
     isActive: !!x?.isActive,
     imageUrl: x?.imageUrl || '',
+    __v: toNumber(x?.__v, 0),
     createdAt: x?.createdAt,
     updatedAt: x?.updatedAt,
   };

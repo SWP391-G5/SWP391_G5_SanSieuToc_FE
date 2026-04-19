@@ -16,22 +16,36 @@ export default function PostConfirmModal({
 }) {
   if (!open) return null;
 
+  const handleCancel = () => onCancel?.();
+
   const confirmClassName =
     confirmVariant === 'danger'
       ? 'bg-error text-on-error hover:opacity-90'
       : 'bg-primary text-on-primary hover:opacity-90';
 
   return (
-    <div className={`fixed inset-0 ${zIndexClassName} flex items-center justify-center bg-black/60 backdrop-blur-sm p-4`}>
+    <div
+      className={`fixed inset-0 ${zIndexClassName} flex items-center justify-center bg-black/60 backdrop-blur-sm p-4`}
+      role="dialog"
+      aria-modal="true"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) handleCancel();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') handleCancel();
+      }}
+      tabIndex={-1}
+    >
       <div className="w-full max-w-md rounded-2xl bg-surface-container-high border border-outline-variant shadow-2xl">
         <div className="px-5 py-4 border-b border-outline-variant">
-          <div className="text-sm font-bold text-black">{title}</div>
-          {message ? <div className="text-xs text-on-surface-variant mt-1">{message}</div> : null}
+          <div className="text-sm font-bold text-on-surface">{title}</div>
+          <div className="text-xs text-on-surface-variant mt-1">Vui lòng xác nhận để tiếp tục.</div>
+          {message ? <div className="text-xs text-on-surface mt-2">{message}</div> : null}
         </div>
         <div className="px-5 py-4 flex items-center justify-end gap-2">
           <button
             type="button"
-            onClick={onCancel}
+            onClick={handleCancel}
             className="h-10 rounded-lg px-4 text-sm font-bold border border-outline-variant hover:bg-surface"
           >
             {cancelText}

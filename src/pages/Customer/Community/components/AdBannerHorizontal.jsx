@@ -9,7 +9,7 @@ export default function AdBannerHorizontal({ banners, copyArray = [] }) {
   
   if (!images.length) return null;
   const currentBanner = banners[idx] || banners[0];
-  const currentCopy = copyArray.length > 0 ? copyArray[idx % copyArray.length] : { subtitle: 'Discover more...', cta: 'Visit Now' };
+  const currentCopy = copyArray.length > 0 ? copyArray[idx % copyArray.length] : { subtitle: '', cta: '', to: '' };
 
   return (
     <div className="group relative mb-12 overflow-hidden rounded-xl border border-[#8eff71]/20 bg-[#121410]">
@@ -32,12 +32,10 @@ export default function AdBannerHorizontal({ banners, copyArray = [] }) {
           <h2 className="font-headline text-2xl font-black leading-tight text-[#fdfdf6]">
             {currentCopy.title || currentBanner?.title || 'Khuyến mãi đặc biệt'}
           </h2>
-          <p className="max-w-sm text-sm text-[#abaca5] opacity-90">
-            {currentCopy.subtitle}
-          </p>
+          <p className="max-w-sm text-sm text-[#abaca5] opacity-90">{currentCopy.subtitle || ''}</p>
           <button
             type="button"
-            onClick={() => currentCopy.to ? navigate(currentCopy.to) : null}
+            onClick={() => (currentCopy.to ? navigate(currentCopy.to) : null)}
             className="font-headline mt-2 w-fit rounded-lg bg-[#8eff71] px-6 py-2 text-sm font-black text-[#0d6100] transition-all hover:scale-105"
           >
             {currentCopy.cta || 'Khám phá'}

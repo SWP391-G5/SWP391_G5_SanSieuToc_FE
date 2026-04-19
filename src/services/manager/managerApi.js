@@ -27,6 +27,31 @@ const managerApi = {
     return data;
   },
 
+  // -------------------------
+  // Response helpers
+  // -------------------------
+  _unwrap(res) {
+    // Backends in this repo sometimes return:
+    // 1) { success, data }
+    // 2) { success, items }
+    // 3) { data: [...] }
+    // 4) raw Array
+    if (res && typeof res === 'object' && 'data' in res && res.data !== undefined && res.data !== null) {
+      return res.data;
+    }
+    return res;
+  },
+
+  _asItems(res) {
+    const unwrapped = managerApi._unwrap(res);
+    if (Array.isArray(unwrapped)) return { items: unwrapped };
+    if (unwrapped && typeof unwrapped === 'object') {
+      if (Array.isArray(unwrapped.items)) return { items: unwrapped.items };
+      if (Array.isArray(unwrapped.data)) return { items: unwrapped.data };
+    }
+    return { items: [] };
+  },
+
   async createPost(payload) {
     const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
     const { data } = await axiosInstance.post(
@@ -62,7 +87,7 @@ const managerApi = {
   // =========================
   async getBanners(params) {
     const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.BANNERS}${buildQuery(params)}`);
-    return data;
+    return managerApi._asItems(data);
   },
 
   async createBanner(payload) {
@@ -72,7 +97,7 @@ const managerApi = {
       payload,
       isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined
     );
-    return data;
+    return { item: managerApi._unwrap(data) };
   },
 
   async updateBanner(id, payload) {
@@ -82,12 +107,12 @@ const managerApi = {
       payload,
       isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined
     );
-    return data;
+    return { item: managerApi._unwrap(data) };
   },
 
   async deleteBanner(id) {
     const { data } = await axiosInstance.delete(ENDPOINTS.MANAGER.BANNER_BY_ID(id));
-    return data;
+    return { item: managerApi._unwrap(data) };
   },
 
   // =========================

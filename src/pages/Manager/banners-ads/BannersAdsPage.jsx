@@ -26,6 +26,48 @@ function openPreview(previewPath) {
 export default function BannersAdsPage() {
   const notify = useNotification();
 
+  const preValidate = ({ nextDraft, currentItems, mode, currentId } = {}) => {
+    const d = nextDraft || {};
+    const selfId = currentId != null ? String(currentId) : '';
+    const nextPlacement = d.placement || placement;
+    const nextOrder = Number.isFinite(Number(d.order)) ? Number(d.order) : 0;
+    const nextActive = !!d.isActive;
+
+    // placement max guard
+    const max = placementMeta?.maxItems;
+    if (typeof max === 'number' && max > 0 && nextOrder >= max) {
+      return { ok: false, message: `Order must be between 0 and ${max - 1} for this placement.` };
+    }
+
+    // Avoid duplicate (placement+order) among ACTIVE items
+    if (nextActive) {
+      const dup = (currentItems || []).find(
+        (x) =>
+          x &&
+          String(x?.id ?? x?._id ?? '') !== selfId &&
+          String(x.placement || '') === String(nextPlacement || '') &&
+          Number(x.order) === nextOrder &&
+          !!x.isActive
+      );
+      if (dup) {
+        return { ok: false, message: `Duplicate active item at order ${nextOrder} for this placement. Please choose another order or deactivate the other item first.` };
+      }
+    }
+
+    // When creating, enforce capacity per placement
+    if (mode === 'create') {
+      const maxItems = placementMeta?.maxItems;
+      if (typeof maxItems === 'number' && maxItems > 0) {
+        const countInPlacement = (currentItems || []).filter((x) => String(x?.placement || '') === String(nextPlacement || '')).length;
+        if (countInPlacement >= maxItems) {
+          return { ok: false, message: `This placement allows up to ${maxItems} images.` };
+        }
+      }
+    }
+
+    return { ok: true };
+  };
+
   const [placement, setPlacement] = useState(DEFAULT_PLACEMENT);
   const placementMeta = useMemo(() => PLACEMENTS.find((p) => p.key === placement) || null, [placement]);
 
@@ -50,6 +92,7 @@ export default function BannersAdsPage() {
     order: 0,
     isActive: true,
     image: null, // {file,previewUrl} | string url
+    __v: 0,
   });
 
   const formStateTuple = useMemo(() => [draft, setDraft], [draft]);
@@ -57,13 +100,29 @@ export default function BannersAdsPage() {
 
   const placementMax = placementMeta?.maxItems ?? 6;
 
+  const nextSuggestedOrder = useMemo(() => {
+    const list = items || [];
+    if (!list.length) return 0;
+    const maxOrder = Math.max(...list.map((x) => Number(x.order) || 0));
+    return Math.max(0, maxOrder + 1);
+  }, [items]);
+
   const openCreate = () => {
-    if (items.length >= placementMax) {
-      notify?.notifyWarning?.(`This placement allows up to ${placementMax} images.`);
+    const v = preValidate({ nextDraft: { placement }, currentItems: rawItems || [], mode: 'create' });
+    if (!v.ok) {
+      notify?.notifyWarning?.(v.message);
       return;
     }
 
-    setDraft({ id: null, title: '', placement, order: 0, isActive: true, image: null });
+    setDraft({
+      id: null,
+      title: '',
+      placement,
+      order: nextSuggestedOrder,
+      isActive: true,
+      image: null,
+      __v: 0,
+    });
     setFormError('');
     setShowForm(true);
   };
@@ -76,6 +135,7 @@ export default function BannersAdsPage() {
       order: Number(b?.order) || 0,
       isActive: !!b?.isActive,
       image: b?.imageUrl || null,
+      __v: Number(b?.__v) || 0,
     });
     setFormError('');
     setShowForm(true);
@@ -86,11 +146,19 @@ export default function BannersAdsPage() {
     setFormError('');
 
     try {
+      const v = preValidate({ nextDraft: draft, currentItems: rawItems || [], mode: draft.id ? 'edit' : 'create', currentId: draft.id });
+      if (!v.ok) {
+        setFormError(v.message);
+        notify?.notifyWarning?.(v.message);
+        return;
+      }
+
       const fd = new FormData();
       fd.set('title', draft.title || '');
       fd.set('placement', draft.placement || placement);
       fd.set('order', String(Number(draft.order) || 0));
       fd.set('isActive', draft.isActive ? 'true' : 'false');
+      if (draft.__v !== undefined && draft.__v !== null) fd.set('__v', String(Number(draft.__v) || 0));
 
       if (draft.image && typeof draft.image === 'object' && draft.image.file instanceof File) {
         fd.append('images', draft.image.file);
@@ -145,11 +213,19 @@ export default function BannersAdsPage() {
     if (!b?.id) return;
 
     try {
+      const next = { ...b, isActive: !b.isActive };
+      const v = preValidate({ nextDraft: next, currentItems: rawItems || [], mode: 'toggle', currentId: b.id });
+      if (!v.ok) {
+        notify?.notifyWarning?.(v.message);
+        return;
+      }
+
       const fd = new FormData();
       fd.set('title', b.title || '');
       fd.set('placement', b.placement || placement);
       fd.set('order', String(Number(b.order) || 0));
       fd.set('isActive', b.isActive ? 'false' : 'true');
+      if (b.__v !== undefined && b.__v !== null) fd.set('__v', String(Number(b.__v) || 0));
 
       await managerApi.updateBanner(b.id, fd);
       await reload();
@@ -162,11 +238,19 @@ export default function BannersAdsPage() {
     if (!b?.id) return;
 
     try {
+      const next = { ...b, order: nextOrder };
+      const v = preValidate({ nextDraft: next, currentItems: rawItems || [], mode: 'order', currentId: b.id });
+      if (!v.ok) {
+        notify?.notifyWarning?.(v.message);
+        return;
+      }
+
       const fd = new FormData();
       fd.set('title', b.title || '');
       fd.set('placement', b.placement || placement);
       fd.set('order', String(Number(nextOrder) || 0));
       fd.set('isActive', b.isActive ? 'true' : 'false');
+      if (b.__v !== undefined && b.__v !== null) fd.set('__v', String(Number(b.__v) || 0));
 
       await managerApi.updateBanner(b.id, fd);
       await reload();
@@ -179,8 +263,8 @@ export default function BannersAdsPage() {
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-headline font-bold">Banners & Ads</h1>
-          <p className="text-sm text-on-surface-variant">Manage marketing images by placement (where they appear on the public site).</p>
+          <h1 className="text-2xl font-headline font-bold">Banner / Quảng cáo</h1>
+          <p className="text-sm text-on-surface-variant">Quản lý ảnh marketing theo vị trí hiển thị (placement) trên trang khách.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -189,14 +273,14 @@ export default function BannersAdsPage() {
             onClick={() => openPreview(placementMeta?.previewPath)}
             className="h-10 rounded-lg px-4 text-sm font-bold border border-outline-variant hover:bg-surface"
           >
-            Preview
+            Xem trước
           </button>
           <button
             type="button"
             onClick={openCreate}
             className="h-10 rounded-lg bg-primary/20 px-4 text-xs font-extrabold uppercase tracking-widest text-primary hover:bg-primary hover:text-on-primary transition-all"
           >
-            Add Image
+            Thêm ảnh
           </button>
         </div>
       </header>
@@ -219,7 +303,7 @@ export default function BannersAdsPage() {
           </label>
 
           <div className="rounded-lg border border-outline-variant bg-surface px-4 py-2">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Applies to</div>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Áp dụng cho</div>
             <div className="text-sm text-on-surface-variant font-semibold">{placementLabel(placement)}</div>
             <div className="text-xs text-on-surface-variant mt-1">{placementMeta?.position || '-'}</div>
           </div>
@@ -227,14 +311,14 @@ export default function BannersAdsPage() {
           <div className="flex items-end justify-between gap-3">
             <label className="inline-flex h-10 items-center gap-2 text-sm text-on-surface-variant">
               <input type="checkbox" checked={activeOnly} onChange={(e) => setActiveOnly(e.target.checked)} />
-              Active only
+              Chỉ hiển thị mục đang bật
             </label>
             <button
               type="button"
               onClick={reload}
               className="h-10 rounded-lg px-4 text-sm font-bold border border-outline-variant hover:bg-surface"
             >
-              Refresh
+              Làm mới
             </button>
           </div>
         </div>
@@ -263,7 +347,21 @@ export default function BannersAdsPage() {
         notify={notify}
       />
 
-      <PostConfirmModal open={!!confirm} config={confirm} onClose={() => setConfirm(null)} />
+      <PostConfirmModal
+        open={!!confirm}
+        title={confirm?.title}
+        message={confirm?.message}
+        cancelText={confirm?.cancelText || 'Hủy'}
+        confirmText={confirm?.confirmText || 'Đồng ý'}
+        confirmVariant={confirm?.variant === 'danger' ? 'danger' : 'primary'}
+        onCancel={() => {
+          confirm?.onCancel?.();
+          setConfirm(null);
+        }}
+        onConfirm={async () => {
+          await confirm?.onConfirm?.();
+        }}
+      />
     </div>
   );
 }
