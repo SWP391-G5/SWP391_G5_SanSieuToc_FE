@@ -16,9 +16,26 @@ function buildQuery(params = {}) {
 }
 
 const publicApi = {
+  _unwrap(res) {
+    if (res && typeof res === 'object' && 'data' in res && res.data !== undefined && res.data !== null) {
+      return res.data;
+    }
+    return res;
+  },
+
+  _asItems(res) {
+    const unwrapped = publicApi._unwrap(res);
+    if (Array.isArray(unwrapped)) return { items: unwrapped };
+    if (unwrapped && typeof unwrapped === 'object') {
+      if (Array.isArray(unwrapped.items)) return { items: unwrapped.items };
+      if (Array.isArray(unwrapped.data)) return { items: unwrapped.data };
+    }
+    return { items: [] };
+  },
+
   async getBanners(params) {
     const { data } = await axiosInstance.get(`/api/banners${buildQuery(params)}`);
-    return data;
+    return publicApi._asItems(data);
   },
 
   async getFields(params) {

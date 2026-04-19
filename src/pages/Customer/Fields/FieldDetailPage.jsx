@@ -1,6 +1,13 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../../services/axios";
+import { usePreviewMode } from "../../../context/PreviewModeContext";
+import useCustomerBanners from "../../../hooks/useCustomerBanners";
+import AdBannerVertical from "../Community/components/AdBannerVertical";
+import AdBannerHorizontal from "../Community/components/AdBannerHorizontal";
+import { FIELD_DETAIL_VERTICAL_POOL } from "../../../data/ads/fieldDetailAdsCopy";
+import { FIELD_DETAIL_HORIZONTAL_POOL } from "../../../data/ads/fieldDetailHorizontalCopy";
+import { getRandomAdsFromPool } from "../../../utils/adUtils";
 
 const UTILITY_LABELS = {
   parking: "Parking",
@@ -187,9 +194,17 @@ function CalendarPicker({ selectedDate, onSelectDate }) {
 export default function FieldDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isPreviewMode } = usePreviewMode();
   const [field, setField] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const { banners: detailBanners } = useCustomerBanners('field_detail_banner');
+  const { banners: horizontalBanners } = useCustomerBanners('field_detail_horizontal');
+
+  const horizontalCopies = useMemo(() => getRandomAdsFromPool(FIELD_DETAIL_HORIZONTAL_POOL, 3), []);
+  const verticalCopies = useMemo(() => getRandomAdsFromPool(FIELD_DETAIL_VERTICAL_POOL, 3), []);
 
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedSlots, setSelectedSlots] = useState([]);
@@ -303,6 +318,11 @@ export default function FieldDetailPage() {
   };
 
   const handleBook = () => {
+    if (isPreviewMode) {
+      alert('Bạn đang ở chế độ xem trước (preview mode) nên không thể đặt sân.');
+      return;
+    }
+
     if (!selectedDate || selectedSlots.length === 0) {
       alert("Please select date and at least one time slot");
       return;
@@ -335,6 +355,11 @@ export default function FieldDetailPage() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-5">
+          <AdBannerHorizontal
+            banners={horizontalBanners}
+            copyArray={horizontalCopies}
+          />
+          
           <div className="relative overflow-hidden rounded-2xl shadow-lg">
             <img
               src={
@@ -443,8 +468,9 @@ export default function FieldDetailPage() {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="sticky top-28 rounded-2xl bg-[#181a16] shadow-xl overflow-hidden">
-            <div className="bg-gradient-to-r from-[#8eff71]/20 to-[#8eff71]/5 p-4 border-b border-[#8eff71]/20">
+          <div className="sticky top-28 flex flex-col gap-6">
+            <div className="rounded-2xl bg-[#181a16] shadow-xl overflow-hidden">
+              <div className="bg-gradient-to-r from-[#8eff71]/20 to-[#8eff71]/5 p-4 border-b border-[#8eff71]/20">
               <div className="flex items-center justify-between">
                 <div>
                   <span className="font-headline text-xs text-[#88f6ff]">
@@ -562,6 +588,16 @@ export default function FieldDetailPage() {
                   Free cancellation up to 24 hours before booking
                 </div>
               </div>
+            )}
+            </div>
+            {detailBanners.length > 0 && (
+              <AdBannerVertical
+                banner={detailBanners[0]}
+                title={verticalCopies[0].title}
+                subtitle={verticalCopies[0].subtitle}
+                cta={verticalCopies[0].cta}
+                to={verticalCopies[0].to}
+              />
             )}
           </div>
         </div>

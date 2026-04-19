@@ -7,7 +7,11 @@ function UserMenu({ auth, navigate, profilePath, showProfile = true, showLogout 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
 
-  const showMenu = showProfile || showLogout;
+  // Hide Profile for Manager to avoid navigating to a non-existent profile page
+  const roleKey = String(auth.user?.role || '').trim().toLowerCase();
+  const canShowProfile = showProfile && roleKey !== 'manager';
+
+  const showMenu = canShowProfile || showLogout;
 
   const displayName = useMemo(() => {
     const name = String(auth.user?.name || '').trim();
@@ -139,7 +143,7 @@ function UserMenu({ auth, navigate, profilePath, showProfile = true, showLogout 
           role="menu"
           className="absolute right-0 top-full mt-2 w-44 overflow-hidden rounded-md border border-white/10 bg-[#0d0f0b]/95 backdrop-blur-xl shadow-[0_20px_40px_rgba(0,0,0,0.35)]"
         >
-          {showProfile ? (
+          {canShowProfile ? (
             <>
               <button
                 type="button"

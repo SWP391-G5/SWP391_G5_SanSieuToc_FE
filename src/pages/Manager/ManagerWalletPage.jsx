@@ -12,6 +12,8 @@ function formatDate(dateStr) {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
@@ -21,6 +23,7 @@ export default function ManagerWalletPage() {
   const [wallet, setWallet] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [transactionType, setTransactionType] = useState('all');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -56,6 +59,8 @@ export default function ManagerWalletPage() {
       }
     };
     if (accessToken) fetchData();
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
   }, [accessToken]);
 
   if (loading) {
@@ -139,74 +144,57 @@ export default function ManagerWalletPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-[#474944]/30 bg-[#121410] p-6">
-        <div className="mb-4">
+      <div className="rounded-xl border border-[#474944]/30 bg-[#121410] overflow-hidden">
+        <div className="px-6 py-4 border-b border-[#474944]/30 flex items-center justify-between">
           <h2 className="text-lg font-headline font-bold text-[#fdfdf6]">
             Lịch sử giao dịch
           </h2>
+          <div className="flex bg-[#1a1c18] rounded-lg p-1">
+            <button
+              onClick={() => setTransactionType('all')}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                transactionType === 'all'
+                  ? 'bg-[#8eff71] text-[#0a0a0a]'
+                  : 'text-[#abaca5] hover:text-[#fdfdf6]'
+              }`}
+            >
+              Tất cả
+            </button>
+            <button
+              onClick={() => setTransactionType('withdraw')}
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                transactionType === 'withdraw'
+                  ? 'bg-[#8eff71] text-[#0a0a0a]'
+                  : 'text-[#abaca5] hover:text-[#fdfdf6]'
+              }`}
+            >
+              Rút tiền
+            </button>
+          </div>
         </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-[#474944]/30 text-left">
-                <th className="pb-3 text-xs font-bold uppercase tracking-wider text-[#abaca5]">
-                  Ngày
-                </th>
-                <th className="pb-3 text-xs font-bold uppercase tracking-wider text-[#abaca5]">
-                  Mô tả
-                </th>
-                <th className="pb-3 text-xs font-bold uppercase tracking-wider text-[#abaca5]">
-                  Sân
-                </th>
-                <th className="pb-3 text-xs font-bold uppercase tracking-wider text-[#abaca5]">
-                  Số tiền
-                </th>
-                <th className="pb-3 text-xs font-bold uppercase tracking-wider text-[#abaca5]">
-                  Trạng thái
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="py-8 text-center text-[#abaca5]"
-                  >
-                    Chưa có giao dịch nào
-                  </td>
-                </tr>
-              ) : (
-                transactions.map((t) => (
-                  <tr
-                    key={t._id}
-                    className="border-b border-[#474944]/20 text-[#fdfdf6]"
-                  >
-                    <td className="py-4 text-sm">{formatDate(t.createdAt)}</td>
-                    <td className="py-4 text-sm">{t.description || 'Hoa hồng sân'}</td>
-                    <td className="py-4 text-sm text-[#abaca5]">
-                      -
-                    </td>
-                    <td className="py-4 text-sm font-bold text-[#8eff71]">
-                      +{formatVnd(t.amount)}
-                    </td>
-                    <td className="py-4">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-1 text-xs font-bold ${
-                          t.balanceAfter > t.balanceBefore
-                            ? 'bg-[#8eff71]/10 text-[#8eff71]'
-                            : 'bg-[#fbff2e]/10 text-[#fbff2e]'
-                        }`}
-                      >
-                        Hoàn thành
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        <div className="divide-y divide-[#474944]/20">
+          {transactions.length === 0 ? (
+            <div className="px-6 py-8 text-center text-[#abaca5]">
+              Chưa có giao dịch nào
+            </div>
+          ) : (
+            transactions
+              .filter(t => transactionType === 'all' || (t.type === 'Withdraw' && transactionType === 'withdraw'))
+              .map((t) => (
+                <div key={t._id} className="px-6 py-4 flex items-center justify-between">
+                  <div>
+                    <div className="text-[#fdfdf6] font-medium">{t.description || 'Hoa hồng sân'}</div>
+                    <div className="text-[#abaca5] text-sm">{formatDate(t.createdAt)}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`font-semibold ${t.amount < 0 ? 'text-[#ff6b6b]' : 'text-[#8eff71]'}`}>
+                      {t.amount < 0 ? '-' : '+'}{formatVnd(Math.abs(t.amount))}
+                    </div>
+                    <div className="text-[#abaca5] text-sm">Hoàn thành</div>
+                  </div>
+                </div>
+              ))
+          )}
         </div>
       </div>
     </div>
