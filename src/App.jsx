@@ -29,6 +29,7 @@ import {
   ManagerPrivacyPage,
   ManagerStatisticsPage,
   ManagerWalletPage,
+  ManagerWithdrawPage,
 } from './pages/Manager';
 
 import ManagerMarketingImagesPage from './pages/Manager/ManagerMarketingImagesPage';
@@ -154,6 +155,7 @@ function App() {
           <Route path="posts" element={<ManagerPostsPage />} />
           <Route path="banners-ads" element={<ManagerMarketingImagesPage />} />
           <Route path="wallet" element={<ManagerWalletPage />} />
+          <Route path="withdraw" element={<ManagerWithdrawPage />} />
           <Route path="privacy" element={<ManagerPrivacyPage />} />
           <Route path="feedback" element={<ManagerFeedbackPage />} />
           <Route path="profile" element={<UserProfilePage />} />

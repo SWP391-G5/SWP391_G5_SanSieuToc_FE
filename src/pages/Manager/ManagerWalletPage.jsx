@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 function formatVnd(amount) {
@@ -16,6 +17,7 @@ function formatDate(dateStr) {
 
 export default function ManagerWalletPage() {
   const { accessToken } = useAuth();
+  const navigate = useNavigate();
   const [wallet, setWallet] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,13 +64,21 @@ export default function ManagerWalletPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-headline font-bold text-[#fdfdf6]">
-          Ví của Manager
-        </h1>
-        <p className="text-sm text-[#abaca5]">
-          Hoa hồng 10% từ doanh thu của các sân
-        </p>
+      <header className="flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-headline font-bold text-[#fdfdf6]">
+            Ví của Manager
+          </h1>
+          <p className="text-sm text-[#abaca5]">
+            Hoa hồng 10% từ doanh thu của các sân
+          </p>
+        </div>
+        <button
+          onClick={() => navigate('/manager/withdraw')}
+          className="bg-[#8eff71] text-[#0a0a0a] px-4 py-2 rounded-lg font-bold text-sm hover:opacity-90"
+        >
+          Rút tiền
+        </button>
       </header>
 
       <div className="grid gap-4 md:grid-cols-4">
