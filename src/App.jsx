@@ -15,6 +15,7 @@ import CheckoutPage from './pages/Payment/CheckoutPage';
 import FieldDetailPage from './pages/Customer/Fields/FieldDetailPage';
 import BookingConfirmPage from './pages/Payment/BookingConfirmPage';
 import ServicePage from './pages/Services/ServicePage';
+import PolicyPage from './pages/Customer/Policy/PolicyPage';
 import AdminLayout from './layouts/AdminLayout';
 import ManagerAccountsPage from './pages/admin/ManagerAccountsPage';
 import OwnerAccountsPage from './pages/admin/OwnerAccountsPage';
@@ -94,6 +95,7 @@ function App() {
               </RequireAuth>
             }
           />
+          <Route path="policy" element={<PolicyPage />} />
 
           <Route
             path="admin"

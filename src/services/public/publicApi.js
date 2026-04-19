@@ -33,6 +33,11 @@ const publicApi = {
     return data;
   },
 
+  async getPrivacies() {
+    const { data } = await axiosInstance.get('/api/privacy');
+    return data;
+  },
+
   async getFieldById(fieldId) {
     const { data } = await axiosInstance.get(`/api/fields/${fieldId}/full`);
 
