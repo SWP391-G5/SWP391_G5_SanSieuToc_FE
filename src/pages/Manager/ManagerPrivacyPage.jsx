@@ -21,6 +21,7 @@ function normalizePrivacyItem(x) {
     isDeleted: !!(x.isDeleted || x.deleted || x.isActive === false),
     updatedAt: x.updatedAt || null,
     createdAt: x.createdAt || null,
+    __v: typeof x.__v === 'number' ? x.__v : x.__v ?? undefined,
   };
 }
 
@@ -36,9 +37,9 @@ function PrivacyFormModal({ open, busy, error, draft, setDraft, onClose, onSubmi
           <div className="flex items-start justify-between gap-4 border-b border-outline-variant p-5">
             <div>
               <div className="text-lg font-headline font-black text-on-surface">
-                {draft?.id ? 'Update privacy' : 'Add privacy'}
+                {draft?.id ? 'Cập nhật chính sách' : 'Thêm chính sách'}
               </div>
-              <div className="text-xs text-on-surface-variant">Title + content. This will be shown on the public site.</div>
+              <div className="text-xs text-on-surface-variant">Tiêu đề + nội dung. Sẽ hiển thị ở trang công khai.</div>
             </div>
             <button
               type="button"
@@ -46,18 +47,18 @@ function PrivacyFormModal({ open, busy, error, draft, setDraft, onClose, onSubmi
               onClick={onClose}
               disabled={busy}
             >
-              Close
+              Đóng
             </button>
           </div>
 
           <div className="p-5 space-y-4">
             <div>
               <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
-                Title
+                Tiêu đề
               </label>
               <input
                 className="h-11 w-full rounded-lg bg-surface border border-outline-variant px-4 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/40"
-                placeholder="Privacy title..."
+                placeholder="Nhập tiêu đề chính sách..."
                 type="text"
                 value={draft?.title || ''}
                 onChange={(e) => setDraft?.((p) => ({ ...p, title: e.target.value }))}
@@ -67,11 +68,11 @@ function PrivacyFormModal({ open, busy, error, draft, setDraft, onClose, onSubmi
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">
-                Content
+                Nội dung
               </label>
               <textarea
                 className="w-full min-h-56 rounded-lg bg-surface border border-outline-variant px-4 py-3 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/40"
-                placeholder="Write privacy content..."
+                placeholder="Nhập nội dung chính sách..."
                 value={draft?.content || ''}
                 onChange={(e) => setDraft?.((p) => ({ ...p, content: e.target.value }))}
                 disabled={busy}
@@ -87,7 +88,7 @@ function PrivacyFormModal({ open, busy, error, draft, setDraft, onClose, onSubmi
                 onClick={onClose}
                 disabled={busy}
               >
-                Cancel
+                Huỷ
               </button>
               <button
                 type="button"
@@ -95,7 +96,7 @@ function PrivacyFormModal({ open, busy, error, draft, setDraft, onClose, onSubmi
                 onClick={onSubmit}
                 disabled={busy}
               >
-                Save
+                Lưu
               </button>
             </div>
           </div>
@@ -117,7 +118,7 @@ export default function ManagerPrivacyPage() {
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
 
-  const [draft, setDraft] = useState({ id: null, title: '', content: '' });
+  const [draft, setDraft] = useState({ id: null, title: '', content: '', __v: undefined });
   const [confirm, setConfirm] = useState(null);
 
   const normalized = useMemo(() => {
@@ -128,13 +129,14 @@ export default function ManagerPrivacyPage() {
       .sort((a, b) => String(a.title || '').localeCompare(String(b.title || '')));
   }, [items]);
 
-  const load = async () => {
+  const load = async ({ silent } = {}) => {
     setLoading(true);
     setError('');
     try {
       const data = await managerApi.getPrivacies();
       const list = data?.items || data?.data || data || [];
       setItems(Array.isArray(list) ? list : []);
+      if (!silent) notify?.notifyInfo?.('Đã làm mới dữ liệu');
     } catch (e) {
       const msg = e?.response?.data?.message || e?.message || 'Failed to load privacy policies';
       setError(msg);
@@ -146,18 +148,18 @@ export default function ManagerPrivacyPage() {
   };
 
   useEffect(() => {
-    load();
+    load({ silent: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const openCreate = () => {
-    setDraft({ id: null, title: '', content: '' });
+    setDraft({ id: null, title: '', content: '', __v: undefined });
     setFormError('');
     setShowForm(true);
   };
 
   const openEdit = (p) => {
-    setDraft({ id: p?.id, title: p?.title || '', content: p?.content || '' });
+    setDraft({ id: p?.id, title: p?.title || '', content: p?.content || '', __v: p?.__v });
     setFormError('');
     setShowForm(true);
   };
@@ -167,7 +169,7 @@ export default function ManagerPrivacyPage() {
     const content = String(draft?.content || '').trim();
 
     if (!title) {
-      notify?.notifyWarning?.('Title is required.');
+      notify?.notifyWarning?.('Vui lòng nhập tiêu đề.');
       return;
     }
 
@@ -177,16 +179,16 @@ export default function ManagerPrivacyPage() {
     try {
       if (!draft?.id) {
         await managerApi.createPrivacy({ privacyName: title, privacyContent: content });
-        notify?.notifySuccess?.('Saved');
+        notify?.notifySuccess?.('Đã lưu');
       } else {
-        await managerApi.updatePrivacyItem(draft.id, { privacyName: title, privacyContent: content });
-        notify?.notifySuccess?.('Updated');
+        await managerApi.updatePrivacyItem(draft.id, { privacyName: title, privacyContent: content, __v: draft.__v });
+        notify?.notifySuccess?.('Đã cập nhật');
       }
 
       setShowForm(false);
       await load();
     } catch (e) {
-      const msg = e?.response?.data?.message || e?.message || 'Failed to save';
+      const msg = e?.response?.data?.message || e?.message || 'Lưu thất bại';
       setFormError(msg);
       notify?.notifyError?.(msg);
     } finally {
@@ -198,18 +200,18 @@ export default function ManagerPrivacyPage() {
     if (!p?.id) return;
 
     setConfirm({
-      title: 'Confirm',
-      message: 'Bạn chắc chắn muốn xoá privacy này? (Xoá vĩnh viễn)',
-      confirmText: 'Delete',
+      title: 'Xác nhận',
+      message: 'Bạn chắc chắn muốn xoá chính sách này? (Xoá vĩnh viễn)',
+      confirmText: 'Xóa',
       variant: 'danger',
       onConfirm: async () => {
         setConfirm(null);
         try {
           await managerApi.deletePrivacy(p.id);
-          notify?.notifySuccess?.('Deleted');
+          notify?.notifySuccess?.('Đã xoá');
           await load();
         } catch (e) {
-          notify?.notifyError?.(e?.response?.data?.message || e?.message || 'Delete failed');
+          notify?.notifyError?.(e?.response?.data?.message || e?.message || 'Xoá thất bại');
         }
       },
     });
@@ -221,14 +223,14 @@ export default function ManagerPrivacyPage() {
         <div>
           <h1 className="text-2xl font-headline font-bold">Privacy</h1>
           <p className="text-sm text-on-surface-variant">
-            Manage privacy policies shown on the public site. Click a title to expand/collapse.
+            Quản lý các chính sách hiển thị ở trang công khai. Bấm vào tiêu đề để mở/đóng nội dung.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={load}
+            onClick={() => load()}
             className="h-10 rounded-lg px-4 text-sm font-bold border border-outline-variant hover:bg-surface disabled:opacity-50"
             disabled={loading}
           >

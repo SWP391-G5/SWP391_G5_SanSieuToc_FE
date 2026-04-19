@@ -221,7 +221,10 @@ export default function ManagerStatisticsPage() {
     return {
       ownersCount: summary?.ownersCount ?? 0,
       fieldsCount: summary?.fieldsCount ?? 0,
-      bookingsCount: summary?.bookingsCount ?? 0,
+      // unique bookings
+      bookingsCount: summary?.totalBookingsCount ?? summary?.bookingsCount ?? 0,
+      // slots booked (booking details)
+      slotsBooked: summary?.totalSlotsBooked ?? 0,
       fieldRevenue: summary?.fieldRevenue ?? 0,
       serviceRevenue: summary?.serviceRevenue ?? 0,
       grossRevenue: summary?.grossRevenue ?? 0,
@@ -259,6 +262,17 @@ export default function ManagerStatisticsPage() {
     setScopeOpen(false);
   };
 
+  const focusOwnerFromHotField = (f) => {
+    const nextOwnerId = String(f?.ownerId || '').trim();
+    if (!nextOwnerId) {
+      // Hot fields could be missing ownerId if BE not updated
+      // Keep silent in UI but still help debugging
+      setError('Không xác định được owner của sân này để Focus Owner.');
+      return;
+    }
+    selectOwnerFocus(nextOwnerId);
+  };
+
   const openFieldView = (field) => {
     if (!field) return;
     // ensure modal renders basic info immediately while full detail loads
@@ -276,14 +290,14 @@ export default function ManagerStatisticsPage() {
       <header className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-headline font-bold">Statistics</h1>
-          <p className="text-sm text-on-surface-variant">Manager-scoped statistics (assigned owners only).</p>
+          <p className="text-sm text-on-surface-variant">Thống kê theo phạm vi Manager (chỉ owner được phân công).</p>
 
           {ownerId ? (
             <div className="mt-2 space-y-4">
               <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60">Focused owner</div>
+                    <div className="text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60">Owner đang lọc</div>
                     <div className="text-sm font-bold text-[#fdfdf6] truncate">
                       {focusedOwner?.name || focusedOwner?.username
                         ? `${focusedOwner?.name || ''}${focusedOwner?.username ? ` (${focusedOwner.username})` : ''}`
@@ -294,9 +308,9 @@ export default function ManagerStatisticsPage() {
                     ) : null}
                     {focusedOwner?.phone || focusedOwner?.address ? (
                       <div className="text-[11px] text-[#fdfdf6]/50 truncate">
-                        {focusedOwner?.phone ? `Phone: ${focusedOwner.phone}` : ''}
+                        {focusedOwner?.phone ? `SĐT: ${focusedOwner.phone}` : ''}
                         {focusedOwner?.phone && focusedOwner?.address ? ' • ' : ''}
-                        {focusedOwner?.address ? `Address: ${focusedOwner.address}` : ''}
+                        {focusedOwner?.address ? `Địa chỉ: ${focusedOwner.address}` : ''}
                       </div>
                     ) : null}
                   </div>
@@ -326,10 +340,10 @@ export default function ManagerStatisticsPage() {
                   <div>
                     <div className="text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60">Fields</div>
                     <div className="text-sm text-[#fdfdf6]/80">
-                      {focusedOwnerFields.length ? `Total: ${focusedOwnerFields.length}` : 'No fields found for this owner.'}
+                      {focusedOwnerFields.length ? `Tổng: ${focusedOwnerFields.length}` : 'Không tìm thấy sân nào cho owner này.'}
                     </div>
                   </div>
-                  <div className="text-[11px] text-[#fdfdf6]/50">Click a card to view details.</div>
+                  <div className="text-[11px] text-[#fdfdf6]/50">Bấm vào thẻ để xem chi tiết.</div>
                 </div>
 
                 {focusedOwnerFields.length ? (
@@ -340,19 +354,18 @@ export default function ManagerStatisticsPage() {
                         type="button"
                         onClick={() => openFieldView(f)}
                         className="rounded-xl border border-white/10 bg-[#0d0f0b] p-4 text-left hover:bg-white/5 transition-colors"
-                        title="View field details"
+                        title="Xem chi tiết sân"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <div className="text-sm font-bold text-[#fdfdf6] truncate">{f.fieldName || 'Unnamed field'}</div>
-                            <div className="text-[11px] text-[#fdfdf6]/60 truncate">{f.fieldType || 'Unknown type'}</div>
+                            <div className="text-sm font-bold text-[#fdfdf6] truncate">{f.fieldName || 'Chưa có tên sân'}</div>
+                            <div className="text-[11px] text-[#fdfdf6]/60 truncate">{f.fieldType || 'Chưa rõ loại sân'}</div>
                           </div>
                           {f.status ? (
                             <div className="text-[10px] font-black uppercase tracking-widest text-[#8eff71]">{String(f.status)}</div>
                           ) : null}
                         </div>
-                        <div className="mt-2 text-[11px] text-[#fdfdf6]/60 line-clamp-2">{f.address || 'No address'}</div>
-                        {/* Raw IDs hidden for end-user readability */}
+                        <div className="mt-2 text-[11px] text-[#fdfdf6]/60 line-clamp-2">{f.address || 'Chưa có địa chỉ'}</div>
                       </button>
                     ))}
                   </div>
@@ -492,7 +505,7 @@ export default function ManagerStatisticsPage() {
                         <div className="text-[10px] font-black uppercase tracking-widest text-[#fdfdf6]/60">Utilities</div>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {displayField.utilities.slice(0, 30).map((u) => (
-                            <span key={String(u)} className="rounded-full border border-white/10 bg-[#0d0f0b] px-3 py-1 text-[11px] text-[#fdfdf6]/70">
+                            <span key={String(u)} className="rounded-full border border-white/10 bg-[#0f0b] px-3 py-1 text-[11px] text-[#fdfdf6]/70">
                               {String(u)}
                             </span>
                           ))}
@@ -505,7 +518,7 @@ export default function ManagerStatisticsPage() {
                         <div className="text-[10px] font-black uppercase tracking-widest text-[#fdfdf6]/60">Dịch vụ</div>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {fieldServices.slice(0, 30).map((s, idx) => (
-                            <span key={String(s?._id || s?.id || idx)} className="rounded-full border border-white/10 bg-[#0d0f0b] px-3 py-1 text-[11px] text-[#fdfdf6]/70">
+                            <span key={String(s?._id || s?.id || idx)} className="rounded-full border border-white/10 bg-[#0f0b] px-3 py-1 text-[11px] text-[#fdfdf6]/70">
                               {String(s?.serviceName || s?.name || 'Dịch vụ')}
                             </span>
                           ))}
@@ -575,7 +588,7 @@ export default function ManagerStatisticsPage() {
 
                     <div className="mt-3 grid gap-2 md:grid-cols-2">
                       {(o.fields || []).map((f) => (
-                        <div key={f.id} className="rounded-lg border border-white/10 bg-[#0d0f0b] p-3">
+                        <div key={f.id} className="rounded-lg border border-white/10 bg-[#0f0b] p-3">
                           <div className="text-sm font-semibold text-[#fdfdf6] truncate">{f.fieldName}</div>
                           <div className="text-[11px] text-[#fdfdf6]/60 truncate">{f.fieldType} • {f.address}</div>
                         </div>
@@ -619,16 +632,16 @@ export default function ManagerStatisticsPage() {
         </div>
 
         <div className="bg-surface-container p-6 rounded-xl">
-          <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Refund Amount</p>
+          <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Số tiền hoàn (Refund)</p>
           <div className="flex items-end gap-2">
             <h3 className="text-4xl font-headline font-black text-error">{formatCompactNumber(stats.refundAmount)}</h3>
             <span className="text-xs font-bold text-tertiary pb-1 mb-1">VND</span>
           </div>
-          <div className="mt-4 text-[10px] text-on-surface-variant">Transaction type = Refund</div>
+          <div className="mt-4 text-[10px] text-on-surface-variant">Tổng giao dịch loại = Hoàn tiền</div>
         </div>
 
         <div className="bg-surface-container p-6 rounded-xl">
-          <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Net Revenue</p>
+          <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Doanh thu thực nhận (Net)</p>
           <div className="flex items-end gap-2">
             <h3 className="text-4xl font-headline font-black text-on-surface">{formatCompactNumber(stats.netRevenue)}</h3>
             <span className="text-xs font-bold text-tertiary pb-1 mb-1">VND</span>
@@ -637,11 +650,19 @@ export default function ManagerStatisticsPage() {
         </div>
 
         <div className="bg-surface-container p-6 rounded-xl">
-          <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Total Bookings</p>
+          <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Tổng lượt đặt (Booking)</p>
           <div className="flex items-end gap-2">
             <h3 className="text-4xl font-headline font-black text-on-surface">{formatCompactNumber(stats.bookingsCount)}</h3>
           </div>
-          <div className="mt-4 text-[10px] text-on-surface-variant">Count by Booking.createdAt (scoped)</div>
+          <div className="mt-4 text-[10px] text-on-surface-variant">Đếm theo Booking.createdAt (trong phạm vi quản lý)</div>
+        </div>
+
+        <div className="bg-surface-container p-6 rounded-xl">
+          <p className="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">Tổng slot đã được đặt (Booking Detail)</p>
+          <div className="flex items-end gap-2">
+            <h3 className="text-4xl font-headline font-black text-on-surface">{formatCompactNumber(stats.slotsBooked)}</h3>
+          </div>
+          <div className="mt-4 text-[10px] text-on-surface-variant">Đếm theo BookingDetail (trong phạm vi quản lý)</div>
         </div>
 
         <div className="bg-surface-container p-6 rounded-xl">
@@ -649,7 +670,7 @@ export default function ManagerStatisticsPage() {
           <div className="flex items-end gap-2">
             <h3 className="text-4xl font-headline font-black text-tertiary">{formatCompactNumber(stats.ownersCount)}</h3>
           </div>
-          <div className="mt-4 text-[10px] text-on-surface-variant">Owners assigned to this manager</div>
+          <div className="mt-4 text-[10px] text-on-surface-variant">Số owner được phân công cho manager này</div>
         </div>
 
         <div className="bg-surface-container p-6 rounded-xl">
@@ -818,14 +839,22 @@ export default function ManagerStatisticsPage() {
             {hotFields.length ? (
               <div className="space-y-3">
                 {hotFields.map((f, idx) => (
-                  <div key={f.fieldId} className="flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold truncate">
-                        #{idx + 1} {f.fieldName || 'Field'}
+                  <button
+                    key={f.fieldId}
+                    type="button"
+                    onClick={() => focusOwnerFromHotField(f)}
+                    className="w-full text-left rounded-lg px-2 py-1.5 -mx-2 hover:bg-white/5 transition-colors"
+                    title="Focus Owner của sân này"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold truncate">
+                          #{idx + 1} {f.fieldName || 'Field'}
+                        </div>
                       </div>
+                      <div className="text-sm font-black text-primary">{formatCompactNumber(f.bookingsCount)}</div>
                     </div>
-                    <div className="text-sm font-black text-primary">{formatCompactNumber(f.bookingsCount)}</div>
-                  </div>
+                  </button>
                 ))}
               </div>
             ) : (

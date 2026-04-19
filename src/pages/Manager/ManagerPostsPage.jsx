@@ -327,8 +327,8 @@ export default function ManagerPostsPage() {
     }
   };
 
-  const approve = async (post) => {
-    const id = post?._id || post?.id;
+  const approve = async (postOrId) => {
+    const id = typeof postOrId === 'string' ? postOrId : postOrId?._id || postOrId?.id;
     if (!id) return;
     requestConfirm(
       createConfirmAction({
@@ -343,6 +343,31 @@ export default function ManagerPostsPage() {
             notify.notifySuccess('Post approved successfully');
           } catch (e) {
             notify.notifyError(e?.response?.data?.message || e?.message || 'Approve failed');
+            throw e;
+          }
+        },
+      })
+    );
+  };
+
+  const reject = async (post) => {
+    const id = post?._id || post?.id;
+    if (!id) return;
+
+    requestConfirm(
+      createConfirmAction({
+        type: 'delete',
+        message: 'Bạn chắc chắn muốn từ chối (Reject) bài đăng này?',
+        confirmText: 'Reject',
+        variant: 'danger',
+        onConfirm: async () => {
+          try {
+            await managerApi.rejectPost(id);
+            await load();
+            notify.notifySuccess('Đã từ chối bài đăng');
+          } catch (e) {
+            const msg = e?.response?.data?.message || e?.message || 'Reject failed';
+            notify.notifyError(msg);
             throw e;
           }
         },
@@ -502,7 +527,9 @@ export default function ManagerPostsPage() {
           onEdit={openEdit}
           canEditPost={canEditPost}
           onApprove={approve}
+          onReject={reject}
           onDelete={remove}
+          userId={userId}
         />
 
         {/* Numeric pagination */}

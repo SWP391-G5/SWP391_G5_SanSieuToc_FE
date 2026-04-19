@@ -259,6 +259,15 @@ export default function BannersAdsPage() {
     }
   };
 
+  const refresh = async () => {
+    try {
+      await reload?.();
+      notify?.notifyInfo?.('Đã làm mới dữ liệu');
+    } catch (e) {
+      notify?.notifyError?.(e?.response?.data?.message || e?.message || 'Làm mới thất bại');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -315,7 +324,7 @@ export default function BannersAdsPage() {
             </label>
             <button
               type="button"
-              onClick={reload}
+              onClick={refresh}
               className="h-10 rounded-lg px-4 text-sm font-bold border border-outline-variant hover:bg-surface"
             >
               Làm mới

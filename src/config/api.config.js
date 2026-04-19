@@ -32,12 +32,16 @@ export const API_CONFIG = {
       POSTS: '/api/manager/posts',
       POST_BY_ID: (id) => `/api/manager/posts/${id}`,
       POST_APPROVE: (id) => `/api/manager/posts/${id}/approve`,
+      POST_REJECT: (id) => `/api/manager/posts/${id}/reject`,
       // Banners & Ads (MarketingResource type='banner')
       BANNERS: '/api/manager/banners',
       BANNER_BY_ID: (id) => `/api/manager/banners/${id}`,
       // Privacy
       PRIVACY: '/api/manager/privacy',
       PRIVACY_BY_ID: (id) => `/api/manager/privacy/${id}`,
+      // Feedback
+      FEEDBACK: '/api/manager/feedback',
+      FEEDBACK_SUMMARY: '/api/manager/feedback/summary',
       // Statistics
       STATISTICS_SUMMARY: '/api/manager/statistics/summary',
       STATISTICS_BOOKINGS_TREND: '/api/manager/statistics/bookings-trend',

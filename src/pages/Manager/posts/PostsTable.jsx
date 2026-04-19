@@ -79,19 +79,36 @@ function ActionGroup({
   canEditPost,
   onApprove,
   onDelete,
+  onReject,
+  userId,
 }) {
   const id = post?._id || post?.id;
   const isPending = String(post?.status) === 'Pending';
 
-  // Shared button class fragments
   const base = 'h-8 rounded-md px-2.5 text-xs font-semibold transition-colors whitespace-nowrap';
   const ghost = `${base} border border-outline-variant text-on-surface-variant hover:bg-surface`;
   const primary = `${base} bg-primary text-on-primary hover:opacity-90`;
   const danger = `${base} border border-error text-error hover:bg-error hover:text-on-error`;
 
+  const canEdit = !isDraft ? !!canEditPost?.(post) : false;
+
+  const postOwnerModel = String(post?.postOwnerModel || '').trim();
+  const isOwnerPost = postOwnerModel === 'UserAccount';
+
+  const rawOwner = post?.postOwnerID || post?.postOwnerId || post?.ownerId || post?.postOwner || '';
+  const ownerId = typeof rawOwner === 'object' && rawOwner !== null ? String(rawOwner._id || rawOwner.id || '') : String(rawOwner || '');
+  const isMyManagerPost = postOwnerModel === 'AdminAccount' && ownerId && userId && String(ownerId) === String(userId);
+
+  // Pending posts: business rule → manager should Reject, not Delete
+  const showReject = !isDraft && isPending;
+
+  // Non-pending posts: allow delete for
+  // - Owner posts (UserAccount)
+  // - Manager posts only if it is my own manager post
+  const showDelete = !isDraft && !isPending && (isOwnerPost || isMyManagerPost);
+
   return (
     <div className="flex flex-col gap-1.5 items-end">
-      {/* Preview is always shown */}
       <button type="button" onClick={() => onPreview?.(post)} className={ghost} title="Preview">
         Xem
       </button>
@@ -112,29 +129,34 @@ function ActionGroup({
       ) : (
         /* ── Server post row buttons ── */
         <div className="flex gap-1.5">
-          <button
-            type="button"
-            onClick={() => onEdit?.(post)}
-            className={ghost}
-          >
-            Sửa
-          </button>
+          {canEdit ? (
+            <button type="button" onClick={() => onEdit?.(post)} className={ghost}>
+              Sửa
+            </button>
+          ) : null}
 
-          {isPending && (
+          {isPending ? (
             <button
               type="button"
-              onClick={() => onApprove?.(id)}
+              onClick={() => onApprove?.(post)}
               className={primary}
-              disabled={!isPending}
-              title={!isPending ? 'Only pending posts can be approved' : 'Approve'}
+              title="Approve"
             >
               Duyệt
             </button>
-          )}
+          ) : null}
 
-          <button type="button" onClick={() => onDelete?.(id)} className={danger}>
-            Xóa
-          </button>
+          {showReject ? (
+            <button type="button" onClick={() => onReject?.(post)} className={danger}>
+              Từ chối
+            </button>
+          ) : null}
+
+          {showDelete ? (
+            <button type="button" onClick={() => onDelete?.(post)} className={danger}>
+              Xóa
+            </button>
+          ) : null}
         </div>
       )}
     </div>
@@ -163,6 +185,8 @@ function ActionGroup({
  * @param {Function} canEditPost     - Returns true if current user may edit a post
  * @param {Function} onApprove       - Trigger approve confirm
  * @param {Function} onDelete        - Trigger delete confirm
+ * @param {Function} onReject        - Trigger reject confirm
+ * @param {string}   userId         - Current user's ID
  */
 export default function PostsTable({
   loading,
@@ -183,6 +207,8 @@ export default function PostsTable({
   canEditPost,
   onApprove,
   onDelete,
+  onReject,
+  userId,
 }) {
   // Make ALL header filters uniform.
   // Use full width of the column and keep labels visible (stacked).
@@ -351,6 +377,8 @@ export default function PostsTable({
                     canEditPost={canEditPost}
                     onApprove={onApprove}
                     onDelete={onDelete}
+                    onReject={onReject}
+                    userId={userId}
                   />
                 </td>
               </tr>

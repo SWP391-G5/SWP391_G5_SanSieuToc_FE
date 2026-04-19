@@ -77,6 +77,11 @@ const managerApi = {
     return data;
   },
 
+  async rejectPost(id) {
+    const { data } = await axiosInstance.patch(ENDPOINTS.MANAGER.POST_REJECT(id));
+    return data;
+  },
+
   async deletePost(id) {
     const { data } = await axiosInstance.delete(ENDPOINTS.MANAGER.POST_BY_ID(id));
     return data;
@@ -174,7 +179,29 @@ const managerApi = {
   // =========================
   async getManagedOwners() {
     const { data } = await axiosInstance.get(ENDPOINTS.MANAGER.SCOPE_OWNERS);
+    return managerApi._asItems(data);
+  },
+
+  // =========================
+  // Feedback (Manager)
+  // =========================
+  async getFeedbacks(params) {
+    const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.FEEDBACK}${buildQuery(params)}`);
     return data;
+  },
+
+  async getFeedbackSummary(params) {
+    const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.FEEDBACK_SUMMARY}${buildQuery(params)}`);
+    // Backend returns: { item: { ... } }
+    return data;
+  },
+
+  async deleteFeedback(feedbackId, reason) {
+    const id = String(feedbackId || '').trim();
+    if (!id) throw new Error('Missing feedbackId');
+    const payload = { reason: String(reason || '').trim() };
+    const { data } = await axiosInstance.delete(`${ENDPOINTS.MANAGER.FEEDBACK}/${id}`, { data: payload });
+    return { item: managerApi._unwrap(data) };
   },
 
   // =========================
