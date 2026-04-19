@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axiosInstance from '../../services/axios';
+import { useAuth } from '../../context/AuthContext';
 
-export default function OwnerWithdrawPage() {
+export default function ManagerWithdrawPage() {
   const navigate = useNavigate();
+  const { accessToken } = useAuth();
   const [wallet, setWallet] = useState(null);
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(true);
@@ -31,8 +32,12 @@ export default function OwnerWithdrawPage() {
 
   const fetchWallet = async () => {
     try {
-      const res = await axiosInstance.get('/api/owner/wallet');
-      setWallet(res.data.wallet);
+      const token = accessToken || localStorage.getItem('accessToken');
+      const res = await fetch('/api/manager/wallet', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setWallet(data.wallet);
     } catch (err) {
       console.error('Failed to fetch wallet:', err);
     } finally {
@@ -91,16 +96,28 @@ export default function OwnerWithdrawPage() {
 
     setSubmitting(true);
     try {
-      await axiosInstance.post('/api/owner/wallet/withdraw', {
-        amount: withdrawAmount,
-        bankName,
-        accountNumber,
-        accountName,
+      const token = accessToken || localStorage.getItem('accessToken');
+      const res = await fetch('/api/manager/wallet/withdraw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          amount: withdrawAmount,
+          bankName,
+          accountNumber,
+          accountName,
+        }),
       });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Có lỗi xảy ra');
+      }
       setMessage('Yêu cầu rút tiền đã được gửi! Vui lòng chờ xử lý.');
-      setTimeout(() => navigate('/owner/wallet'), 2000);
+      setTimeout(() => navigate('/manager/wallet'), 2000);
     } catch (err) {
-      setMessage(err.response?.data?.message || 'Có lỗi xảy ra');
+      setMessage(err.message || 'Có lỗi xảy ra');
     } finally {
       setSubmitting(false);
     }
@@ -117,35 +134,35 @@ export default function OwnerWithdrawPage() {
   return (
     <div className="max-w-xl mx-auto space-y-6">
       <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => navigate('/owner/wallet')} className="p-2 hover:bg-surface-container rounded-full">
-          <span className="material-symbols-outlined">arrow_back</span>
+        <button onClick={() => navigate('/manager/wallet')} className="p-2 hover:bg-[#474944]/30 rounded-full">
+          <span className="material-symbols-outlined text-[#fdfdf6]">arrow_back</span>
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-on-surface">Withdraw</h1>
-          <p className="text-on-surface-variant">Rút tiền về tài khoản ngân hàng</p>
+          <h1 className="text-2xl font-headline font-bold text-[#fdfdf6]">Rút tiền</h1>
+          <p className="text-sm text-[#abaca5]">Rút tiền về tài khoản ngân hàng</p>
         </div>
       </div>
 
-      <div className="bg-gradient-to-br from-primary to-primary/80 p-6 rounded-2xl text-on-primary">
-        <div className="text-sm opacity-80 mb-2">Available Balance</div>
-        <div className="text-4xl font-bold">{formatVnd(wallet?.balance)}</div>
+      <div className="rounded-xl border border-[#474944]/30 bg-[#121410] p-6">
+        <div className="text-sm text-[#abaca5] mb-2">Số dư khả dụng</div>
+        <div className="text-4xl font-black text-[#fdfdf6]">{formatVnd(wallet?.balance)}</div>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-surface-container rounded-xl p-6 space-y-4">
+      <form onSubmit={handleSubmit} className="rounded-xl border border-[#474944]/30 bg-[#121410] p-6 space-y-4">
         <div>
-          <label className="block text-sm text-on-surface-variant mb-2">Số tiền rút</label>
+          <label className="block text-sm text-[#abaca5] mb-2">Số tiền rút</label>
           <div className="relative">
             <input
               type="text"
               value={amount ? formatVnd(parseInt(amount)) : ''}
               onChange={handleAmountChange}
               placeholder="0"
-              className="w-full bg-surface p-4 rounded-lg text-xl font-bold text-on-surface border border-outline focus:border-primary outline-none"
+              className="w-full bg-[#1a1c18] p-4 rounded-lg text-xl font-bold text-[#fdfdf6] border border-[#474944]/50 focus:border-[#8eff71] outline-none"
             />
             <button
               type="button"
               onClick={setMaxAmount}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-primary text-sm font-medium"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8eff71] text-sm font-medium"
             >
               MAX
             </button>
@@ -153,11 +170,11 @@ export default function OwnerWithdrawPage() {
         </div>
 
         <div>
-          <label className="block text-sm text-on-surface-variant mb-2">Ngân hàng</label>
+          <label className="block text-sm text-[#abaca5] mb-2">Ngân hàng</label>
           <select
             value={bankName}
             onChange={(e) => setBankName(e.target.value)}
-            className="w-full bg-surface p-4 rounded-lg text-on-surface border border-outline focus:border-primary outline-none"
+            className="w-full bg-[#1a1c18] p-4 rounded-lg text-[#fdfdf6] border border-[#474944]/50 focus:border-[#8eff71] outline-none"
           >
             <option value="">Chọn ngân hàng</option>
             {banks.map((bank) => (
@@ -169,29 +186,29 @@ export default function OwnerWithdrawPage() {
         </div>
 
         <div>
-          <label className="block text-sm text-on-surface-variant mb-2">Số tài khoản</label>
+          <label className="block text-sm text-[#abaca5] mb-2">Số tài khoản</label>
           <input
             type="text"
             value={accountNumber}
             onChange={(e) => setAccountNumber(e.target.value)}
             placeholder="Nhập số tài khoản"
-            className="w-full bg-surface p-4 rounded-lg text-on-surface border border-outline focus:border-primary outline-none"
+            className="w-full bg-[#1a1c18] p-4 rounded-lg text-[#fdfdf6] border border-[#474944]/50 focus:border-[#8eff71] outline-none"
           />
         </div>
 
         <div>
-          <label className="block text-sm text-on-surface-variant mb-2">Tên người thụ hưởng</label>
+          <label className="block text-sm text-[#abaca5] mb-2">Tên người thụ hưởng</label>
           <input
             type="text"
             value={accountName}
             onChange={(e) => setAccountName(e.target.value)}
             placeholder="Nhập tên chủ tài khoản"
-            className="w-full bg-surface p-4 rounded-lg text-on-surface border border-outline focus:border-primary outline-none"
+            className="w-full bg-[#1a1c18] p-4 rounded-lg text-[#fdfdf6] border border-[#474944]/50 focus:border-[#8eff71] outline-none"
           />
         </div>
 
         {message && (
-          <div className={`p-3 rounded-lg text-sm ${message.includes('đã được') ? 'bg-success/20 text-success' : 'bg-error/20 text-error'}`}>
+          <div className={`p-3 rounded-lg text-sm ${message.includes('đã được') ? 'bg-[#8eff71]/20 text-[#8eff71]' : 'bg-[#ff6b6b]/20 text-[#ff6b6b]'}`}>
             {message}
           </div>
         )}
@@ -199,7 +216,7 @@ export default function OwnerWithdrawPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full bg-primary text-on-primary py-4 rounded-lg font-bold text-lg hover:opacity-90 disabled:opacity-50"
+          className="w-full bg-[#8eff71] text-[#0a0a0a] py-4 rounded-lg font-bold text-lg hover:opacity-90 disabled:opacity-50"
         >
           {submitting ? 'Đang xử lý...' : 'Rút tiền'}
         </button>
