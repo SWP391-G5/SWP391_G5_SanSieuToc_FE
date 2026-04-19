@@ -9,9 +9,34 @@ import useFields from '../../../hooks/useFields';
 import FeaturedFieldsSection from './components/FeaturedFieldsSection';
 import HeroSection from './components/HeroSection';
 
+import useCustomerBanners from '../../../hooks/useCustomerBanners';
+import { HOME_INTRO_COPY, HOME_FEATURE_POOL } from '../../../data/ads/homeAdsCopy';
+import { getRandomAdsFromPool } from '../../../utils/adUtils';
+
 export default function HomePage() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const { banners: homeBanners } = useCustomerBanners('home_hero');
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Consolidated randomized hero ads: Intro fixed + Randomized features
+  const heroAdsArray = useMemo(() => {
+    // Pick 4 additional features to mix with 2 intro slides = 6 max slides
+    const features = getRandomAdsFromPool(HOME_FEATURE_POOL, 4);
+    return [...HOME_INTRO_COPY, ...features];
+  }, []);
+
+  useEffect(() => {
+    if (!homeBanners?.length) return;
+    const t = setInterval(() => {
+      setCurrentSlide((s) => (s + 1) % homeBanners.length);
+    }, 5000);
+    return () => clearInterval(t);
+  }, [homeBanners]);
+
+  const activeHeroImage = homeBanners[currentSlide]?.imageUrl || footballImg;
+  const activeCopy = heroAdsArray[currentSlide % heroAdsArray.length];
 
   useEffect(() => {
     const target = location.state?.scrollTo;
@@ -146,7 +171,8 @@ export default function HomePage() {
   return (
     <div className="pb-24 md:pb-0">
       <HeroSection
-        backgroundImageSrc={footballImg}
+        backgroundImageSrc={activeHeroImage}
+        activeCopy={activeCopy}
         heroSearchRef={heroSearchRef}
         minDate={minDate}
         selectedDate={selectedDate}

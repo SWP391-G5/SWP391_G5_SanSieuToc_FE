@@ -1,7 +1,14 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../../../services/axios';
 import DEFAULT_FIELD_IMAGE_URL from '../../../utils/defaultFieldImage';
+import { usePreviewMode } from '../../../context/PreviewModeContext';
+import useCustomerBanners from '../../../hooks/useCustomerBanners';
+import AdBannerVertical from '../Community/components/AdBannerVertical';
+import AdBannerHorizontal from '../Community/components/AdBannerHorizontal';
+import { FIELD_DETAIL_VERTICAL_POOL } from '../../../data/ads/fieldDetailAdsCopy';
+import { FIELD_DETAIL_HORIZONTAL_POOL } from '../../../data/ads/fieldDetailHorizontalCopy';
+import { getRandomAdsFromPool } from '../../../utils/adUtils';
 
 const UTILITY_LABELS = {
   parking: 'Parking',
@@ -43,9 +50,9 @@ function CalendarPicker({ selectedDate, onSelectDate }) {
   };
 
   const isPastDate = (day) => {
-    const date = new Date(year, month, day);
-    const todayStr = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    return date < todayStr;
+    const dateTs = new Date(year, month, day).setHours(0, 0, 0, 0);
+    const todayTs = new Date(today.getFullYear(), today.getMonth(), today.getDate()).setHours(0, 0, 0, 0);
+    return dateTs < todayTs;
   };
 
   const isSelected = (day) => {
@@ -62,7 +69,10 @@ function CalendarPicker({ selectedDate, onSelectDate }) {
   const handleSelectDate = (day) => {
     if (isPastDate(day)) return;
     const date = new Date(year, month, day);
-    onSelectDate(date.toISOString().split('T')[0]);
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    onSelectDate(`${y}-${m}-${d}`);
   };
 
   const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -148,14 +158,33 @@ function getPrimaryFieldImage(imageValue) {
 export default function FieldDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isPreviewMode } = usePreviewMode();
   const [field, setField] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const { banners: detailBanners } = useCustomerBanners('field_detail_banner');
+  const { banners: horizontalBanners } = useCustomerBanners('field_detail_horizontal');
+
+  const horizontalCopies = useMemo(() => getRandomAdsFromPool(FIELD_DETAIL_HORIZONTAL_POOL, 3), []);
+  const verticalCopies = useMemo(() => getRandomAdsFromPool(FIELD_DETAIL_VERTICAL_POOL, 3), []);
 
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedSlots, setSelectedSlots] = useState([]);
   const [bookedSlots, setBookedSlots] = useState([]);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+
+  const isSlotPast = (slot) => {
+    const startHour = parseInt(slot.split(':')[0], 10);
+    if (selectedDate === todayStr) {
+      const currentHour = now.getHours();
+      if (currentHour > startHour) return true;
+    }
+    return false;
+  };
 
   useEffect(() => {
     const fetchField = async () => {
@@ -193,6 +222,7 @@ export default function FieldDetailPage() {
 
   const toggleSlot = (slot) => {
     if (bookedSlots.includes(slot)) return;
+    if (isSlotPast(slot)) return;
     setSelectedSlots((prev) =>
       prev.includes(slot) ? prev.filter((s) => s !== slot) : [...prev, slot]
     );
@@ -239,6 +269,11 @@ export default function FieldDetailPage() {
   };
 
   const handleBook = () => {
+    if (isPreviewMode) {
+      alert('Bạn đang ở chế độ xem trước (preview mode) nên không thể đặt sân.');
+      return;
+    }
+
     if (!selectedDate || selectedSlots.length === 0) {
       alert('Please select date and at least one time slot');
       return;
@@ -269,6 +304,11 @@ export default function FieldDetailPage() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-5">
+          <AdBannerHorizontal
+            banners={horizontalBanners}
+            copyArray={horizontalCopies}
+          />
+          
           <div className="relative overflow-hidden rounded-2xl shadow-lg">
             <img
               src={heroImage}
@@ -347,8 +387,9 @@ export default function FieldDetailPage() {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="sticky top-28 rounded-2xl bg-[#181a16] shadow-xl overflow-hidden">
-            <div className="bg-gradient-to-r from-[#8eff71]/20 to-[#8eff71]/5 p-4 border-b border-[#8eff71]/20">
+          <div className="sticky top-28 flex flex-col gap-6">
+            <div className="rounded-2xl bg-[#181a16] shadow-xl overflow-hidden">
+              <div className="bg-gradient-to-r from-[#8eff71]/20 to-[#8eff71]/5 p-4 border-b border-[#8eff71]/20">
               <div className="flex items-center justify-between">
                 <div>
                   <span className="font-headline text-xs text-[#88f6ff]">Booking</span>
@@ -391,14 +432,17 @@ export default function FieldDetailPage() {
                     {timeSlots.map((slot) => {
                       const isBooked = bookedSlots.includes(slot);
                       const isSelected = selectedSlots.includes(slot);
+                      const isPast = isSlotPast(slot);
                       return (
                         <button
                           key={slot}
                           type="button"
                           onClick={() => toggleSlot(slot)}
-                          disabled={isBooked}
+                          disabled={isBooked || isPast}
                           className={
-                            isBooked
+                            isPast
+                              ? 'font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through'
+                              : isBooked
                               ? 'font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through'
                               : isSelected
                               ? 'font-headline rounded-lg bg-[#8eff71] px-1 py-2 text-[10px] font-bold text-[#0d6100]'
@@ -443,6 +487,16 @@ export default function FieldDetailPage() {
                   Free cancellation up to 24 hours before booking
                 </div>
               </div>
+            )}
+            </div>
+            {detailBanners.length > 0 && (
+              <AdBannerVertical
+                banner={detailBanners[0]}
+                title={verticalCopies[0].title}
+                subtitle={verticalCopies[0].subtitle}
+                cta={verticalCopies[0].cta}
+                to={verticalCopies[0].to}
+              />
             )}
           </div>
         </div>

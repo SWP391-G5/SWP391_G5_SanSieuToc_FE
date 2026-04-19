@@ -17,9 +17,8 @@ export default function useManagerBannersAds({ placement = '' } = {}) {
     setLoading(true);
     setError('');
     try {
-      const data = await managerApi.getBanners(query);
-      const list = data?.items || data?.data || data || [];
-      setItems(Array.isArray(list) ? list : []);
+      const res = await managerApi.getBanners(query);
+      setItems(Array.isArray(res?.items) ? res.items : []);
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || 'Failed to load banners');
       setItems([]);

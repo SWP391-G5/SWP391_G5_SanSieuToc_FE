@@ -27,27 +27,36 @@ function getGuestWishlistFieldIds() {
 }
 
 export function AuthProvider({ children }) {
-  const [accessToken, setAccessToken] = useState(null);
-  const [user, setUser] = useState(null);
-  const [isAuthReady, setIsAuthReady] = useState(false);
-
-  useEffect(() => {
+  // Read auth token synchronously on first render to avoid auth flicker.
+  const [accessToken, setAccessToken] = useState(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (parsed?.accessToken) {
-        setAccessToken(parsed.accessToken);
-        setUser(parsed.user || null);
-        setAuthToken(parsed.accessToken);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.accessToken) {
+          setAuthToken(parsed.accessToken); // Gắn header ngay lập tức
+          return parsed.accessToken;
+        }
       }
     } catch {
-      // ignore
-    } finally {
-      setIsAuthReady(true);
+      return null;
     }
-  }, []);
+    return null;
+  });
 
+  const [user, setUser] = useState(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw)?.user || null;
+    } catch {
+      return null;
+    }
+    return null;
+  });
+
+  const isAuthReady = true;
+
+  // Khi login state thay đổi
   useEffect(() => {
     if (!isAuthReady) return;
 
@@ -73,9 +82,11 @@ export function AuthProvider({ children }) {
       logout: () => {
         setAccessToken(null);
         setUser(null);
+        setAuthToken(null);
       },
       loginAdmin: async ({ username, password, role }) => {
         const data = await authService.loginAdmin({ username, password, role });
+        setAuthToken(data.accessToken); // Bắt buộc set sync trước khi UI tự động điều hướng
         setAccessToken(data.accessToken);
         setUser(data.user);
         setAuthToken(data.accessToken);
@@ -83,6 +94,7 @@ export function AuthProvider({ children }) {
       },
       loginUser: async ({ username, password, role }) => {
         const data = await authService.loginUser({ username, password, role });
+        setAuthToken(data.accessToken); // Bắt buộc set sync
         setAccessToken(data.accessToken);
         setUser(data.user);
 
@@ -109,6 +121,7 @@ export function AuthProvider({ children }) {
       },
       verifyEmail: async ({ email, code }) => {
         const data = await authService.verifyEmailUser({ email, code });
+        setAuthToken(data.accessToken);
         setAccessToken(data.accessToken);
         setUser(data.user);
         setAuthToken(data.accessToken);
@@ -116,6 +129,7 @@ export function AuthProvider({ children }) {
       },
       verifyEmailAdmin: async ({ email, code }) => {
         const data = await authService.verifyEmailAdmin({ email, code });
+        setAuthToken(data.accessToken);
         setAccessToken(data.accessToken);
         setUser(data.user);
         setAuthToken(data.accessToken);
@@ -136,6 +150,7 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');

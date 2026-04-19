@@ -33,3 +33,27 @@ export const DEFAULT_HOME_HERO_SLIDES = [
 // Reuse the same set for FieldList ads for now.
 // You can change this later to a dedicated list if needed.
 export const DEFAULT_FIELDS_LIST_ADS_SLIDES = DEFAULT_HOME_HERO_SLIDES;
+
+// Fallbacks for newly defined placements in config/placements.js
+export const DEFAULT_COMMUNITY_HORIZONTAL = [football7, football8, football9];
+export const DEFAULT_COMMUNITY_VERTICAL = [football10, football11];
+export const DEFAULT_FIELD_DETAIL_BANNER = [football4, football5];
+export const DEFAULT_FIELD_DETAIL_HORIZONTAL = [football5, football9, football10];
+
+// Map a placement key to its fallback array
+export function getFallbackImagesForPlacement(key) {
+  switch (key) {
+    case 'home_hero':
+      return DEFAULT_HOME_HERO_SLIDES;
+    case 'fields_list_ads':
+      return DEFAULT_FIELDS_LIST_ADS_SLIDES;
+    case 'community_horizontal':
+      return DEFAULT_COMMUNITY_HORIZONTAL;
+    case 'community_vertical':
+      return DEFAULT_COMMUNITY_VERTICAL;
+    case 'field_detail_banner':
+      return DEFAULT_FIELD_DETAIL_BANNER;
+    default:
+      return [football1];
+  }
+}

@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 
+import useCustomerBanners from '../../../hooks/useCustomerBanners';
+
 import AdBannerHorizontal from './components/AdBannerHorizontal';
 import AdBannerVertical from './components/AdBannerVertical';
 import CommunityCard from './components/CommunityCard';
 
 import { adaptPostToCommunityItem } from './communityApiAdapter';
 import publicApi from '../../../services/public/publicApi';
+import { COMMUNITY_HORIZONTAL_POOL } from '../../../data/ads/communityHorizontalCopy';
+import { COMMUNITY_VERTICAL_POOL } from '../../../data/ads/communityVerticalCopy';
+import { getRandomAdsFromPool } from '../../../utils/adUtils';
 
 function clamp(n, min, max) {
   return Math.min(max, Math.max(min, n));
@@ -19,6 +24,18 @@ export default function CommunityPage() {
   const [error, setError] = useState('');
   const [totalPages, setTotalPages] = useState(1);
   const [searchText, setSearchText] = useState('');
+
+  const { banners: horizontalBanners } = useCustomerBanners('community_horizontal');
+  const { banners: verticalBanners } = useCustomerBanners('community_vertical');
+
+  // Randomize copies on mount
+  const horizontalCopies = useMemo(() => {
+    return getRandomAdsFromPool(COMMUNITY_HORIZONTAL_POOL, 3);
+  }, []);
+
+  const verticalCopies = useMemo(() => {
+    return getRandomAdsFromPool(COMMUNITY_VERTICAL_POOL, 5);
+  }, []);
 
   const safePage = clamp(page, 1, totalPages);
 
@@ -52,8 +69,9 @@ export default function CommunityPage() {
         setItems([]);
         setTotalPages(1);
       } finally {
-        if (!alive) return;
-        setLoading(false);
+        if (alive) {
+          setLoading(false);
+        }
       }
     })();
 
@@ -73,19 +91,27 @@ export default function CommunityPage() {
       <div className="flex gap-8">
         {/* Left vertical ad */}
         <aside className="sticky top-28 hidden h-[calc(100vh-7rem)] w-64 flex-col gap-6 overflow-auto lg:flex">
-          <AdBannerVertical
-            title="Giảm 20% giờ vàng"
-            subtitle="Voucher áp dụng cho sân top-rated (số lượng có hạn)."
-          />
+          {verticalBanners.map((banner, index) => {
+            const copy = verticalCopies[index % verticalCopies.length] || verticalCopies[0];
+            return (
+              <AdBannerVertical
+                key={banner._id}
+                banner={banner}
+                title={copy.title}
+                subtitle={copy.subtitle}
+                cta={copy.cta}
+                to={copy.to}
+              />
+            );
+          })}
         </aside>
 
         {/* Main */}
         <section className="flex-1 pb-20">
           {/* Top horizontal ad */}
           <AdBannerHorizontal
-            title="Đặt sân nhanh, nhận ưu đãi"
-            subtitle="Quảng cáo: ưu đãi theo khung giờ — xem ngay để không bỏ lỡ."
-            cta="Xem ưu đãi"
+            banners={horizontalBanners}
+            copyArray={horizontalCopies}
           />
 
           <div className="mb-8 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">

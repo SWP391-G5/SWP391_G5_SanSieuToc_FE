@@ -4,6 +4,9 @@
  */
 
 import axiosInstance from '../axios';
+import { API_CONFIG } from '../../config/api.config';
+
+const ENDPOINTS = API_CONFIG.ENDPOINTS;
 
 function buildQuery(params = {}) {
   const sp = new URLSearchParams();
@@ -20,14 +23,39 @@ const managerApi = {
   // Posts (Manager)
   // =========================
   async getPosts(params) {
-    const { data } = await axiosInstance.get(`/api/manager/posts${buildQuery(params)}`);
+    const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.POSTS}${buildQuery(params)}`);
     return data;
+  },
+
+  // -------------------------
+  // Response helpers
+  // -------------------------
+  _unwrap(res) {
+    // Backends in this repo sometimes return:
+    // 1) { success, data }
+    // 2) { success, items }
+    // 3) { data: [...] }
+    // 4) raw Array
+    if (res && typeof res === 'object' && 'data' in res && res.data !== undefined && res.data !== null) {
+      return res.data;
+    }
+    return res;
+  },
+
+  _asItems(res) {
+    const unwrapped = managerApi._unwrap(res);
+    if (Array.isArray(unwrapped)) return { items: unwrapped };
+    if (unwrapped && typeof unwrapped === 'object') {
+      if (Array.isArray(unwrapped.items)) return { items: unwrapped.items };
+      if (Array.isArray(unwrapped.data)) return { items: unwrapped.data };
+    }
+    return { items: [] };
   },
 
   async createPost(payload) {
     const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
     const { data } = await axiosInstance.post(
-      '/api/manager/posts',
+      ENDPOINTS.MANAGER.POSTS,
       payload,
       isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined
     );
@@ -37,7 +65,7 @@ const managerApi = {
   async updatePost(id, payload) {
     const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
     const { data } = await axiosInstance.put(
-      `/api/manager/posts/${id}`,
+      ENDPOINTS.MANAGER.POST_BY_ID(id),
       payload,
       isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined
     );
@@ -45,12 +73,17 @@ const managerApi = {
   },
 
   async approvePost(id) {
-    const { data } = await axiosInstance.patch(`/api/manager/posts/${id}/approve`);
+    const { data } = await axiosInstance.patch(ENDPOINTS.MANAGER.POST_APPROVE(id));
+    return data;
+  },
+
+  async rejectPost(id) {
+    const { data } = await axiosInstance.patch(ENDPOINTS.MANAGER.POST_REJECT(id));
     return data;
   },
 
   async deletePost(id) {
-    const { data } = await axiosInstance.delete(`/api/manager/posts/${id}`);
+    const { data } = await axiosInstance.delete(ENDPOINTS.MANAGER.POST_BY_ID(id));
     return data;
   },
 
@@ -58,66 +91,122 @@ const managerApi = {
   // Banners (Manager)
   // =========================
   async getBanners(params) {
-    const { data } = await axiosInstance.get(`/api/manager/banners${buildQuery(params)}`);
-    return data;
+    const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.BANNERS}${buildQuery(params)}`);
+    return managerApi._asItems(data);
   },
 
   async createBanner(payload) {
     const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
     const { data } = await axiosInstance.post(
-      '/api/manager/banners',
+      ENDPOINTS.MANAGER.BANNERS,
       payload,
       isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined
     );
-    return data;
+    return { item: managerApi._unwrap(data) };
   },
 
   async updateBanner(id, payload) {
     const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
     const { data } = await axiosInstance.put(
-      `/api/manager/banners/${id}`,
+      ENDPOINTS.MANAGER.BANNER_BY_ID(id),
       payload,
       isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined
     );
-    return data;
+    return { item: managerApi._unwrap(data) };
   },
 
   async deleteBanner(id) {
-    const { data } = await axiosInstance.delete(`/api/manager/banners/${id}`);
-    return data;
+    const { data } = await axiosInstance.delete(ENDPOINTS.MANAGER.BANNER_BY_ID(id));
+    return { item: managerApi._unwrap(data) };
   },
 
   // =========================
   // Privacy (Manager)
   // =========================
   async getPrivacies(params) {
-    const { data } = await axiosInstance.get(`/api/manager/privacy${buildQuery(params)}`);
+    const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.PRIVACY}${buildQuery(params)}`);
     return data;
   },
 
   async createPrivacy(payload) {
-    const { data } = await axiosInstance.post('/api/manager/privacy', payload);
+    const { data } = await axiosInstance.post(ENDPOINTS.MANAGER.PRIVACY, payload);
     return data;
   },
 
   async updatePrivacyItem(id, payload) {
-    const { data } = await axiosInstance.put(`/api/manager/privacy/${id}`, payload);
+    const { data } = await axiosInstance.put(ENDPOINTS.MANAGER.PRIVACY_BY_ID(id), payload);
     return data;
   },
 
   async deletePrivacy(id) {
-    const { data } = await axiosInstance.delete(`/api/manager/privacy/${id}`);
+    const { data } = await axiosInstance.delete(ENDPOINTS.MANAGER.PRIVACY_BY_ID(id));
     return data;
+  },
+
+  // =========================
+  // Statistics (Manager)
+  // =========================
+  async getStatisticsSummary(params) {
+    const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.STATISTICS_SUMMARY}${buildQuery(params)}`);
+    return data;
+  },
+
+  async getBookingsTrend(params) {
+    const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.STATISTICS_BOOKINGS_TREND}${buildQuery(params)}`);
+    return data;
+  },
+
+  async getRevenueTrend(params) {
+    const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.STATISTICS_REVENUE_TREND}${buildQuery(params)}`);
+    return data;
+  },
+
+  async getHotFields(params) {
+    const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.STATISTICS_HOT_FIELDS}${buildQuery(params)}`);
+    return data;
+  },
+
+  // =========================
+  // Field detail (full)
+  // =========================
+  async getFieldByIdFull(fieldId) {
+    const { data } = await axiosInstance.get(`/api/fields/${fieldId}/full`);
+    return data;
+  },
+
+  // =========================
+  // Scope (Manager)
+  // =========================
+  async getManagedOwners() {
+    const { data } = await axiosInstance.get(ENDPOINTS.MANAGER.SCOPE_OWNERS);
+    return managerApi._asItems(data);
+  },
+
+  // =========================
+  // Feedback (Manager)
+  // =========================
+  async getFeedbacks(params) {
+    const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.FEEDBACK}${buildQuery(params)}`);
+    return data;
+  },
+
+  async getFeedbackSummary(params) {
+    const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.FEEDBACK_SUMMARY}${buildQuery(params)}`);
+    // Backend returns: { item: { ... } }
+    return data;
+  },
+
+  async deleteFeedback(feedbackId, reason) {
+    const id = String(feedbackId || '').trim();
+    if (!id) throw new Error('Missing feedbackId');
+    const payload = { reason: String(reason || '').trim() };
+    const { data } = await axiosInstance.delete(`${ENDPOINTS.MANAGER.FEEDBACK}/${id}`, { data: payload });
+    return { item: managerApi._unwrap(data) };
   },
 
   // =========================
   // Deferred modules (keep stubs)
   // =========================
-  async getStatistics() {
-    // TODO: implement GET /api/manager/statistics
-    const { data } = await axiosInstance.get('/__todo__/manager/statistics');
-    return data;
-  },
 };
 
 export default managerApi;

@@ -18,6 +18,14 @@ import {
 
 import '../styles/UserProfilePage.css';
 
+const checkSlotEnded = (date, slotEnd) => {
+  const now = new Date();
+  const slotDate = new Date(date);
+  const [hours, minutes] = (slotEnd || '23:59').split(':').map(Number);
+  slotDate.setHours(hours, minutes, 0, 0);
+  return now > slotDate;
+};
+
 function formatVnd(amount) {
   const n = Number(amount || 0);
   try {
@@ -46,11 +54,39 @@ async function uploadToCloudinary({ file, cloudName, uploadPreset }) {
   return secureUrl;
 }
 
-function BookingCard({ booking, onCancel }) {
+function BookingCard({ booking, onCancel, onFeedback }) {
   const [expanded, setExpanded] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [isEnded, setIsEnded] = useState(false);
 
-  const canCancel = booking.status === 'Confirmed' && booking.statusPayment === 'Paid';
+  useEffect(() => {
+    const checkStatus = () => {
+      if (booking.allDates && booking.allDates.length > 0) {
+        for (const d of booking.allDates) {
+          if (d.slots && d.slots.length > 0) {
+            const lastSlot = d.slots[d.slots.length - 1];
+            if (lastSlot?.end && checkSlotEnded(d.date, lastSlot.end)) {
+              setIsEnded(true);
+              break;
+            }
+          }
+        }
+      } else if (booking.date && booking.timeSlots && booking.timeSlots.length > 0) {
+        const lastSlot = booking.timeSlots[booking.timeSlots.length - 1];
+        const slotEnd = typeof lastSlot === 'object' ? lastSlot.end : lastSlot;
+        if (checkSlotEnded(booking.date, slotEnd)) {
+          setIsEnded(true);
+        }
+      }
+    };
+    
+    checkStatus();
+    const interval = setInterval(checkStatus, 60000);
+    return () => clearInterval(interval);
+  }, [booking]);
+
+  const canCancel = booking.status === 'Confirmed' && booking.statusPayment === 'Paid' && !isEnded;
+  const canFeedback = isEnded && (booking.status === 'Confirmed' || booking.status === 'Cancelled');
 
   const handleCancel = async () => {
     if (!window.confirm('Bạn có chắc muốn hủy đơn đặt sân này?\nTiền sẽ được hoàn lại sau khi Owner xác nhận.')) {
@@ -76,23 +112,32 @@ function BookingCard({ booking, onCancel }) {
       <div className="booking-card-body">
         <div className="booking-card-top">
           <div className="booking-card-info">
-            <h3 className="booking-card-title">{booking.fieldName}</h3>
-            <p className="booking-card-address">📍 {booking.fieldAddress}</p>
+            <h3 className="booking-card-title">{booking.fieldName || 'Unknown'}</h3>
+            <p className="booking-card-address">📍 {booking.fieldAddress || ''}</p>
           </div>
           <div className="booking-card-status">
-            <span className={`booking-status-badge status-${booking.status.toLowerCase().replace(/\s+/g, '-')}`}>
-              {booking.status}
+            <span className={`booking-status-badge status-${isEnded ? 'ended' : (booking.status || '').toLowerCase().replace(/\s+/g, '-')}`}>
+              {isEnded ? 'Ended' : booking.status}
             </span>
-            <span className={`booking-payment-badge ${booking.statusPayment.toLowerCase().replace(/\s+/g, '-')}`}>
+            <span className={`booking-payment-badge ${(booking.statusPayment || '').toLowerCase().replace(/\s+/g, '-')}`}>
               {booking.statusPayment}
             </span>
           </div>
         </div>
-        <p className="booking-card-date">📅 {new Date(booking.date).toLocaleDateString('vi-VN')}</p>
-        <p className="booking-card-time">🕒 {booking.timeSlots.map(s => typeof s === 'object' ? s.start : s).join(', ')}</p>
+        <p className="booking-card-date">📅 {booking.date ? new Date(booking.date).toLocaleDateString('vi-VN') : 'N/A'}</p>
+        <p className="booking-card-time">🕒 {(booking.timeSlots || []).map(s => typeof s === 'object' ? s.start : s).join(', ')}</p>
         <div className="booking-card-footer">
-          <span className="booking-card-price">{formatVnd(booking.grandTotal)}đ</span>
+          <span className="booking-card-price">{formatVnd(booking.grandTotal || 0)}đ</span>
           <div className="booking-card-actions">
+            {canFeedback && (
+              <button
+                className="booking-feedback-btn"
+                onClick={() => onFeedback && onFeedback(booking)}
+                style={{ background: '#ffc864', color: '#121410' }}
+              >
+                ⭐ Đánh giá
+              </button>
+            )}
             {canCancel && (
               <button
                 className="booking-cancel-btn"
@@ -120,28 +165,43 @@ function BookingCard({ booking, onCancel }) {
               </div>
             )}
             
-            <div className="booking-detail-row">
-              <span className="booking-detail-label">Khung giờ:</span>
-              <div className="booking-slots-row">
-                {booking.allDates && booking.allDates.length > 0 ? (
-                  booking.allDates.map((d, idx) => (
-                    <div key={idx} className="booking-date-group">
-                      <span className="booking-date-label">{new Date(d.date).toLocaleDateString('vi-VN')}:</span>
-                      {d.slots.map((slot, sIdx) => (
-                        <span key={sIdx} className="booking-slot-badge">
+            <div className="booking-detail-row" style={{ display: 'block' }}>
+              <span className="booking-detail-label" style={{ display: 'block', marginBottom: '8px' }}>Khung giờ:</span>
+              {booking.allDates && booking.allDates.length > 0 ? (
+                booking.allDates.map((d, idx) => (
+                  <div key={idx} style={{ marginBottom: '12px' }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '4px', color: '#8eff71' }}>
+                      {new Date(d.date).toLocaleDateString('vi-VN')}
+                    </div>
+                    {d.slots.map((slot, sIdx) => (
+                      <div key={sIdx} style={{ 
+                        background: 'rgba(142, 255, 113, 0.1)', 
+                        padding: '8px 12px', 
+                        borderRadius: '8px',
+                        marginBottom: '4px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <span style={{ color: '#fdfdf6', fontWeight: '500' }}>
                           {slot.start} - {slot.end}
                         </span>
-                      ))}
-                    </div>
-                  ))
-                ) : (
-                  booking.timeSlots.map((slot, idx) => (
+                        <span style={{ color: '#8eff71', fontSize: '12px' }}>
+                          Đã đặt
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ))
+              ) : (
+                <div className="booking-slots-row">
+                  {booking.timeSlots.map((slot, idx) => (
                     <span key={idx} className="booking-slot-badge">
                       {typeof slot === 'object' ? `${slot.start} - ${slot.end}` : slot}
                     </span>
-                  ))
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {booking.services && booking.services.length > 0 && (
@@ -215,7 +275,6 @@ export default function UserProfilePage() {
   const { notifyError, notifyInfo, notifySuccess } = useNotification();
 
   const [activeTab, setActiveTab] = useState('personal');
-  const [bookingType, setBookingType] = useState('field');
   const [bookings, setBookings] = useState([]);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [transactions, setTransactions] = useState([]);
@@ -349,13 +408,6 @@ export default function UserProfilePage() {
       const fetchBookings = async () => {
         setBookingsLoading(true);
         try {
-          if (bookingType === 'service') {
-            if (!ignore) {
-              setBookings([]);
-            }
-            setBookingsLoading(false);
-            return;
-          }
           if (auth.accessToken) {
             setAuthToken(auth.accessToken);
           }
@@ -375,7 +427,7 @@ export default function UserProfilePage() {
       fetchBookings();
       return () => { ignore = true };
     }
-  }, [activeTab, bookingType, notifyError, auth.accessToken]);
+  }, [activeTab, notifyError, auth.accessToken]);
 
   // Effect to fetch transactions when tab is active
   useEffect(() => {
@@ -418,6 +470,10 @@ export default function UserProfilePage() {
     } catch (err) {
       notifyError(err?.response?.data?.message || 'Hủy đơn thất bại.');
     }
+  };
+
+  const handleOpenFeedback = (booking) => {
+    navigate(`/feedback?bookingId=${booking.id}&fieldName=${encodeURIComponent(booking.fieldName)}`);
   };
 
   const onPickAvatar = () => {
@@ -688,13 +744,17 @@ export default function UserProfilePage() {
             PERSONAL INFORMATION
           </button>
           {isCustomer && (
-            <button
-              type="button"
-              className={`profile-terminal-tab ${activeTab === 'bookings' ? 'active' : ''}`}
-              onClick={() => setActiveTab('bookings')}
-            >
-              BOOKING HISTORY ▾
-            </button>
+            <>
+              <button
+                type="button"
+                className={`profile-terminal-tab ${activeTab === 'bookings' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('bookings');
+                }}
+              >
+FIELD BOOKING
+              </button>
+            </>
           )}
 
           {isAdminAccount ? (
@@ -717,17 +777,7 @@ export default function UserProfilePage() {
           </button>
           
         </div>
-        {activeTab === 'bookings' && (
-          <div className="booking-type-selector">
-            <select
-              value={bookingType}
-              onChange={(e) => setBookingType(e.target.value)}
-              className="booking-type-dropdown"
-            >
-              <option value="field">Field Booking History</option>
-            </select>
-          </div>
-        )}
+        
 
         {activeTab === 'personal' ? (
           <div className="profile-terminal-grid">
@@ -799,80 +849,78 @@ export default function UserProfilePage() {
               </section>
 
               {!isAdminAccount && (
-                <>
-                  <section className="profile-terminal-card">
-                    <div className="profile-terminal-card-title">
-                      <span className="profile-terminal-card-icon">💳</span>
-                      PITCH CREDIT WALLET
+                <section className="profile-terminal-card">
+                  <div className="profile-terminal-card-title">
+                    <span className="profile-terminal-card-icon">💳</span>
+                    PITCH CREDIT WALLET
+                  </div>
+
+                  <div className="profile-terminal-wallet">
+                    <div className="profile-terminal-wallet-left">
+                      <div className="profile-terminal-wallet-label">AVAILABLE BALANCE</div>
+                      <div className="profile-terminal-wallet-balance">{formatVnd(walletBalance)}đ</div>
                     </div>
-
-                    <div className="profile-terminal-wallet">
-                      <div className="profile-terminal-wallet-left">
-                        <div className="profile-terminal-wallet-label">AVAILABLE BALANCE</div>
-                        <div className="profile-terminal-wallet-balance">{formatVnd(walletBalance)}đ</div>
-                      </div>
-                      <button type="button" className="profile-terminal-btn" onClick={onTopUp}>
-                        TOP UP
-                      </button>
-                    </div>
-                  </section>
-
-                  <section className="profile-terminal-card">
-                    <div className="profile-terminal-card-title">
-                      <span className="profile-terminal-card-icon">🛡️</span>
-                      SECURITY PROTOCOL
-                    </div>
-
-                    <form className="profile-terminal-form" onSubmit={onChangePassword}>
-                      <div className="profile-terminal-field profile-terminal-field-wide">
-                        <label className="profile-terminal-label">CURRENT PASSWORD</label>
-                        <input
-                          className="profile-terminal-input"
-                          type="password"
-                          value={passwordForm.currentPassword}
-                          onChange={(e) => setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))}
-                          placeholder="••••••••"
-                        />
-                      </div>
-
-                      <div className="profile-terminal-field">
-                        <label className="profile-terminal-label">NEW PASSWORD</label>
-                        <input
-                          className="profile-terminal-input"
-                          type="password"
-                          value={passwordForm.newPassword}
-                          onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))}
-                          placeholder="••••••••"
-                        />
-                      </div>
-
-                      <div className="profile-terminal-field">
-                        <label className="profile-terminal-label">CONFIRM NEW PASSWORD</label>
-                        <input
-                          className="profile-terminal-input"
-                          type="password"
-                          value={passwordForm.confirmNewPassword}
-                          onChange={(e) => setPasswordForm((p) => ({ ...p, confirmNewPassword: e.target.value }))}
-                          placeholder="••••••••"
-                        />
-                      </div>
-
-                      <div className="profile-terminal-actions">
-                        <button type="submit" className="profile-terminal-btn primary" disabled={changingPassword}>
-                          {changingPassword ? 'UPDATING...' : 'UPDATE CREDENTIALS'}
-                        </button>
-                      </div>
-                    </form>
-                  </section>
-                </>
+                    <button type="button" className="profile-terminal-btn" onClick={onTopUp}>
+                      TOP UP
+                    </button>
+                  </div>
+                </section>
               )}
+
+              <section className="profile-terminal-card">
+                <div className="profile-terminal-card-title">
+                  <span className="profile-terminal-card-icon">🛡️</span>
+                  SECURITY PROTOCOL
+                </div>
+
+                <form className="profile-terminal-form" onSubmit={onChangePassword}>
+                  <div className="profile-terminal-field profile-terminal-field-wide">
+                    <label className="profile-terminal-label">CURRENT PASSWORD</label>
+                    <input
+                      className="profile-terminal-input"
+                      type="password"
+                      value={passwordForm.currentPassword}
+                      onChange={(e) => setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))}
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <div className="profile-terminal-field">
+                    <label className="profile-terminal-label">NEW PASSWORD</label>
+                    <input
+                      className="profile-terminal-input"
+                      type="password"
+                      value={passwordForm.newPassword}
+                      onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))}
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <div className="profile-terminal-field">
+                    <label className="profile-terminal-label">CONFIRM NEW PASSWORD</label>
+                    <input
+                      className="profile-terminal-input"
+                      type="password"
+                      value={passwordForm.confirmNewPassword}
+                      onChange={(e) => setPasswordForm((p) => ({ ...p, confirmNewPassword: e.target.value }))}
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <div className="profile-terminal-actions">
+                    <button type="submit" className="profile-terminal-btn primary" disabled={changingPassword}>
+                      {changingPassword ? 'UPDATING...' : 'UPDATE CREDENTIALS'}
+                    </button>
+                  </div>
+                </form>
+              </section>
             </div>
             <div className="profile-terminal-right">
               <section className="profile-terminal-card">
                 <div className="profile-terminal-avatar">
                   <div className="profile-terminal-avatar-preview">
                     <img src={avatarUrl} alt="Avatar" className="profile-terminal-avatar-img" />
-                    <div className="profile-terminal-avatar-lock">🔒</div>
+                    {/* <div className="profile-terminal-avatar-lock">🔒</div> */}
                   </div>
 
                   <div className="profile-terminal-avatar-meta">
@@ -893,7 +941,7 @@ export default function UserProfilePage() {
               <section className="profile-terminal-card">
                 <div className="profile-terminal-card-title">
                   <span className="profile-terminal-card-icon">📅</span>
-                  BOOKING HISTORY
+                  FIELD BOOKING HISTORY
                 </div>
                 {bookingsLoading ? (
                   <div className="profile-terminal-loading" style={{ marginTop: '1rem' }}>
@@ -910,6 +958,7 @@ export default function UserProfilePage() {
                         key={booking.id} 
                         booking={booking}
                         onCancel={handleCancelBooking}
+                        onFeedback={handleOpenFeedback}
                       />
                     ))}
                   </div>
