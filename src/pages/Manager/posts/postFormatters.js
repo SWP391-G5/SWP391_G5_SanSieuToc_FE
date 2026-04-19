@@ -64,6 +64,41 @@ export function getPostImages(post) {
 }
 
 /**
+ * getPostTags
+ * Normalizes tags list from API post.
+ *
+ * @param {object} post - post-like object
+ * @returns {string[]} tags
+ */
+export function getPostTags(post) {
+  const raw = post?.postTags ?? post?.tags ?? post?.tag ?? [];
+
+  if (typeof raw === 'string') {
+    const s = raw.trim();
+    if (!s) return [];
+
+    // JSON array string
+    if (s.startsWith('[') && s.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(s);
+        return Array.isArray(parsed) ? parsed.filter(Boolean).map(String) : [];
+      } catch {
+        // fallthrough
+      }
+    }
+
+    // comma-separated
+    if (s.includes(',')) return s.split(',').map((x) => x.trim()).filter(Boolean);
+
+    return [s];
+  }
+
+  if (Array.isArray(raw)) return raw.filter(Boolean).map(String);
+
+  return [];
+}
+
+/**
  * formatDateTime
  * Formats an ISO date string for table display.
  *

@@ -60,6 +60,11 @@ const publicApi = {
 
     return data;
   },
+
+  async getPostTags() {
+    const { data } = await axiosInstance.get('/api/public/post-tags');
+    return publicApi._asItems(data);
+  },
 };
 
 export default publicApi;

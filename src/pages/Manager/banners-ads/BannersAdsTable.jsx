@@ -3,12 +3,16 @@
  * Table list for banners/ads.
  */
 
+import { PLACEMENTS } from './placementsMeta';
+
 function openPreview(url) {
   if (!url) return;
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
-export default function BannersAdsTable({ loading, items, onEdit, onDelete, onToggleActive, onUpdateOrder }) {
+// Inline order editing has been removed; order is edited in the Edit modal.
+
+export default function BannersAdsTable({ loading, items, onEdit, onDelete, onToggleActive }) {
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full text-sm">
@@ -29,21 +33,7 @@ export default function BannersAdsTable({ loading, items, onEdit, onDelete, onTo
               <td className="py-3 pr-4 text-on-surface-variant">{idx + 1}</td>
               <td className="py-3 pr-4 text-on-surface-variant font-semibold">{b?.title || '-'}</td>
               <td className="py-3 pr-4 text-on-surface-variant">{b?.placement || '-'}</td>
-              <td className="py-3 pr-4">
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  defaultValue={Number(b?.order) || 0}
-                  className="h-9 w-24 rounded-lg bg-surface px-2 text-sm border border-outline-variant text-on-surface-variant"
-                  onBlur={(e) => {
-                    const next = Number(e.target.value);
-                    if (Number.isNaN(next)) return;
-                    if (next === Number(b?.order || 0)) return;
-                    onUpdateOrder?.(b, next);
-                  }}
-                />
-              </td>
+              <td className="py-3 pr-4 text-on-surface-variant font-semibold">{Number(b?.order) || 0}</td>
               <td className="py-3 pr-4">
                 <button
                   type="button"

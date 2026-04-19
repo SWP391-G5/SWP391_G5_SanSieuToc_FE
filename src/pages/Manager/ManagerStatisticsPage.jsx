@@ -54,15 +54,9 @@ function CurrencyTooltip({ active, payload, label }) {
 }
 
 const PRESETS = [
-  { value: 'today', label: 'Hôm nay' },
   { value: 'last7days', label: '7 ngày gần đây' },
-  { value: 'thisWeek', label: 'Tuần này' },
   { value: 'thisMonth', label: 'Tháng này' },
-  { value: 'lastMonth', label: 'Tháng trước' },
-  // Year-based (<= 1 year)
   { value: 'thisYear', label: 'Năm nay' },
-  { value: 'lastYear', label: 'Năm trước' },
-  { value: 'last12months', label: '12 tháng gần đây' },
 ];
 
 /**
@@ -73,9 +67,9 @@ export default function ManagerStatisticsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const ownerId = String(searchParams.get('ownerId') || '').trim();
 
-  const [preset, setPreset] = useState('thisMonth');
-  // Default to month so "Xu hướng doanh thu" matches requirement
-  const [groupBy, setGroupBy] = useState('month');
+  const [preset, setPreset] = useState('last7days');
+  // Default to day; will be auto-adjusted per preset
+  const [groupBy, setGroupBy] = useState('day');
   const [trendViewMode, setTrendViewMode] = useState('chart');
 
   const [loading, setLoading] = useState(true);
@@ -290,12 +284,15 @@ export default function ManagerStatisticsPage() {
     setFieldViewing(null);
   };
 
-  // Auto-adjust groupBy based on preset (year-based => month)
+  // Auto-adjust groupBy based on preset
   useEffect(() => {
     const p = String(preset || '').trim();
-    if (p === 'thisYear' || p === 'lastYear' || p === 'last12months' || p === 'last365days') {
+    if (p === 'thisYear') {
       if (groupBy !== 'month') setGroupBy('month');
+      return;
     }
+    // last7days / thisMonth
+    if (groupBy !== 'day') setGroupBy('day');
   }, [preset]);
 
   return (
@@ -715,7 +712,7 @@ export default function ManagerStatisticsPage() {
                 <label className="block">
                   <div className="mb-1 text-[11px] font-bold text-[#fdfdf6]/70">Khoảng thời gian</div>
                   <select
-                    className="h-9 rounded-lg border border-white/10 bg-[#0d0f0b] px-3 text-sm text-[#fdfdf6]"
+                    className="h-9 rounded-lg border border-white/10 bg-[#0f0b] px-3 text-sm text-[#fdfdf6]"
                     value={preset}
                     onChange={(e) => setPreset(e.target.value)}
                   >
@@ -730,7 +727,7 @@ export default function ManagerStatisticsPage() {
                 <label className="block">
                   <div className="mb-1 text-[11px] font-bold text-[#fdfdf6]/70">Nhóm theo</div>
                   <select
-                    className="h-9 rounded-lg border border-white/10 bg-[#0d0f0b] px-3 text-sm text-[#fdfdf6]"
+                    className="h-9 rounded-lg border border-white/10 bg-[#0f0b] px-3 text-sm text-[#fdfdf6]"
                     value={groupBy}
                     onChange={(e) => setGroupBy(e.target.value)}
                   >
@@ -747,7 +744,7 @@ export default function ManagerStatisticsPage() {
                     className={`h-9 rounded-lg px-3 text-sm font-bold transition ${
                       trendViewMode === 'chart'
                         ? 'bg-[#f97316] text-[#0b0d09]'
-                        : 'border border-white/10 bg-[#0d0f0b] text-[#fdfdf6]'
+                        : 'border border-white/10 bg-[#0f0b] text-[#fdfdf6]'
                     }`}
                   >
                     Chart
@@ -758,7 +755,7 @@ export default function ManagerStatisticsPage() {
                     className={`h-9 rounded-lg px-3 text-sm font-bold transition ${
                       trendViewMode === 'table'
                         ? 'bg-[#f97316] text-[#0b0d09]'
-                        : 'border border-white/10 bg-[#0d0f0b] text-[#fdfdf6]'
+                        : 'border border-white/10 bg-[#0f0b] text-[#fdfdf6]'
                     }`}
                   >
                     Table
@@ -791,19 +788,31 @@ export default function ManagerStatisticsPage() {
                   <div className="text-sm text-on-surface-variant">No revenue data for selected range.</div>
                 )
               ) : revenueTrend.length ? (
-                <div className="space-y-2">
-                  {revenueTrend.map((it) => (
-                    <div key={it.label} className="flex items-center justify-between gap-4 border-b border-white/5 py-2">
-                      <div className="text-sm font-semibold text-on-surface">{it.label}</div>
-                      <div className="flex flex-wrap items-center gap-3 text-[11px]">
-                        <span className="text-primary">Field: {formatCompactNumber(it.fieldRevenue ?? 0)}</span>
-                        <span className="text-primary">Service: {formatCompactNumber(it.serviceRevenue ?? 0)}</span>
-                        <span className="text-primary">Gross: {formatCompactNumber(it.gross)}</span>
-                        <span className="text-error">Refund: {formatCompactNumber(it.refund)}</span>
-                        <span className="text-on-surface-variant">Net: {formatCompactNumber(it.net)}</span>
-                      </div>
-                    </div>
-                  ))}
+                <div className="overflow-x-auto">
+                  <table className="min-w-[720px] w-full border-separate border-spacing-0">
+                    <thead>
+                      <tr className="text-left">
+                        <th className="sticky left-0 bg-surface-container p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Kỳ</th>
+                        <th className="p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Field</th>
+                        <th className="p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Service</th>
+                        <th className="p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Gross</th>
+                        <th className="p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Refund</th>
+                        <th className="p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Net</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {revenueTrend.map((it) => (
+                        <tr key={it.label} className="hover:bg-white/5">
+                          <td className="sticky left-0 bg-surface-container p-2 text-sm font-semibold text-[#fdfdf6] border-b border-white/5 whitespace-nowrap">{it.label}</td>
+                          <td className="p-2 text-sm text-[#8eff71] border-b border-white/5 whitespace-nowrap">{formatCompactNumber(it.fieldRevenue ?? 0)}</td>
+                          <td className="p-2 text-sm text-[#4cc9f0] border-b border-white/5 whitespace-nowrap">{formatCompactNumber(it.serviceRevenue ?? 0)}</td>
+                          <td className="p-2 text-sm text-[#fdfdf6]/80 border-b border-white/5 whitespace-nowrap">{formatCompactNumber(it.gross ?? 0)}</td>
+                          <td className="p-2 text-sm text-[#ff4d4d] border-b border-white/5 whitespace-nowrap">{formatCompactNumber(it.refund ?? 0)}</td>
+                          <td className="p-2 text-sm text-[#fdfdf6]/70 border-b border-white/5 whitespace-nowrap">{formatCompactNumber(it.net ?? 0)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : (
                 <div className="text-sm text-on-surface-variant">No revenue data for selected range.</div>
@@ -840,13 +849,23 @@ export default function ManagerStatisticsPage() {
                   <div className="text-sm text-on-surface-variant">No booking data for selected range.</div>
                 )
               ) : bookingsTrend.length ? (
-                <div className="space-y-2">
-                  {bookingsTrend.map((it) => (
-                    <div key={it.label} className="flex items-center justify-between border-b border-white/5 py-2">
-                      <div className="text-sm text-on-surface">{it.label}</div>
-                      <div className="text-sm font-black text-on-surface">{formatCompactNumber(it.bookings)}</div>
-                    </div>
-                  ))}
+                <div className="overflow-x-auto">
+                  <table className="min-w-[420px] w-full border-separate border-spacing-0">
+                    <thead>
+                      <tr className="text-left">
+                        <th className="sticky left-0 bg-surface-container p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Kỳ</th>
+                        <th className="p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Bookings</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bookingsTrend.map((it) => (
+                        <tr key={it.label} className="hover:bg-white/5">
+                          <td className="sticky left-0 bg-surface-container p-2 text-sm font-semibold text-[#fdfdf6] border-b border-white/5 whitespace-nowrap">{it.label}</td>
+                          <td className="p-2 text-sm text-[#8eff71] border-b border-white/5 whitespace-nowrap">{formatCompactNumber(it.bookings ?? 0)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : (
                 <div className="text-sm text-on-surface-variant">No booking data for selected range.</div>

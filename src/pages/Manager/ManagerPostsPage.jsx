@@ -52,6 +52,7 @@ export default function ManagerPostsPage() {
   const [search, setSearch] = useState('');
   const [tableOwner, setTableOwner] = useState(''); // '' | 'Draft' | 'AdminAccount' | 'UserAccount'
   const [sortBy, setSortBy] = useState('created_desc'); // created_desc | created_asc | updated_desc | updated_asc
+  const [tag, setTag] = useState(''); // '' | tag slug
 
   // ── Modal / action state ─────────────────────────────────────────────────
   const [showForm, setShowForm] = useState(false);
@@ -61,7 +62,7 @@ export default function ManagerPostsPage() {
   const [confirmAction, setConfirmAction] = useState(null); // { title, message, variant, confirmText, onConfirm }
 
   // ── Form state ───────────────────────────────────────────────────────────
-  const [form, setForm] = useState({ title: '', content: '', images: [] });
+  const [form, setForm] = useState({ title: '', content: '', images: [], tags: [] });
   const [formBusy, setFormBusy] = useState(false);
   const [formError, setFormError] = useState('');
 
@@ -73,8 +74,9 @@ export default function ManagerPostsPage() {
       status: status && status !== 'Draft' ? status : undefined,
       q: search || undefined,
       sort: sortBy,
+      tag: tag || undefined,
     }),
-    [status, search, sortBy]
+    [status, search, sortBy, tag]
   );
 
   // Client-side search needle for draft filtering
@@ -108,7 +110,7 @@ export default function ManagerPostsPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ title: '', content: '', images: [] });
+    setForm({ title: '', content: '', images: [], tags: [] });
     setFormError('');
     setShowForm(true);
   };
@@ -125,6 +127,7 @@ export default function ManagerPostsPage() {
       content: draft.postContent || '',
       // IMPORTANT: always hydrate from postImage via helper
       images: getPostImages(draft),
+      tags: Array.isArray(draft?.postTags) ? draft.postTags : [],
     });
     setFormError('');
     setShowForm(true);
@@ -151,6 +154,8 @@ export default function ManagerPostsPage() {
       const contentStr = form?.content ? String(form.content) : '';
       fd.set('postContent', contentStr);
       fd.set('status', 'Draft');
+
+      (form?.tags || []).forEach((t) => fd.append('postTags', t));
 
       const stringImages = (form?.images || []).filter((x) => typeof x === 'string' && x.trim());
       stringImages.slice(0, 6).forEach((url) => fd.append('postImage', url));
@@ -186,6 +191,25 @@ export default function ManagerPostsPage() {
       notify.notifyWarning('Draft not found.');
       return;
     }
+
+    // Defensive validation: publishing a Draft still requires content
+    const title = String(draft?.postName || draft?.title || '').trim();
+    const content = String(draft?.postContent || draft?.content || '').trim();
+    const tags = Array.isArray(draft?.postTags) ? draft.postTags.filter(Boolean) : [];
+
+    if (!title) {
+      notify.notifyWarning('Title is required to publish.');
+      return;
+    }
+    if (!content) {
+      notify.notifyWarning('Content is required to publish.');
+      return;
+    }
+    if (tags.length < 1) {
+      notify.notifyWarning('Tag is required to publish.');
+      return;
+    }
+
     setFormBusy(true);
     setFormError('');
     try {
@@ -286,18 +310,39 @@ export default function ManagerPostsPage() {
       content: post?.postContent || post?.content || '',
       // show existing saved urls for edit consistency
       images: getPostImages(post),
+      tags: Array.isArray(post?.postTags) ? post.postTags : [],
     });
     setFormError('');
     setShowForm(true);
   };
 
   const submitForm = async () => {
+    // Defensive validation: Publish requires Title + Content + Tag (Images optional)
+    const title = String(form?.title || '').trim();
+    const content = String(form?.content || '').trim();
+    const tags = Array.isArray(form?.tags) ? form.tags.filter(Boolean) : [];
+
+    if (!title) {
+      notify.notifyWarning('Title is required to publish.');
+      return;
+    }
+    if (!content) {
+      notify.notifyWarning('Content is required to publish.');
+      return;
+    }
+    if (tags.length < 1) {
+      notify.notifyWarning('Tag is required to publish.');
+      return;
+    }
+
     setFormBusy(true);
     setFormError('');
     try {
       const fd = new FormData();
       fd.set('postName', form.title);
       fd.set('postContent', form.content);
+
+      (form?.tags || []).forEach((t) => fd.append('postTags', t));
 
       const stringImages = (form?.images || []).filter((x) => typeof x === 'string' && x.trim());
       stringImages.slice(0, 6).forEach((url) => fd.append('postImage', url));
@@ -315,7 +360,7 @@ export default function ManagerPostsPage() {
 
       setShowForm(false);
       setEditing(null);
-      setForm({ title: '', content: '', images: [] });
+      setForm({ title: '', content: '', images: [], tags: [] });
       await load();
       notify.notifySuccess('Đã đăng bài (Publish) thành công');
     } catch (e) {
@@ -407,6 +452,7 @@ export default function ManagerPostsPage() {
       merged,
       status,
       tableOwner,
+      tag,
       searchNeedle: clientSearchNeedle,
       // Draft is in DB now
       isLocalDraft: (p) => String(p?.status) === 'Draft',
@@ -429,7 +475,7 @@ export default function ManagerPostsPage() {
     });
 
     return filtered;
-  }, [draftItems, items, status, tableOwner, sortBy, clientSearchNeedle]);
+  }, [draftItems, items, status, tableOwner, sortBy, clientSearchNeedle, tag]);
 
   // Keep totalPages in sync with the actual displayed list (after filters)
   useEffect(() => {
@@ -448,10 +494,12 @@ export default function ManagerPostsPage() {
     return filteredAndSortedItems.slice(start, start + limit);
   }, [filteredAndSortedItems, page, limit]);
 
+  // Reset also clears tag filter
   const resetFilters = () => {
     setStatus('');
     setTableOwner('');
     setSearch('');
+    setTag('');
     setSortBy('created_desc');
     setPage(1);
   };
@@ -463,7 +511,9 @@ export default function ManagerPostsPage() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-headline font-bold text-on-surface">Posts</h1>
-          <p className="text-sm text-on-surface-variant">Quản lý bài viết hệ thống và duyệt bài do Owner gửi.</p>
+          <p className="text-sm text-on-surface-variant">
+            Quản lý bài viết hệ thống và duyệt bài do Owner/Customer gửi (lọc theo tag).
+          </p>
         </div>
         <div className="flex gap-2">
           <button
@@ -498,6 +548,33 @@ export default function ManagerPostsPage() {
           onReset={resetFilters}
         />
 
+        {/* Quick tag filter */}
+        {/* <div className="flex flex-wrap items-end gap-3">
+          <label className="space-y-1">
+            <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Tag</div>
+            <select
+              className="h-10 w-56 rounded-lg bg-surface px-3 text-sm border border-outline-variant text-on-surface-variant"
+              value={tag}
+              onChange={(e) => {
+                setPage(1);
+                setTag(e.target.value);
+              }}
+            >
+              <option value="">Tất cả</option>
+              <option value="ThongBao">Thông báo</option>
+              <option value="TimKeo">Tìm kèo</option>
+              <option value="Tips">Tips / Kinh nghiệm</option>
+              <option value="Review">Review</option>
+              <option value="HoiDap">Hỏi đáp</option>
+              <option value="GiaoLuu">Giao lưu</option>
+              <option value="SuKien">Sự kiện / Giải đấu</option>
+              <option value="KhuyenMai">Khuyến mãi</option>
+              <option value="BaoLoi">Báo lỗi / Góp ý</option>
+              <option value="Khac">Khác</option>
+            </select>
+          </label>
+        </div> */}
+
         {error ? <div className="text-sm text-error">{error}</div> : null}
         {/* Loading UI removed to avoid pagination side-effects */}
 
@@ -515,6 +592,11 @@ export default function ManagerPostsPage() {
           onChangeOwner={(v) => {
             setPage(1);
             setTableOwner(v);
+          }}
+          tag={tag}
+          onChangeTag={(v) => {
+            setPage(1);
+            setTag(v);
           }}
           sortBy={sortBy}
           onChangeSort={(v) => {
