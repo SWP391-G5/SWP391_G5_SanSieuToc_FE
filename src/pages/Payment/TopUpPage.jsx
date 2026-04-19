@@ -40,8 +40,11 @@ const TopUpPage = () => {
           placeholder="Enter amount (VND)"
           value={amount}
           onChange={(e) => {
-            setAmount(e.target.value);
-            setError('');
+            const value = e.target.value;
+            if (value === '' || parseInt(value) <= 10000000) {
+              setAmount(value);
+              setError('');
+            }
           }}
           min="10000"
           max="10000000"
@@ -53,7 +56,7 @@ const TopUpPage = () => {
         <button 
           className="topup-button" 
           onClick={handleProceed}
-          disabled={!amount || parseFloat(amount) <= 0}
+          disabled={!amount || parseFloat(amount) <= 0 || parseFloat(amount) > 10000000}
         >
           Proceed to Payment
         </button>

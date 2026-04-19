@@ -7,7 +7,7 @@
   justify-content: center;
   min-height: calc(100vh - 200px);
   padding: 40px 20px;
-  background-image: linear-gradient(135deg, rgba(26, 26, 46, 0.85) 0%, rgba(22, 33, 62, 0.9) 100%),
+  background-image: linear-gradient(135deg, rgba(22, 163, 74, 0.85) 0%, rgba(22, 33, 62, 0.9) 100%),
     url('https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1920&q=80');
   width: 100%;
   background-size: cover;
@@ -18,31 +18,31 @@
 .topup-page h1 {
   font-size: 2.5rem;
   margin-bottom: 30px;
-  color: #00d4ff;
+  color: #16a34a;
   text-align: center;
-  text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+  text-shadow: 0 0 20px rgba(22, 163, 74, 0.3);
 }
 
 .topup-container {
-  background: rgba(0, 0, 0, 0.3);
-  border: 2px solid #00d4ff;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid #16a34a;
   border-radius: 10px;
   padding: 40px;
   width: 100%;
   max-width: 500px;
-  box-shadow: 0 8px 32px rgba(0, 212, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(22, 163, 74, 0.3);
 }
 
 .topup-info-box {
-  background: rgba(0, 212, 255, 0.1);
-  border-left: 4px solid #00d4ff;
+  background: rgba(0, 0, 0, 0.5);
+  border-left: 4px solid #16a34a;
   padding: 15px;
   margin-bottom: 25px;
   border-radius: 5px;
 }
 
 .topup-info-box h3 {
-  color: #00d4ff;
+  color: #16a34a;
   margin: 0 0 8px 0;
   font-size: 1.1rem;
 }
@@ -58,7 +58,7 @@
   padding: 15px;
   margin-bottom: 20px;
   font-size: 1.1rem;
-  border: 2px solid #00d4ff;
+  border: 2px solid #16a34a;
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.5);
   color: #fff;
@@ -68,8 +68,15 @@
 
 .topup-page input:focus {
   outline: none;
-  border-color: #00ff00;
-  box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+  border-color: #16a34a;
+  box-shadow: 0 0 15px rgba(22, 163, 74, 0.3);
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.topup-page input:focus {
+  outline: none;
+  border-color: #16a34a;
+  box-shadow: 0 0 15px rgba(22, 163, 74, 0.3);
   background: rgba(0, 0, 0, 0.7);
 }
 
@@ -99,7 +106,7 @@
   font-size: 1.1rem;
   font-weight: bold;
   color: #000;
-  background: #00d4ff;
+  background: #16a34a;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -107,9 +114,9 @@
 }
 
 .topup-button:hover:not(:disabled) {
-  background: #00ff00;
+  background: #16a34a;
   transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(0, 255, 0, 0.4);
+  box-shadow: 0 8px 25px rgba(22, 163, 74, 0.4);
 }
 
 .topup-button:disabled {
@@ -120,15 +127,15 @@
 }
 
 .topup-benefits {
-  background: rgba(0, 212, 255, 0.05);
+  background: rgba(22, 163, 74, 0.05);
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 20px;
-  border: 1px solid rgba(0, 212, 255, 0.2);
+  border: 1px solid rgba(22, 163, 74, 0.2);
 }
 
 .topup-benefits h4 {
-  color: #00d4ff;
+  color: #16a34a;
   margin: 0 0 12px 0;
   font-size: 0.95rem;
   text-transform: uppercase;
@@ -148,7 +155,7 @@
 
 .topup-benefits li:before {
   content: '✓ ';
-  color: #00ff00;
+  color: #16a34a;
   font-weight: bold;
   margin-right: 8px;
 }

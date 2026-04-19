@@ -2758,3 +2758,47 @@
   font-size: 0.8rem;
   color: rgba(231, 249, 238, 0.5);
 }
+
+.booking-card-details {
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 0.5rem;
+}
+
+.booking-services-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.booking-service-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+
+.booking-service-item .service-name {
+  color: rgba(231, 249, 238, 0.8);
+}
+
+.booking-service-item .service-price {
+  color: #6dff9e;
+  font-weight: 500;
+}
+
+.booking-card-expand-btn {
+  background: transparent;
+  border: 1px solid rgba(109, 255, 158, 0.3);
+  color: #6dff9e;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.booking-card-expand-btn:hover {
+  background: rgba(109, 255, 158, 0.1);
+}

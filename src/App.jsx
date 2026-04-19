@@ -38,6 +38,9 @@ import OwnerLayout from './layouts/owner/OwnerLayout';
 import OwnerDashboardPage from './pages/owner/OwnerDashboardPage';
 import OwnerFieldsPage from './pages/owner/OwnerFieldsPage';
 import OwnerBookingsPage from './pages/owner/OwnerBookingsPage';
+import OwnerRefundsPage from './pages/owner/OwnerRefundsPage';
+import OwnerWalletPage from './pages/owner/OwnerWalletPage';
+import OwnerWithdrawPage from './pages/owner/OwnerWithdrawPage';
 
 import { useAuth } from './context/AuthContext';
 
@@ -135,6 +138,9 @@ function App() {
           <Route path="dashboard" element={<OwnerDashboardPage />} />
           <Route path="fields" element={<OwnerFieldsPage />} />
           <Route path="bookings" element={<OwnerBookingsPage />} />
+          <Route path="refunds" element={<OwnerRefundsPage />} />
+          <Route path="wallet" element={<OwnerWalletPage />} />
+          <Route path="withdraw" element={<OwnerWithdrawPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
 
