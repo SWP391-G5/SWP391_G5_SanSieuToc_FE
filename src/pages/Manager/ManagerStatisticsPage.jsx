@@ -747,7 +747,7 @@ export default function ManagerStatisticsPage() {
                         : 'border border-white/10 bg-[#0f0b] text-[#fdfdf6]'
                     }`}
                   >
-                    Chart
+                    Biểu đồ
                   </button>
                   <button
                     type="button"
@@ -758,7 +758,7 @@ export default function ManagerStatisticsPage() {
                         : 'border border-white/10 bg-[#0f0b] text-[#fdfdf6]'
                     }`}
                   >
-                    Table
+                    Bảng
                   </button>
                 </div>
               </div>
@@ -776,16 +776,16 @@ export default function ManagerStatisticsPage() {
                         <Tooltip content={<CurrencyTooltip />} />
                         <Legend wrapperStyle={{ fontSize: 11, color: 'rgba(253,253,246,0.7)' }} />
 
-                        <Bar dataKey="fieldRevenue" name="Field" stackId="rev" fill="#8eff71" isAnimationActive={false} />
-                        <Bar dataKey="serviceRevenue" name="Service" stackId="rev" fill="#4cc9f0" isAnimationActive={false} />
-                        <Bar dataKey="refund" name="Refund" fill="#ff4d4d" isAnimationActive={false} />
+                        <Bar dataKey="fieldRevenue" name="Sân" stackId="rev" fill="#8eff71" isAnimationActive={false} />
+                        <Bar dataKey="serviceRevenue" name="Dịch vụ" stackId="rev" fill="#4cc9f0" isAnimationActive={false} />
+                        <Bar dataKey="refund" name="Hoàn tiền" fill="#ff4d4d" isAnimationActive={false} />
 
-                        <Line type="monotone" dataKey="net" name="Net" stroke="#fdfdf6" strokeWidth={2} dot={false} isAnimationActive={false} />
+                        <Line type="monotone" dataKey="net" name="Thực nhận" stroke="#fdfdf6" strokeWidth={2} dot={false} isAnimationActive={false} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="text-sm text-on-surface-variant">No revenue data for selected range.</div>
+                  <div className="text-sm text-on-surface-variant">Không có dữ liệu doanh thu cho khoảng đã chọn.</div>
                 )
               ) : revenueTrend.length ? (
                 <div className="overflow-x-auto">
@@ -793,11 +793,11 @@ export default function ManagerStatisticsPage() {
                     <thead>
                       <tr className="text-left">
                         <th className="sticky left-0 bg-surface-container p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Kỳ</th>
-                        <th className="p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Field</th>
-                        <th className="p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Service</th>
-                        <th className="p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Gross</th>
-                        <th className="p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Refund</th>
-                        <th className="p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Net</th>
+                        <th className="p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Sân</th>
+                        <th className="p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Dịch vụ</th>
+                        <th className="p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Tổng</th>
+                        <th className="p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Hoàn tiền</th>
+                        <th className="p-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60 border-b border-white/10">Thực nhận</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -815,7 +815,7 @@ export default function ManagerStatisticsPage() {
                   </table>
                 </div>
               ) : (
-                <div className="text-sm text-on-surface-variant">No revenue data for selected range.</div>
+                <div className="text-sm text-on-surface-variant">Không có dữ liệu doanh thu cho khoảng đã chọn.</div>
               )}
             </div>
 

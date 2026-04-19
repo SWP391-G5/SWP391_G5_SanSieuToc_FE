@@ -14,12 +14,12 @@ import { useEffect, useRef, useState } from 'react';
  * Sidebar navigation definition for manager area.
  */
 const NAV_ITEMS = [
-  { key: 'statistics', label: 'Statistics', to: '/manager/statistics', icon: 'bar_chart' },
-  { key: 'posts', label: 'Posts', to: '/manager/posts', icon: 'edit_note' },
-  { key: 'marketing', label: 'Banners & Ads', to: '/manager/banners-ads', icon: 'branding_watermark' },
-  { key: 'wallet', label: 'Wallet', to: '/manager/wallet', icon: 'account_balance_wallet' },
-  { key: 'privacy', label: 'Privacy', to: '/manager/privacy', icon: 'shield' },
-  { key: 'feedback', label: 'Feedback', to: '/manager/feedback', icon: 'rate_review' },
+  { key: 'statistics', label: 'Thống kê', to: '/manager/statistics', icon: 'bar_chart' },
+  { key: 'posts', label: 'Bài viết', to: '/manager/posts', icon: 'edit_note' },
+  { key: 'marketing', label: 'Banner & Quảng cáo', to: '/manager/banners-ads', icon: 'branding_watermark' },
+  { key: 'wallet', label: 'Ví', to: '/manager/wallet', icon: 'account_balance_wallet' },
+  { key: 'privacy', label: 'Quyền riêng tư', to: '/manager/privacy', icon: 'shield' },
+  { key: 'feedback', label: 'Phản hồi', to: '/manager/feedback', icon: 'rate_review' },
 ];
 
 /**
@@ -107,9 +107,9 @@ export default function ManagerLayout() {
                 .toUpperCase()}
             </div>
             <div className="overflow-hidden">
-              <p className="text-sm font-bold truncate">{auth.user?.name || auth.user?.username || 'Manager'}</p>
+              <p className="text-sm font-bold truncate">{auth.user?.name || auth.user?.username || 'Quản lý'}</p>
               <p className="text-[10px] text-on-surface-variant uppercase tracking-tighter truncate">
-                {auth.user?.email || String(auth.user?.role || 'Manager')}
+                {auth.user?.email || String(auth.user?.role || 'Quản lý')}
               </p>
             </div>
           </div>
@@ -121,7 +121,7 @@ export default function ManagerLayout() {
         {/* TopAppBar */}
         <header className="fixed top-0 right-0 w-[calc(100%-16rem)] z-40 bg-[#0d0f0b]/70 backdrop-blur-xl flex justify-between items-center px-8 h-20 shadow-[0_40px_40px_0_rgba(142,255,113,0.08)]">
           <div className="flex items-center gap-4">
-            <h2 className="text-xl font-headline font-extrabold tracking-tight text-on-surface">Dashboard</h2>
+            <h2 className="text-xl font-headline font-extrabold tracking-tight text-on-surface">Bảng điều khiển</h2>
             <div className="h-4 w-[1px] bg-outline-variant/30" />
           </div>
 
@@ -151,9 +151,9 @@ export default function ManagerLayout() {
                 >
                   <div className="p-3">
                     <div className="rounded-lg bg-white/5 px-3 py-2">
-                      <div className="text-xs font-black tracking-widest uppercase text-[#fdfdf6]/50">Account</div>
+                      <div className="text-xs font-black tracking-widest uppercase text-[#fdfdf6]/50">Tài khoản</div>
                       <div className="mt-1 truncate text-sm font-semibold text-[#fdfdf6]">
-                        {auth.user?.name || auth.user?.username || 'Manager'}
+                        {auth.user?.name || auth.user?.username || 'Quản lý'}
                       </div>
                       <div className="truncate text-xs text-[#fdfdf6]/60">{auth.user?.email || ''}</div>
                     </div>

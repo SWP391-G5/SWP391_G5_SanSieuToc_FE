@@ -30,16 +30,16 @@ export default function AdminLayout() {
             onClick={() => navigate('/')}
             className="text-left font-headline text-xl font-black italic text-[#8eff71]"
           >
-            Admin Console
+            Bảng điều khiển Admin
           </button>
-          <div className="mt-1 text-[10px] uppercase tracking-widest text-[#fdfdf6]/50">System Root</div>
+          <div className="mt-1 text-[10px] uppercase tracking-widest text-[#fdfdf6]/50">Hệ thống</div>
 
           <div className="mt-5 flex flex-col gap-1">
-            <NavItem to="/admin/managers" label="Manager Accounts" icon="manage_accounts" />
-            <NavItem to="/admin/owners" label="Owner Accounts" icon="domain" />
-            <NavItem to="/admin/customers" label="Customer Accounts" icon="group" />
-            <NavItem to="/admin/reports" label="Reports" icon="report" />
-            <NavItem to="/admin/profile" label="My Profile" icon="account_circle" />
+            <NavItem to="/admin/managers" label="Tài khoản Quản lý" icon="manage_accounts" />
+            <NavItem to="/admin/owners" label="Tài khoản Chủ sân" icon="domain" />
+            <NavItem to="/admin/customers" label="Tài khoản Khách hàng" icon="group" />
+            <NavItem to="/admin/reports" label="Báo cáo" icon="report" />
+            <NavItem to="/admin/profile" label="Hồ sơ của tôi" icon="account_circle" />
           </div>
 
           <div className="mt-auto pt-6">
@@ -52,7 +52,7 @@ export default function AdminLayout() {
               className="flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-br from-[#8eff71] to-[#2ff801] px-3 py-2 text-sm font-bold text-[#0d6100] hover:opacity-90"
             >
               <span className="material-symbols-outlined text-[18px] leading-none">logout</span>
-              <span>Logout</span>
+              <span>Đăng xuất</span>
             </button>
           </div>
         </aside>

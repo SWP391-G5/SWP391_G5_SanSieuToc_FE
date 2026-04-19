@@ -19,6 +19,18 @@ function formatDate(d) {
   return dt.toLocaleDateString('vi-VN', { year: 'numeric', month: 'short', day: '2-digit' });
 }
 
+const STATUS_LABELS = {
+  Active: 'Hoạt động',
+  InActive: 'Không hoạt động',
+  Banned: 'Bị khóa',
+  Deleted: 'Đã xóa',
+};
+
+function toVietnameseStatus(status) {
+  const key = String(status || '').trim();
+  return STATUS_LABELS[key] || key || '-';
+}
+
 function StatusBadge({ status }) {
   const s = String(status || '').trim();
   const cls =
@@ -27,7 +39,7 @@ function StatusBadge({ status }) {
       : s === 'Banned'
         ? 'bg-red-500/15 text-red-300'
         : 'bg-yellow-500/15 text-yellow-200';
-  return <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>{s || '-'}</span>;
+  return <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>{toVietnameseStatus(s)}</span>;
 }
 
 function RolePill({ children }) {
@@ -57,9 +69,9 @@ function Tabs({ active }) {
 
   return (
     <div className="flex items-center gap-2">
-      <Tab id="managers" label="Managers" to="/admin/managers" />
-      <Tab id="owners" label="Owners" to="/admin/owners" />
-      <Tab id="customers" label="Customers" to="/admin/customers" />
+      <Tab id="managers" label="Quản lý" to="/admin/managers" />
+      <Tab id="owners" label="Chủ sân" to="/admin/owners" />
+      <Tab id="customers" label="Khách hàng" to="/admin/customers" />
     </div>
   );
 }
@@ -101,7 +113,7 @@ export default function CustomerAccountsPage() {
       const data = await adminService.listCustomers();
       setItems(data?.items || []);
     } catch (e) {
-      notifyError(e?.response?.data?.message || 'Tải danh sách Customer thất bại.');
+      notifyError(e?.response?.data?.message || 'Tải danh sách Khách hàng thất bại.');
     } finally {
       setLoading(false);
     }
@@ -116,7 +128,7 @@ export default function CustomerAccountsPage() {
     if (!id) return;
     try {
       await adminService.banCustomer(id);
-      notifySuccess('Đã ban tài khoản Customer.');
+      notifySuccess('Đã khóa tài khoản Khách hàng.');
       await load();
     } catch (e) {
       notifyError(e?.response?.data?.message || 'Thao tác thất bại.');
@@ -127,7 +139,7 @@ export default function CustomerAccountsPage() {
     if (!id) return;
     try {
       await adminService.unbanCustomer(id);
-      notifySuccess('Đã mở khóa tài khoản Customer.');
+      notifySuccess('Đã mở khóa tài khoản Khách hàng.');
       await load();
     } catch (e) {
       notifyError(e?.response?.data?.message || 'Thao tác thất bại.');
@@ -139,10 +151,10 @@ export default function CustomerAccountsPage() {
       <div className="space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#8eff71]/80">User Ecosystem</div>
-            <div className="mt-1 text-4xl font-black text-[#fdfdf6]">Account Management</div>
+            <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#8eff71]/80">Hệ sinh thái người dùng</div>
+            <div className="mt-1 text-4xl font-black text-[#fdfdf6]">Quản lý tài khoản</div>
             <div className="mt-2 max-w-2xl text-sm text-[#fdfdf6]/60">
-              Customer accounts are managed by status only. Admin may ban customers; creation happens via user signup.
+              Tài khoản Khách hàng được quản lý theo trạng thái. Admin có thể khóa tài khoản; việc tạo tài khoản diễn ra khi người dùng đăng ký.
             </div>
           </div>
 
@@ -152,7 +164,7 @@ export default function CustomerAccountsPage() {
               className="rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm text-[#fdfdf6]/80 hover:text-[#8eff71]"
               onClick={() => setFiltersOpen((v) => !v)}
             >
-              Advanced Filters
+              Bộ lọc nâng cao
             </button>
           </div>
         </div>
@@ -163,21 +175,21 @@ export default function CustomerAccountsPage() {
           <div className="rounded-xl border border-white/10 bg-white/5 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#fdfdf6]/50">Advanced Filters</div>
-                <div className="mt-1 text-sm text-[#fdfdf6]/70">Filter the account list by status.</div>
+                <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#fdfdf6]/50">Bộ lọc nâng cao</div>
+                <div className="mt-1 text-sm text-[#fdfdf6]/70">Lọc danh sách tài khoản theo trạng thái.</div>
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-xs text-[#fdfdf6]/60">Status</label>
+                <label className="text-xs text-[#fdfdf6]/60">Trạng thái</label>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="rounded-md border border-white/10 bg-[#0d0f0b] px-3 py-2 text-sm outline-none focus:border-[#8eff71]/40"
                 >
-                  <option value="All">All</option>
+                  <option value="All">Tất cả</option>
                   {availableStatuses.map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {toVietnameseStatus(s)}
                     </option>
                   ))}
                 </select>
@@ -189,8 +201,8 @@ export default function CustomerAccountsPage() {
         <div className="rounded-xl border border-white/10 bg-white/5">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
             <div>
-              <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#fdfdf6]/50">Account List</div>
-              <div className="mt-1 text-sm font-semibold text-[#fdfdf6]">Customers</div>
+              <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#fdfdf6]/50">Danh sách tài khoản</div>
+              <div className="mt-1 text-sm font-semibold text-[#fdfdf6]">Khách hàng</div>
             </div>
 
             <div className="relative w-full max-w-md">
@@ -199,7 +211,7 @@ export default function CustomerAccountsPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full rounded-md border border-white/10 bg-[#0d0f0b] py-2 pl-10 pr-3 text-sm outline-none focus:border-[#8eff71]/40"
-                placeholder="Search by name, email or username..."
+                placeholder="Tìm theo họ tên, email hoặc tên đăng nhập..."
               />
             </div>
           </div>
@@ -208,11 +220,11 @@ export default function CustomerAccountsPage() {
             <table className="w-full text-left text-sm">
               <thead className="text-[11px] font-black uppercase tracking-widest text-[#fdfdf6]/50">
                 <tr className="border-b border-white/10">
-                  <th className="px-5 py-3">Account User</th>
-                  <th className="px-5 py-3">Assigned Role</th>
-                  <th className="px-5 py-3">System Status</th>
-                  <th className="px-5 py-3">Req. Date</th>
-                  <th className="px-5 py-3 text-right">Actions</th>
+                  <th className="px-5 py-3">Tài khoản</th>
+                  <th className="px-5 py-3">Vai trò</th>
+                  <th className="px-5 py-3">Trạng thái</th>
+                  <th className="px-5 py-3">Ngày tạo</th>
+                  <th className="px-5 py-3 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -230,7 +242,7 @@ export default function CustomerAccountsPage() {
                         </div>
                       </td>
                       <td className="px-5 py-4">
-                        <RolePill>Customer</RolePill>
+                        <RolePill>Khách hàng</RolePill>
                       </td>
                       <td className="px-5 py-4">
                         <StatusBadge status={it.status} />
@@ -243,7 +255,7 @@ export default function CustomerAccountsPage() {
                             onClick={() => onUnban(it.id)}
                             className="rounded-md bg-white/10 px-3 py-2 text-xs text-[#8eff71] hover:bg-[#8eff71]/10"
                           >
-                            Unban
+                              Mở khóa
                           </button>
                         ) : (
                           <button
@@ -251,7 +263,7 @@ export default function CustomerAccountsPage() {
                             onClick={() => onBan(it.id)}
                             className="rounded-md bg-white/10 px-3 py-2 text-xs text-red-300 hover:bg-red-500/10"
                           >
-                            Ban
+                            Khóa
                           </button>
                         )}
                       </td>
@@ -269,7 +281,7 @@ export default function CustomerAccountsPage() {
           </div>
 
           <div className="flex items-center justify-between px-5 py-4 text-xs text-[#fdfdf6]/50">
-            <div>{loading ? 'Loading...' : `Showing ${filteredItems.length} of ${items.length} customers`}</div>
+            <div>{loading ? 'Đang tải...' : `Hiển thị ${filteredItems.length} / ${items.length} khách hàng`}</div>
             <div />
           </div>
         </div>
@@ -277,23 +289,23 @@ export default function CustomerAccountsPage() {
 
       <div className="space-y-4">
         <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-          <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#fdfdf6]/50">Total Accounts</div>
+          <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#fdfdf6]/50">Tổng tài khoản</div>
           <div className="mt-2 text-4xl font-black text-[#fdfdf6]">{items.length}</div>
           <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
             <div className="rounded-lg bg-[#0d0f0b] p-3">
-              <div className="text-[#fdfdf6]/50">Active</div>
+              <div className="text-[#fdfdf6]/50">Hoạt động</div>
               <div className="mt-1 text-lg font-black text-[#8eff71]">
                 {items.filter((x) => x.status === 'Active').length}
               </div>
             </div>
             <div className="rounded-lg bg-[#0d0f0b] p-3">
-              <div className="text-[#fdfdf6]/50">Inactive</div>
+              <div className="text-[#fdfdf6]/50">Không hoạt động</div>
               <div className="mt-1 text-lg font-black text-yellow-200">
                 {items.filter((x) => x.status === 'InActive').length}
               </div>
             </div>
             <div className="rounded-lg bg-[#0d0f0b] p-3">
-              <div className="text-[#fdfdf6]/50">Banned</div>
+              <div className="text-[#fdfdf6]/50">Bị khóa</div>
               <div className="mt-1 text-lg font-black text-red-300">
                 {items.filter((x) => x.status === 'Banned').length}
               </div>
@@ -302,14 +314,14 @@ export default function CustomerAccountsPage() {
         </div>
 
         <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-          <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#fdfdf6]/50">Distribution</div>
+          <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#fdfdf6]/50">Phân bổ</div>
           <div className="mt-4 space-y-3 text-sm">
             <button
               type="button"
               onClick={() => navigate('/admin/managers')}
               className="flex w-full items-center justify-between rounded-md bg-[#0d0f0b] px-3 py-2 text-left text-[#fdfdf6]/80 hover:text-[#8eff71]"
             >
-              <span>Managers</span>
+              <span>Quản lý</span>
               <span className="text-xs font-black">›</span>
             </button>
             <button
@@ -317,7 +329,7 @@ export default function CustomerAccountsPage() {
               onClick={() => navigate('/admin/owners')}
               className="flex w-full items-center justify-between rounded-md bg-[#0d0f0b] px-3 py-2 text-left text-[#fdfdf6]/80 hover:text-[#8eff71]"
             >
-              <span>Owners</span>
+              <span>Chủ sân</span>
               <span className="text-xs font-black">›</span>
             </button>
             <button
@@ -325,7 +337,7 @@ export default function CustomerAccountsPage() {
               onClick={() => navigate('/admin/customers')}
               className="flex w-full items-center justify-between rounded-md bg-[#0d0f0b] px-3 py-2 text-left text-[#fdfdf6]/80 hover:text-[#8eff71]"
             >
-              <span>Customers</span>
+              <span>Khách hàng</span>
               <span className="text-xs font-black text-[#8eff71]">{items.length}</span>
             </button>
           </div>

@@ -17,7 +17,7 @@ function UserMenu({ auth, navigate, profilePath, showProfile = true, showLogout 
     const name = String(auth.user?.name || '').trim();
     if (name) return name;
     const username = String(auth.user?.username || '').trim();
-    return username || 'User';
+    return username || 'Người dùng';
   }, [auth.user?.name, auth.user?.username]);
 
   const avatarSrc = useMemo(() => {
@@ -95,7 +95,7 @@ function UserMenu({ auth, navigate, profilePath, showProfile = true, showLogout 
         onClick={() => navigate('/auth')}
         className="scale-95 rounded-md bg-gradient-to-br from-[#8eff71] to-[#2ff801] px-6 py-2 font-bold text-[#0d6100] transition-transform duration-200 hover:scale-100"
       >
-        Log In
+        Đăng nhập
       </button>
     );
   }
@@ -107,7 +107,7 @@ function UserMenu({ auth, navigate, profilePath, showProfile = true, showLogout 
           <span className="h-10 w-10 overflow-hidden rounded-full ring-2 ring-[#8eff71]/30">
             <img
               src={avatarSrc || avatarFallback}
-              alt="Avatar"
+              alt="Ảnh đại diện"
               className="h-full w-full object-cover"
               referrerPolicy="no-referrer"
             />
@@ -130,7 +130,7 @@ function UserMenu({ auth, navigate, profilePath, showProfile = true, showLogout 
         <span className="h-10 w-10 overflow-hidden rounded-full ring-2 ring-[#8eff71]/30">
           <img
             src={avatarSrc || avatarFallback}
-            alt="Avatar"
+            alt="Ảnh đại diện"
             className="h-full w-full object-cover"
             referrerPolicy="no-referrer"
           />
@@ -152,7 +152,7 @@ function UserMenu({ auth, navigate, profilePath, showProfile = true, showLogout 
                 className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
               >
                 <span className="material-symbols-outlined text-[18px] leading-none">account_circle</span>
-                <span>Profile</span>
+                <span>Hồ sơ</span>
               </button>
 
               <div className="my-1 h-px bg-white/10" />
@@ -168,7 +168,7 @@ function UserMenu({ auth, navigate, profilePath, showProfile = true, showLogout 
                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-tertiary hover:bg-white/5 hover:text-[#8eff71]"
                >
                  <span className="material-symbols-outlined text-[18px] leading-none">dashboard</span>
-                 <span className="font-bold">Owner Hub</span>
+                 <span className="font-bold">Khu vực Chủ sân</span>
                </button>
                <div className="my-1 h-px bg-white/10" />
              </>
@@ -183,7 +183,7 @@ function UserMenu({ auth, navigate, profilePath, showProfile = true, showLogout 
                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#8eff71] hover:bg-white/5 hover:text-white"
                >
                  <span className="material-symbols-outlined text-[18px] leading-none">manage_accounts</span>
-                 <span className="font-bold">Manager Hub</span>
+                 <span className="font-bold">Khu vực Quản lý</span>
                </button>
                <div className="my-1 h-px bg-white/10" />
              </>
@@ -198,7 +198,7 @@ function UserMenu({ auth, navigate, profilePath, showProfile = true, showLogout 
                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-error hover:bg-white/5 hover:text-white"
                >
                  <span className="material-symbols-outlined text-[18px] leading-none">admin_panel_settings</span>
-                 <span className="font-bold">Admin Control</span>
+                 <span className="font-bold">Quản trị</span>
                </button>
                <div className="my-1 h-px bg-white/10" />
              </>
@@ -212,7 +212,7 @@ function UserMenu({ auth, navigate, profilePath, showProfile = true, showLogout 
               className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#fdfdf6]/80 hover:bg-white/5 hover:text-[#8eff71]"
             >
               <span className="material-symbols-outlined text-[18px] leading-none">logout</span>
-              <span>Logout</span>
+              <span>Đăng xuất</span>
             </button>
           ) : null}
         </div>
@@ -276,7 +276,7 @@ export default function MainLayout() {
                 }}
                 className={navItemClass(isHome)}
               >
-                Home
+                Trang chủ
               </button>
               <button
                 type="button"
@@ -286,7 +286,7 @@ export default function MainLayout() {
                 }}
                 className={navItemClass(isFields)}
               >
-                Field
+                Sân
               </button>
               <button
                 type="button"
@@ -296,7 +296,7 @@ export default function MainLayout() {
                 }}
                 className={navItemClass(isCommunity)}
               >
-                Community
+                Cộng đồng
               </button>
               <button
                 type="button"
@@ -306,13 +306,13 @@ export default function MainLayout() {
                 }}
                 className={navItemClass(isPolicy)}
               >
-                Policy
+                Chính sách
               </button>
               <button type="button" onClick={() => navigate('/wishlist')} className={navItemClass(isWishlist)}>
-                Wishlist
+                Yêu thích
               </button>
               <button type="button" onClick={() => navigate('/services')} className={navItemClass(isService)}>
-                Service
+                Dịch vụ
               </button>
             </div>
           ) : null}
@@ -341,11 +341,11 @@ export default function MainLayout() {
           <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
             <div>
               <div className="font-headline text-2xl font-black italic text-[#8eff71]">San Sieu Toc</div>
-              <p className="mt-3 text-sm text-[#abaca5]">Fast field booking. Better play.</p>
+              <p className="mt-3 text-sm text-[#abaca5]">Đặt sân nhanh. Chơi hay hơn.</p>
             </div>
             <div className="grid grid-cols-2 gap-8 md:col-span-2">
               <div>
-                <div className="mb-3 text-xs font-black uppercase tracking-widest text-[#fdfdf6]">Product</div>
+                <div className="mb-3 text-xs font-black uppercase tracking-widest text-[#fdfdf6]">Sản phẩm</div>
                 <ul className="space-y-2 text-sm text-[#abaca5]">
                   <li>
                     <button
@@ -356,23 +356,23 @@ export default function MainLayout() {
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
                     >
-                      Fields
+                      Sân
                     </button>
                   </li>
                   <li>
                     <button type="button" className="hover:text-[#8eff71]" onClick={() => navigate('/auth')}>
-                      Bookings
+                      Đặt sân
                     </button>
                   </li>
                   <li>
                     <button type="button" className="hover:text-[#8eff71]" onClick={() => navigate('/auth')}>
-                      Pricing
+                      Bảng giá
                     </button>
                   </li>
                 </ul>
               </div>
               <div>
-                <div className="mb-3 text-xs font-black uppercase tracking-widest text-[#fdfdf6]">Company</div>
+                <div className="mb-3 text-xs font-black uppercase tracking-widest text-[#fdfdf6]">Công ty</div>
                 <ul className="space-y-2 text-sm text-[#abaca5]">
                   <li>
                     <button
@@ -380,7 +380,7 @@ export default function MainLayout() {
                       className="hover:text-[#8eff71]"
                       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                     >
-                      About
+                      Giới thiệu
                     </button>
                   </li>
                   <li>
@@ -392,7 +392,7 @@ export default function MainLayout() {
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
                     >
-                      Community
+                      Cộng đồng
                     </button>
                   </li>
                   <li>
@@ -404,7 +404,7 @@ export default function MainLayout() {
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
                     >
-                      Policy
+                      Chính sách
                     </button>
                   </li>
                 </ul>
@@ -412,7 +412,7 @@ export default function MainLayout() {
             </div>
           </div>
           <div className="mt-12 border-t border-[#474944]/20 pt-8 text-xs text-[#abaca5]">
-            © {new Date().getFullYear()} San Sieu Toc. All rights reserved.
+            © {new Date().getFullYear()} San Sieu Toc. Đã đăng ký bản quyền.
           </div>
         </footer>
       ) : null}
