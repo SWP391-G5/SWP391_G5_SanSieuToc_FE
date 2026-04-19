@@ -36,6 +36,9 @@ import ManagerMarketingImagesPage from './pages/Manager/ManagerMarketingImagesPa
 import RequireOwner from './components/owner/RequireOwner';
 import OwnerLayout from './layouts/owner/OwnerLayout';
 import OwnerFieldsPage from './pages/owner/OwnerFieldsPage';
+import OwnerRefundsPage from './pages/owner/OwnerRefundsPage';
+import OwnerWalletPage from './pages/owner/OwnerWalletPage';
+import OwnerWithdrawPage from './pages/owner/OwnerWithdrawPage';
 
 import { useAuth } from './context/AuthContext';
 
@@ -131,6 +134,9 @@ function App() {
         >
           <Route index element={<Navigate to="/owner/fields" replace />} />
           <Route path="fields" element={<OwnerFieldsPage />} />
+          <Route path="refunds" element={<OwnerRefundsPage />} />
+          <Route path="wallet" element={<OwnerWalletPage />} />
+          <Route path="withdraw" element={<OwnerWithdrawPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
 

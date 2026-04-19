@@ -76,22 +76,22 @@ function BookingCard({ booking, onCancel }) {
       <div className="booking-card-body">
         <div className="booking-card-top">
           <div className="booking-card-info">
-            <h3 className="booking-card-title">{booking.fieldName}</h3>
-            <p className="booking-card-address">📍 {booking.fieldAddress}</p>
+            <h3 className="booking-card-title">{booking.fieldName || 'Unknown'}</h3>
+            <p className="booking-card-address">📍 {booking.fieldAddress || ''}</p>
           </div>
           <div className="booking-card-status">
-            <span className={`booking-status-badge status-${booking.status.toLowerCase().replace(/\s+/g, '-')}`}>
+            <span className={`booking-status-badge status-${(booking.status || '').toLowerCase().replace(/\s+/g, '-')}`}>
               {booking.status}
             </span>
-            <span className={`booking-payment-badge ${booking.statusPayment.toLowerCase().replace(/\s+/g, '-')}`}>
+            <span className={`booking-payment-badge ${(booking.statusPayment || '').toLowerCase().replace(/\s+/g, '-')}`}>
               {booking.statusPayment}
             </span>
           </div>
         </div>
-        <p className="booking-card-date">📅 {new Date(booking.date).toLocaleDateString('vi-VN')}</p>
-        <p className="booking-card-time">🕒 {booking.timeSlots.map(s => typeof s === 'object' ? s.start : s).join(', ')}</p>
+        <p className="booking-card-date">📅 {booking.date ? new Date(booking.date).toLocaleDateString('vi-VN') : 'N/A'}</p>
+        <p className="booking-card-time">🕒 {(booking.timeSlots || []).map(s => typeof s === 'object' ? s.start : s).join(', ')}</p>
         <div className="booking-card-footer">
-          <span className="booking-card-price">{formatVnd(booking.grandTotal)}đ</span>
+          <span className="booking-card-price">{formatVnd(booking.grandTotal || 0)}đ</span>
           <div className="booking-card-actions">
             {canCancel && (
               <button
@@ -215,7 +215,6 @@ export default function UserProfilePage() {
   const { notifyError, notifyInfo, notifySuccess } = useNotification();
 
   const [activeTab, setActiveTab] = useState('personal');
-  const [bookingType, setBookingType] = useState('field');
   const [bookings, setBookings] = useState([]);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [transactions, setTransactions] = useState([]);
@@ -349,13 +348,6 @@ export default function UserProfilePage() {
       const fetchBookings = async () => {
         setBookingsLoading(true);
         try {
-          if (bookingType === 'service') {
-            if (!ignore) {
-              setBookings([]);
-            }
-            setBookingsLoading(false);
-            return;
-          }
           if (auth.accessToken) {
             setAuthToken(auth.accessToken);
           }
@@ -375,7 +367,7 @@ export default function UserProfilePage() {
       fetchBookings();
       return () => { ignore = true };
     }
-  }, [activeTab, bookingType, notifyError, auth.accessToken]);
+  }, [activeTab, notifyError, auth.accessToken]);
 
   // Effect to fetch transactions when tab is active
   useEffect(() => {
@@ -688,13 +680,17 @@ export default function UserProfilePage() {
             PERSONAL INFORMATION
           </button>
           {isCustomer && (
-            <button
-              type="button"
-              className={`profile-terminal-tab ${activeTab === 'bookings' ? 'active' : ''}`}
-              onClick={() => setActiveTab('bookings')}
-            >
-              BOOKING HISTORY ▾
-            </button>
+            <>
+              <button
+                type="button"
+                className={`profile-terminal-tab ${activeTab === 'bookings' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('bookings');
+                }}
+              >
+FIELD BOOKING
+              </button>
+            </>
           )}
 
           {isAdminAccount ? (
@@ -717,17 +713,7 @@ export default function UserProfilePage() {
           </button>
           
         </div>
-        {activeTab === 'bookings' && (
-          <div className="booking-type-selector">
-            <select
-              value={bookingType}
-              onChange={(e) => setBookingType(e.target.value)}
-              className="booking-type-dropdown"
-            >
-              <option value="field">Field Booking History</option>
-            </select>
-          </div>
-        )}
+        
 
         {activeTab === 'personal' ? (
           <div className="profile-terminal-grid">
@@ -893,7 +879,7 @@ export default function UserProfilePage() {
               <section className="profile-terminal-card">
                 <div className="profile-terminal-card-title">
                   <span className="profile-terminal-card-icon">📅</span>
-                  BOOKING HISTORY
+                  FIELD BOOKING HISTORY
                 </div>
                 {bookingsLoading ? (
                   <div className="profile-terminal-loading" style={{ marginTop: '1rem' }}>
