@@ -19,6 +19,7 @@ export function PreviewModeProvider({ children }) {
   return <PreviewModeContext.Provider value={value}>{children}</PreviewModeContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function usePreviewMode() {
   return useContext(PreviewModeContext);
 }

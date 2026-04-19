@@ -226,18 +226,13 @@ export default function MainLayout() {
   const location = useLocation();
   const auth = useAuth();
 
-  const scrollToId = (id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
   const pathname = location.pathname;
   const isHome = pathname === '/';
   const isFields = pathname.startsWith('/fields');
   const isWishlist = pathname.startsWith('/wishlist');
   const isCommunity = pathname.startsWith('/community');
   const isService = pathname.startsWith('/services');
+  const isPolicy = pathname.startsWith('/policy');
 
   const isAdminRoute = pathname.startsWith('/admin');
   const accountTypeKey = String(auth.user?.accountType || '').trim().toLowerCase();
@@ -305,10 +300,13 @@ export default function MainLayout() {
               </button>
               <button
                 type="button"
-                onClick={() => scrollToId('privacy')}
-                className="text-[#fdfdf6]/70 transition-colors duration-300 hover:text-[#8eff71]"
+                onClick={() => {
+                  navigate('/policy');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className={navItemClass(isPolicy)}
               >
-                Privacy
+                Policy
               </button>
               <button type="button" onClick={() => navigate('/wishlist')} className={navItemClass(isWishlist)}>
                 Wishlist
@@ -340,7 +338,6 @@ export default function MainLayout() {
       {/* Footer */}
       {!isAdminRoute ? (
         <footer id="community" className="scroll-mt-24 mx-auto w-full max-w-7xl px-6 py-16 md:px-8">
-          <div id="privacy" className="scroll-mt-24" />
           <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
             <div>
               <div className="font-headline text-2xl font-black italic text-[#8eff71]">San Sieu Toc</div>
@@ -399,8 +396,15 @@ export default function MainLayout() {
                     </button>
                   </li>
                   <li>
-                    <button type="button" className="hover:text-[#8eff71]" onClick={() => scrollToId('privacy')}>
-                      Contact
+                    <button
+                      type="button"
+                      className="hover:text-[#8eff71]"
+                      onClick={() => {
+                        navigate('/policy');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    >
+                      Policy
                     </button>
                   </li>
                 </ul>

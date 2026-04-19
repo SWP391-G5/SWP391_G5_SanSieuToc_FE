@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import footballImg from '../../../assets/images/football.jpg';
 import volleyballImg from '../../../assets/images/volleyball.jpg';
-import { FIELDS, getFieldSuggestions, getTopRatedFields } from '../../../features/fields';
+import useFields from '../../../hooks/useFields';
+import publicApi from '../../../services/public/publicApi';
 
 import FeaturedFieldsSection from './components/FeaturedFieldsSection';
 import HeroSection from './components/HeroSection';
@@ -78,7 +79,32 @@ export default function HomePage() {
   const [heroSearchOpen, setHeroSearchOpen] = useState(false);
   const heroSearchRef = useRef(null);
 
-  const heroSuggestions = useMemo(() => getFieldSuggestions(FIELDS, heroSearch, 6), [heroSearch]);
+  // Dynamic suggestions from database instead of static FIELDS
+  const [dbSuggestions, setDbSuggestions] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+
+  useEffect(() => {
+    const query = heroSearch.trim();
+    if (!query || !heroSearchOpen) {
+      setDbSuggestions([]);
+      return undefined;
+    }
+
+    const timer = setTimeout(async () => {
+      setLoadingSuggestions(true);
+      try {
+        const data = await publicApi.getFields({ q: query });
+        const items = Array.isArray(data?.items) ? data.items : [];
+        setDbSuggestions(items.slice(0, 6)); // limit to 6
+      } catch (err) {
+        console.error('Failed to fetch suggestions:', err);
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    }, 300); // Debounce 300ms
+
+    return () => clearTimeout(timer);
+  }, [heroSearch, heroSearchOpen]);
 
   useEffect(() => {
     if (!heroSearchOpen) return undefined;
@@ -104,7 +130,12 @@ export default function HomePage() {
 
   const goToFields = (q) => {
     const value = String(q ?? '').trim();
-    navigate('/fields', value ? { state: { searchText: value } } : undefined);
+    navigate('/fields', { 
+      state: { 
+        searchText: value,
+        searchDate: selectedDate || undefined
+      } 
+    });
   };
 
   const submitHeroSearch = () => {
@@ -117,7 +148,20 @@ export default function HomePage() {
     submitHeroSearch();
   };
 
-  const topRatedFields = useMemo(() => getTopRatedFields(FIELDS, 3), []);
+  const featuredFieldsParams = useMemo(
+    () => ({
+      priceMin: 0,
+      priceMax: 5000000,
+      sortBy: 'topRated',
+    }),
+    []
+  );
+
+  const { items: featuredFields } = useFields(featuredFieldsParams);
+  const topRatedFields = useMemo(() => {
+    return Array.isArray(featuredFields) ? featuredFields.slice(0, 3) : [];
+  }, [featuredFields]);
+
   const [largeField, smallField1, smallField2] = topRatedFields;
 
   const featured = {
@@ -168,7 +212,7 @@ export default function HomePage() {
         heroSearchOpen={heroSearchOpen}
         onHeroSearchOpen={() => setHeroSearchOpen(true)}
         onHeroSearchClose={() => setHeroSearchOpen(false)}
-        heroSuggestions={heroSuggestions}
+        heroSuggestions={dbSuggestions}
         onPickSuggestion={(f) => {
           setHeroSearch(f.name);
           setHeroSearchOpen(false);
