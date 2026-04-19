@@ -46,9 +46,10 @@ export function matchesSearch({ needle, title, content }) {
  * @param {function(object):boolean} args.isLocalDraft - fn detects local draft
  * @param {function(object):string} args.getTitle - fn normalized title
  * @param {function(object):string} args.getContent - fn normalized content
+ * @param {string} [args.tag] - optional tag filter
  * @returns {Array<object>} filtered list
  */
-export function filterPostLikeList({ merged, status, tableOwner, searchNeedle, isLocalDraft, getTitle, getContent }) {
+export function filterPostLikeList({ merged, status, tableOwner, searchNeedle, isLocalDraft, getTitle, getContent, tag }) {
   return (merged || []).filter((post) => {
     const localDraft = isLocalDraft(post);
 
@@ -70,6 +71,12 @@ export function filterPostLikeList({ merged, status, tableOwner, searchNeedle, i
         if (localDraft) return false;
         if (String(post?.postOwnerModel || '') !== String(tableOwner)) return false;
       }
+    }
+
+    // Tag filter (optional)
+    if (tag) {
+      const tags = Array.isArray(post?.postTags) ? post.postTags : [];
+      if (!tags.includes(tag)) return false;
     }
 
     // Search

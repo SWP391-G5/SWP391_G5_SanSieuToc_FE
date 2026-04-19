@@ -3,9 +3,31 @@
  * Create/Edit modal for Manager Posts.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { MAX_IMAGES_PER_POST, buildPickedImagePreviews, revokePreviewUrl } from './postUploadHelpers';
 import uploadService from '../../../services/uploadService';
+import publicApi from '../../../services/public/publicApi';
+
+const FALLBACK_POST_TAG_OPTIONS = [
+  { value: 'ThongBao', label: 'Thông báo' },
+  { value: 'TimKeo', label: 'Tìm kèo' },
+  { value: 'Tips', label: 'Tips / Kinh nghiệm' },
+  { value: 'Review', label: 'Review' },
+  { value: 'HoiDap', label: 'Hỏi đáp' },
+  { value: 'GiaoLuu', label: 'Giao lưu' },
+  { value: 'SuKien', label: 'Sự kiện / Giải đấu' },
+  { value: 'KhuyenMai', label: 'Khuyến mãi' },
+  { value: 'BaoLoi', label: 'Báo lỗi / Góp ý' },
+  { value: 'Khac', label: 'Khác' },
+];
+
+const MIN_TAGS_PER_POST = 1;
+const MAX_TAGS_PER_POST = 3;
+
+// Align with BE schema constraints; show as hints in UI
+const MAX_TITLE_CHARS = 200;
+// Product: ~2k words suggestion. Use a char limit hint (roughly 12k chars) but keep BE max at 10000.
+const MAX_CONTENT_CHARS = 10000;
 
 export default function PostFormModal({
   open,
@@ -19,6 +41,53 @@ export default function PostFormModal({
   onPublish,
   notify,
 }) {
+  const [tagOptions, setTagOptions] = useState(FALLBACK_POST_TAG_OPTIONS);
+
+  // Load global tag options (shared among Customer/Owner/Manager)
+  useEffect(() => {
+    if (!open) return;
+
+    let alive = true;
+    (async () => {
+      try {
+        const res = await publicApi.getPostTags();
+        const items = res?.items;
+        if (!alive) return;
+
+        if (Array.isArray(items) && items.length > 0) {
+          const cleaned = items
+            .map((x) => ({ value: String(x?.value || '').trim(), label: String(x?.label || '').trim() }))
+            .filter((x) => x.value && x.label);
+          if (cleaned.length > 0) setTagOptions(cleaned);
+        }
+      } catch {
+        // keep fallback
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [open]);
+
+  const tagOptionsByValue = useMemo(() => {
+    const m = new Map();
+    (tagOptions || []).forEach((t) => m.set(String(t.value), t));
+    return m;
+  }, [tagOptions]);
+
+  const knownTagValues = useMemo(() => new Set((tagOptions || []).map((t) => String(t.value))), [tagOptions]);
+
+  const selectedTags = Array.isArray(form?.tags) ? form.tags : [];
+
+  // If API tags have changed, keep previously selected tags visible and selectable
+  const mergedTagOptions = useMemo(() => {
+    const extras = selectedTags
+      .filter((v) => v && !knownTagValues.has(String(v)))
+      .map((v) => ({ value: String(v), label: String(v) }));
+    return [...(tagOptions || []), ...extras];
+  }, [tagOptions, selectedTags, knownTagValues]);
+
   // Cleanup preview URLs when modal closes
   useEffect(() => {
     if (open) return;
@@ -30,6 +99,7 @@ export default function PostFormModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // IMPORTANT: keep this after hooks to avoid hook order change
   if (!open) return null;
 
   const onPickFiles = (files) => {
@@ -68,11 +138,66 @@ export default function PostFormModal({
     });
   };
 
+  const canSaveDraft = !editing || String(editing?.status) === 'Draft' || !!editing?.__dbDraft;
+
+  const toggleTag = (value) => {
+    setForm((prev) => {
+      const next = new Set(Array.isArray(prev?.tags) ? prev.tags : []);
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
+
+      // enforce max
+      const nextArr = Array.from(next);
+      if (nextArr.length > MAX_TAGS_PER_POST) {
+        notify?.notifyWarning?.(`Bạn chỉ được chọn tối đa ${MAX_TAGS_PER_POST} tag cho 1 bài.`);
+        return prev;
+      }
+
+      return { ...prev, tags: nextArr };
+    });
+  };
+
+  const validateDraft = () => {
+    const title = String(form?.title || '').trim();
+    const tags = Array.isArray(form?.tags) ? form.tags.filter(Boolean) : [];
+
+    if (!title) return 'Title is required.';
+    if (title.length > MAX_TITLE_CHARS) return `Title tối đa ${MAX_TITLE_CHARS} ký tự.`;
+    if (tags.length < MIN_TAGS_PER_POST) return `Vui lòng chọn tối thiểu ${MIN_TAGS_PER_POST} tag.`;
+
+    const content = String(form?.content || '');
+    if (content.length > MAX_CONTENT_CHARS) return `Content tối đa ${MAX_CONTENT_CHARS} ký tự.`;
+
+    return '';
+  };
+
+  const validatePublish = () => {
+    const base = validateDraft();
+    if (base) return base;
+
+    const content = String(form?.content || '').trim();
+    if (!content) return 'Content is required to publish.';
+
+    return '';
+  };
+
   const handleSaveDraft = () => {
+    const err = validateDraft();
+    if (err) {
+      notify?.notifyWarning?.(err);
+      return;
+    }
     onSaveDraft?.();
   };
 
-  const canSaveDraft = !editing || String(editing?.status) === 'Draft' || !!editing?.__dbDraft;
+  const handlePublish = () => {
+    const err = validatePublish();
+    if (err) {
+      notify?.notifyWarning?.(err);
+      return;
+    }
+    onPublish?.();
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
@@ -98,26 +223,68 @@ export default function PostFormModal({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
               <label className="space-y-1 block">
-                <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Title</div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Title</div>
+                  <div className="text-xs text-on-surface-variant">Tối đa {MAX_TITLE_CHARS} ký tự</div>
+                </div>
                 <input
                   className="h-11 w-full rounded-lg bg-white px-4 text-sm border border-outline-variant text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40"
                   value={form?.title || ''}
-                  onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+                  onChange={(e) => setForm((p) => ({ ...p, title: e.target.value.slice(0, MAX_TITLE_CHARS) }))}
                   placeholder="Post title"
                   disabled={formBusy}
                 />
               </label>
 
               <label className="space-y-1 block">
-                <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Content</div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Content</div>
+                  <div className="text-xs text-on-surface-variant">Tối đa {MAX_CONTENT_CHARS} ký tự</div>
+                </div>
                 <textarea
                   className="min-h-44 w-full rounded-lg bg-white px-4 py-3 text-sm border border-outline-variant text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40"
                   value={form?.content || ''}
-                  onChange={(e) => setForm((p) => ({ ...p, content: e.target.value }))}
+                  onChange={(e) => setForm((p) => ({ ...p, content: e.target.value.slice(0, MAX_CONTENT_CHARS) }))}
                   placeholder="Write content..."
                   disabled={formBusy}
                 />
               </label>
+
+              {/* Tags */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Tags</div>
+                  <div className="text-xs text-on-surface-variant">
+                    Chọn {MIN_TAGS_PER_POST}–{MAX_TAGS_PER_POST} tag
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {mergedTagOptions.map((opt) => {
+                    const active = selectedTags.includes(opt.value);
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => toggleTag(opt.value)}
+                        disabled={formBusy}
+                        className={
+                          active
+                            ? 'h-9 rounded-full px-3 text-xs font-bold border border-primary bg-primary/15 text-primary'
+                            : 'h-9 rounded-full px-3 text-xs font-bold border border-outline-variant text-on-surface-variant hover:bg-surface'
+                        }
+                        title={opt.value}
+                      >
+                        {tagOptionsByValue.get(String(opt.value))?.label || opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {selectedTags.length < MIN_TAGS_PER_POST ? (
+                  <div className="text-xs text-error">Vui lòng chọn tối thiểu {MIN_TAGS_PER_POST} tag.</div>
+                ) : null}
+              </div>
 
               {formError ? <div className="rounded-lg border border-error/60 bg-error/10 p-3 text-sm text-error">{formError}</div> : null}
             </div>
@@ -187,20 +354,19 @@ export default function PostFormModal({
                 onClick={handleSaveDraft}
                 className="h-11 rounded-lg px-5 text-sm font-bold border border-outline-variant hover:bg-surface disabled:opacity-50"
                 disabled={formBusy}
-                title="Lưu nháp vào DB (status=Draft)"
               >
-                {formBusy ? 'Saving...' : 'Save Draft'}
+                Save Draft
               </button>
             ) : null}
 
             <button
               type="button"
-              onClick={onPublish}
-              className="h-11 rounded-lg px-6 text-sm font-bold bg-primary text-on-primary hover:opacity-90 disabled:opacity-50"
-              disabled={formBusy}
-              title="Đăng bài ngay (Publish)"
+              onClick={handlePublish}
+              className="h-11 rounded-lg bg-primary px-5 text-sm font-bold text-white hover:brightness-95 disabled:opacity-50"
+              disabled={formBusy || selectedTags.length < MIN_TAGS_PER_POST}
+              title={selectedTags.length < MIN_TAGS_PER_POST ? `Vui lòng chọn tối thiểu ${MIN_TAGS_PER_POST} tag.` : undefined}
             >
-              {formBusy ? 'Publishing...' : 'Publish'}
+              Publish
             </button>
           </div>
         </div>

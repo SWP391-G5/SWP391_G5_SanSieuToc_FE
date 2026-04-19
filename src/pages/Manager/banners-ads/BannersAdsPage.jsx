@@ -33,16 +33,27 @@ function openPreview(previewPath) {
 export default function BannersAdsPage() {
   const notify = useNotification();
 
+  const getPlacementMeta = (key) => (PLACEMENTS || []).find((p) => p.key === key) || null;
+  const clampOrderByPlacement = (order, placementKey) => {
+    const meta = getPlacementMeta(placementKey);
+    const max = meta?.maxItems;
+    const n = Number.isFinite(Number(order)) ? Number(order) : 0;
+    if (typeof max === 'number' && max > 0) return Math.min(Math.max(0, n), max - 1);
+    return Math.max(0, n);
+  };
+
   const preValidate = ({ nextDraft, currentItems, mode, currentId } = {}) => {
     const d = nextDraft || {};
     const selfId = currentId != null ? String(currentId) : '';
     const nextPlacement = d.placement || placement;
-    const nextOrder = Number.isFinite(Number(d.order)) ? Number(d.order) : 0;
     const nextActive = !!d.isActive;
 
-    // placement max guard
-    const max = placementMeta?.maxItems;
-    if (typeof max === 'number' && max > 0 && nextOrder >= max) {
+    const meta = getPlacementMeta(nextPlacement);
+    const max = meta?.maxItems;
+
+    // Order range guard for BOTH active and inactive when placement has fixed slots
+    const nextOrder = clampOrderByPlacement(d.order, nextPlacement);
+    if (typeof max === 'number' && max > 0 && (nextOrder < 0 || nextOrder >= max)) {
       return { ok: false, message: `Order must be between 0 and ${max - 1} for this placement.` };
     }
 
@@ -53,26 +64,35 @@ export default function BannersAdsPage() {
           x &&
           String(x?.id ?? x?._id ?? '') !== selfId &&
           String(x.placement || '') === String(nextPlacement || '') &&
-          Number(x.order) === nextOrder &&
+          Number(x.order) === Number(nextOrder) &&
           !!x.isActive
       );
       if (dup) {
-        return { ok: false, message: `Duplicate active item at order ${nextOrder} for this placement. Please choose another order or deactivate the other item first.` };
+        return {
+          ok: false,
+          message: `Duplicate active item at order ${nextOrder} for this placement. Please choose another order or deactivate the other item first.`,
+        };
       }
     }
 
-    // When creating, enforce capacity per placement
-    if (mode === 'create') {
-      const maxItems = placementMeta?.maxItems;
-      if (typeof maxItems === 'number' && maxItems > 0) {
-        const countInPlacement = (currentItems || []).filter((x) => String(x?.placement || '') === String(nextPlacement || '')).length;
-        if (countInPlacement >= maxItems) {
-          return { ok: false, message: `This placement allows up to ${maxItems} images.` };
+    // IMPORTANT CHANGE:
+    // - Do NOT enforce "capacity" for inactive items.
+    // - Only block creation when placement has fixed slots AND the new item is active.
+    if (mode === 'create' && nextActive) {
+      if (typeof max === 'number' && max > 0) {
+        const activeCountInPlacement = (currentItems || []).filter(
+          (x) => x && String(x?.placement || '') === String(nextPlacement || '') && !!x.isActive
+        ).length;
+        if (activeCountInPlacement >= max) {
+          return {
+            ok: false,
+            message: `This placement allows up to ${max} ACTIVE images. Please deactivate an existing one or create this as Inactive.`,
+          };
         }
       }
     }
 
-    return { ok: true };
+    return { ok: true, normalized: { placement: nextPlacement, order: nextOrder, isActive: nextActive } };
   };
 
   const [placement, setPlacement] = useState(DEFAULT_PLACEMENT);
@@ -85,8 +105,20 @@ export default function BannersAdsPage() {
   const items = useMemo(() => {
     const list = (rawItems || []).map(normalizeBannerItem);
     const filtered = activeOnly ? list.filter((x) => x.isActive) : list;
+
+    // When showing only ACTIVE items, enforce slot-range display and drop overflow orders.
+    // (These should not exist, but this prevents "filter still wrong" when backend data is dirty.)
+    if (activeOnly) {
+      const max = placementMeta?.maxItems;
+      if (typeof max === 'number' && max > 0) {
+        return filtered
+          .filter((x) => Number(x.order) >= 0 && Number(x.order) < max)
+          .sort((a, b) => (a.order !== b.order ? a.order - b.order : String(a.id).localeCompare(String(b.id))));
+      }
+    }
+
     return filtered.sort((a, b) => (a.order !== b.order ? a.order - b.order : String(a.id).localeCompare(String(b.id))));
-  }, [activeOnly, rawItems]);
+  }, [activeOnly, rawItems, placementMeta]);
 
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -105,17 +137,26 @@ export default function BannersAdsPage() {
   const formStateTuple = useMemo(() => [draft, setDraft], [draft]);
   const [confirm, setConfirm] = useState(null);
 
-  const placementMax = placementMeta?.maxItems ?? 6;
-
   const nextSuggestedOrder = useMemo(() => {
+    const meta = placementMeta;
+    const max = meta?.maxItems;
+
     const list = items || [];
+    if (typeof max === 'number' && max > 0) {
+      // suggest first free slot for ACTIVE items
+      const used = new Set(list.filter((x) => x?.isActive).map((x) => Number(x.order)));
+      for (let i = 0; i < max; i += 1) if (!used.has(i)) return i;
+      return 0;
+    }
+
+    // fallback: append after max order
     if (!list.length) return 0;
     const maxOrder = Math.max(...list.map((x) => Number(x.order) || 0));
     return Math.max(0, maxOrder + 1);
-  }, [items]);
+  }, [items, placementMeta]);
 
   const openCreate = () => {
-    const v = preValidate({ nextDraft: { placement }, currentItems: rawItems || [], mode: 'create' });
+    const v = preValidate({ nextDraft: { placement, isActive: true, order: nextSuggestedOrder }, currentItems: rawItems || [], mode: 'create' });
     if (!v.ok) {
       notify?.notifyWarning?.(v.message);
       return;
@@ -125,7 +166,7 @@ export default function BannersAdsPage() {
       id: null,
       title: '',
       placement,
-      order: nextSuggestedOrder,
+      order: v?.normalized?.order ?? nextSuggestedOrder,
       isActive: true,
       image: null,
       __v: 0,
@@ -153,18 +194,25 @@ export default function BannersAdsPage() {
     setFormError('');
 
     try {
-      const v = preValidate({ nextDraft: draft, currentItems: rawItems || [], mode: draft.id ? 'edit' : 'create', currentId: draft.id });
+      const v = preValidate({
+        nextDraft: draft,
+        currentItems: rawItems || [],
+        mode: draft.id ? 'edit' : 'create',
+        currentId: draft.id,
+      });
       if (!v.ok) {
         setFormError(v.message);
         notify?.notifyWarning?.(v.message);
         return;
       }
 
+      const normalized = v?.normalized || {};
+
       const fd = new FormData();
       fd.set('title', draft.title || '');
-      fd.set('placement', draft.placement || placement);
-      fd.set('order', String(Number(draft.order) || 0));
-      fd.set('isActive', draft.isActive ? 'true' : 'false');
+      fd.set('placement', normalized.placement || draft.placement || placement);
+      fd.set('order', String(Number(normalized.order ?? draft.order) || 0));
+      fd.set('isActive', normalized.isActive ? 'true' : 'false');
       if (draft.__v !== undefined && draft.__v !== null) fd.set('__v', String(Number(draft.__v) || 0));
 
       if (draft.image && typeof draft.image === 'object' && draft.image.file instanceof File) {
@@ -226,12 +274,13 @@ export default function BannersAdsPage() {
         notify?.notifyWarning?.(v.message);
         return;
       }
+      const normalized = v?.normalized || {};
 
       const fd = new FormData();
       fd.set('title', b.title || '');
-      fd.set('placement', b.placement || placement);
-      fd.set('order', String(Number(b.order) || 0));
-      fd.set('isActive', b.isActive ? 'false' : 'true');
+      fd.set('placement', normalized.placement || b.placement || placement);
+      fd.set('order', String(Number(normalized.order ?? b.order) || 0));
+      fd.set('isActive', normalized.isActive ? 'true' : 'false');
       if (b.__v !== undefined && b.__v !== null) fd.set('__v', String(Number(b.__v) || 0));
 
       await managerApi.updateBanner(b.id, fd);
@@ -251,12 +300,13 @@ export default function BannersAdsPage() {
         notify?.notifyWarning?.(v.message);
         return;
       }
+      const normalized = v?.normalized || {};
 
       const fd = new FormData();
       fd.set('title', b.title || '');
-      fd.set('placement', b.placement || placement);
-      fd.set('order', String(Number(nextOrder) || 0));
-      fd.set('isActive', b.isActive ? 'true' : 'false');
+      fd.set('placement', normalized.placement || b.placement || placement);
+      fd.set('order', String(Number(normalized.order ?? nextOrder) || 0));
+      fd.set('isActive', normalized.isActive ? 'true' : 'false');
       if (b.__v !== undefined && b.__v !== null) fd.set('__v', String(Number(b.__v) || 0));
 
       await managerApi.updateBanner(b.id, fd);
@@ -322,6 +372,11 @@ export default function BannersAdsPage() {
             <div className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Áp dụng cho</div>
             <div className="text-sm text-on-surface-variant font-semibold">{placementLabel(placement)}</div>
             <div className="text-xs text-on-surface-variant mt-1">{placementMeta?.position || '-'}</div>
+            <div className="text-xs text-on-surface-variant mt-1">
+              {typeof placementMeta?.maxItems === 'number' && placementMeta.maxItems > 0
+                ? `Số ảnh tối đa: ${placementMeta.maxItems} (Order: 0 → ${Math.max(0, placementMeta.maxItems - 1)})`
+                : 'Số ảnh tối đa: không giới hạn'}
+            </div>
           </div>
 
           <div className="flex items-end justify-between gap-3">
@@ -349,7 +404,6 @@ export default function BannersAdsPage() {
           onEdit={openEdit}
           onDelete={requestDelete}
           onToggleActive={toggleActive}
-          onUpdateOrder={updateOrder}
         />
       </div>
 

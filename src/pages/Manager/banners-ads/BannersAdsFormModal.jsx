@@ -25,6 +25,7 @@ export default function BannersAdsFormModal({ open, initial, busy, error, onClos
   useEffect(() => {
     if (!open) return;
     const max = placementMeta?.maxItems;
+    // Clamp when placement has fixed slots (apply to BOTH active and inactive)
     if (typeof max === 'number' && max > 0 && Number(form?.order) >= max) {
       setForm((p) => ({ ...p, order: Math.max(0, max - 1) }));
     }
@@ -90,14 +91,18 @@ export default function BannersAdsFormModal({ open, initial, busy, error, onClos
 
                   setForm((p) => {
                     const proposedOrder = Number.isFinite(Number(p?.order)) ? Number(p.order) : 0;
+
+                    // Clamp whenever placement has fixed slots (apply to BOTH active and inactive)
                     const safeOrder =
-                      typeof max === 'number' && max > 0 ? Math.min(Math.max(0, proposedOrder), max - 1) : proposedOrder;
+                      typeof max === 'number' && max > 0
+                        ? Math.min(Math.max(0, proposedOrder), max - 1)
+                        : Math.max(0, proposedOrder);
 
                     return { ...p, placement: nextPlacement, order: safeOrder };
                   });
 
                   if (typeof max === 'number' && max > 0) {
-                    notify?.notifyInfo?.(`Placement \"${nextMeta?.label || nextPlacement}\" allows up to ${max} images.`);
+                    notify?.notifyInfo?.(`Placement "${nextMeta?.label || nextPlacement}" order range: 0 → ${max - 1}.`);
                   }
                 }}
                 disabled={busy}
@@ -114,17 +119,18 @@ export default function BannersAdsFormModal({ open, initial, busy, error, onClos
               <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Order</div>
               <input
                 type="number"
+                min={0}
                 className="h-11 w-full rounded-lg bg-surface px-4 text-sm border border-outline-variant text-on-surface outline-none focus:ring-2 focus:ring-primary/30"
                 value={form?.order ?? 0}
                 onChange={(e) => {
                   const raw = Number(e.target.value);
+                  const base = Number.isFinite(raw) ? raw : 0;
+                  const nonNegative = Math.max(0, base);
+
                   const max = placementMeta?.maxItems;
                   const nextOrder =
-                    typeof max === 'number' && max > 0
-                      ? Math.min(Math.max(0, Number.isFinite(raw) ? raw : 0), max - 1)
-                      : Number.isFinite(raw)
-                      ? raw
-                      : 0;
+                    typeof max === 'number' && max > 0 ? Math.min(nonNegative, max - 1) : nonNegative;
+
                   setForm((p) => ({ ...p, order: nextOrder }));
                 }}
                 disabled={busy}
@@ -133,7 +139,9 @@ export default function BannersAdsFormModal({ open, initial, busy, error, onClos
                 <div className="text-[11px] text-on-surface-variant">
                   Range: 0 → {Math.max(0, placementMeta.maxItems - 1)}
                 </div>
-              ) : null}
+              ) : (
+                <div className="text-[11px] text-on-surface-variant">Order must be ≥ 0</div>
+              )}
             </label>
           </div>
 
@@ -188,8 +196,14 @@ export default function BannersAdsFormModal({ open, initial, busy, error, onClos
             <button
               type="button"
               onClick={() => {
-                if (!form?.image) {
+                // Create requires image; Edit can keep existing image URL.
+                if (!form?.id && !form?.image) {
                   notify?.notifyWarning?.('Image is required.');
+                  return;
+                }
+
+                if (Number(form?.order) < 0) {
+                  notify?.notifyWarning?.('Order must be ≥ 0.');
                   return;
                 }
 
@@ -198,6 +212,7 @@ export default function BannersAdsFormModal({ open, initial, busy, error, onClos
                   notify?.notifyWarning?.(`Order must be between 0 and ${max - 1} for this placement.`);
                   return;
                 }
+
                 onSubmit?.();
               }}
               className="h-11 rounded-lg px-6 text-sm font-bold bg-primary text-on-primary hover:opacity-90 disabled:opacity-50"

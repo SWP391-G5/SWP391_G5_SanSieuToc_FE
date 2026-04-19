@@ -5,7 +5,11 @@
  * Header cells include inline Status and Owner filter dropdowns.
  */
 
+// 2. Third-party
+import { useEffect, useMemo, useState } from 'react';
+
 // 3. Internal
+import publicApi from '../../../services/public/publicApi';
 import { formatDateTime, isLocalDraftPost, normalizeOwnerLabel } from './postFormatters';
 
 // All server-side statuses (Draft is a local-only pseudo-status)
@@ -21,6 +25,21 @@ const UPDATED_SORT_OPTIONS = [
   { value: '', label: 'Tất cả' },
   { value: 'updated_desc', label: 'Mới nhất' },
   { value: 'updated_asc', label: 'Cũ nhất' },
+];
+
+// Optional: tag options for header filter
+const FALLBACK_TAG_OPTIONS = [
+  { value: '', label: 'Tất cả' },
+  { value: 'ThongBao', label: 'Thông báo' },
+  { value: 'TimKeo', label: 'Tìm kèo' },
+  { value: 'Tips', label: 'Tips' },
+  { value: 'Review', label: 'Review' },
+  { value: 'HoiDap', label: 'Hỏi đáp' },
+  { value: 'GiaoLuu', label: 'Giao lưu' },
+  { value: 'SuKien', label: 'Sự kiện' },
+  { value: 'KhuyenMai', label: 'Khuyến mãi' },
+  { value: 'BaoLoi', label: 'Báo lỗi' },
+  { value: 'Khac', label: 'Khác' },
 ];
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -209,7 +228,41 @@ export default function PostsTable({
   onDelete,
   onReject,
   userId,
+  tag,
+  onChangeTag,
 }) {
+  const [tagOptions, setTagOptions] = useState(FALLBACK_TAG_OPTIONS);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await publicApi.getPostTags();
+        const items = res?.items;
+        if (!alive) return;
+
+        if (Array.isArray(items) && items.length > 0) {
+          const cleaned = items
+            .map((x) => ({ value: String(x?.value || '').trim(), label: String(x?.label || '').trim() }))
+            .filter((x) => x.value && x.label);
+          setTagOptions([{ value: '', label: 'Tất cả' }, ...(cleaned.length ? cleaned : FALLBACK_TAG_OPTIONS.slice(1))]);
+        }
+      } catch {
+        // keep fallback
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const tagLabelByValue = useMemo(() => {
+    const m = new Map();
+    (tagOptions || []).forEach((t) => m.set(String(t.value), t.label));
+    return m;
+  }, [tagOptions]);
+
   // Make ALL header filters uniform.
   // Use full width of the column and keep labels visible (stacked).
   const filterClass =
@@ -225,7 +278,7 @@ export default function PostsTable({
         length cannot make columns shift. Without this, a long title causes other
         columns to shrink unpredictably.
       */}
-      <table className="w-full table-fixed text-sm min-w-[980px]">
+      <table className="w-full table-fixed text-sm min-w-[1080px]">
         <colgroup>
           <col style={{ width: '3rem' }} />
           <col />
@@ -233,6 +286,7 @@ export default function PostsTable({
           <col style={{ width: '11rem' }} />
           <col style={{ width: '14rem' }} />
           <col style={{ width: '14rem' }} />
+          <col style={{ width: '12rem' }} />
           <col style={{ width: '11rem' }} />
         </colgroup>
 
@@ -314,6 +368,20 @@ export default function PostsTable({
               </div>
             </th>
 
+            {/* Tags */}
+            <th className="py-3 pr-4">
+              <div className="flex flex-col gap-1">
+                <span>Tag</span>
+                <select className={filterClass} value={tag || ''} onChange={(e) => onChangeTag?.(e.target.value)}>
+                  {tagOptions.map((opt) => (
+                    <option key={opt.value || 'all'} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </th>
+
             <th className="py-3 text-right">Hành động</th>
           </tr>
         </thead>
@@ -322,6 +390,8 @@ export default function PostsTable({
           {items.map((post, idx) => {
             const id = post?._id || post?.id;
             const isDraft = isLocalDraftPost(post);
+
+            const tags = Array.isArray(post?.postTags) ? post.postTags : [];
 
             return (
               <tr key={id || idx} className="align-top">
@@ -364,6 +434,22 @@ export default function PostsTable({
                   {post?.updatedAt ? formatDateTime(post.updatedAt) : '-'}
                 </td>
 
+                {/* Tags */}
+                <td className="py-3 pr-4 text-xs text-on-surface-variant">
+                  {tags.length ? (
+                    <div className="flex flex-wrap gap-1">
+                      {tags.slice(0, 3).map((t) => (
+                        <span key={t} className="inline-flex rounded-full border border-outline-variant px-2 py-0.5">
+                          {t}
+                        </span>
+                      ))}
+                      {tags.length > 3 ? <span className="text-gray-500">+{tags.length - 3}</span> : null}
+                    </div>
+                  ) : (
+                    '-'
+                  )}
+                </td>
+
                 {/* Action buttons */}
                 <td className="py-3 text-right">
                   <ActionGroup
@@ -388,7 +474,7 @@ export default function PostsTable({
           {/* Empty state */}
           {!loading && items.length === 0 ? (
             <tr>
-              <td colSpan={7} className="py-8 text-center text-sm text-on-surface-variant">
+              <td colSpan={8} className="py-8 text-center text-sm text-on-surface-variant">
                 Không tìm thấy bài viết nào.
               </td>
             </tr>

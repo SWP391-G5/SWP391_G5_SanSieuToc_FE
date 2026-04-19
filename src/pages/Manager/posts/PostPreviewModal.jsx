@@ -3,12 +3,13 @@
  * Customer-facing preview modal for Manager Posts.
  */
 
-import { formatDateTime, getPostContent, getPostImages, getPostTitle } from './postFormatters';
+import { formatDateTime, getPostContent, getPostImages, getPostTitle, getPostTags } from './postFormatters';
 
 export default function PostPreviewModal({ open, post, onClose }) {
   if (!open || !post) return null;
 
   const images = getPostImages(post).slice(0, 6);
+  const tags = getPostTags(post);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
@@ -33,6 +34,16 @@ export default function PostPreviewModal({ open, post, onClose }) {
               <h3 className="text-2xl font-bold text-black break-words">{getPostTitle(post) || '(no title)'}</h3>
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span className="inline-flex rounded-full border border-outline-variant px-2 py-1 text-black">Status: {post?.status || '-'}</span>
+                {tags.length ? (
+                  <span className="inline-flex flex-wrap gap-1 items-center">
+                    <span className="text-gray-600">Tags:</span>
+                    {tags.map((t) => (
+                      <span key={t} className="inline-flex rounded-full border border-outline-variant px-2 py-1 text-black">
+                        {t}
+                      </span>
+                    ))}
+                  </span>
+                ) : null}
                 {post?.updatedAt ? <span className="text-gray-600">Updated: {formatDateTime(post.updatedAt)}</span> : null}
               </div>
             </div>
