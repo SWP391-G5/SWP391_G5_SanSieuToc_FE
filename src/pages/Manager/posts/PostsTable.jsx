@@ -181,7 +181,7 @@ export default function PostsTable({
   // Make ALL header filters uniform.
   // Use full width of the column and keep labels visible (stacked).
   const filterClass =
-    'h-8 w-full min-w-[120px] rounded-lg bg-surface px-2 text-xs border border-outline-variant text-black';
+    'h-8 w-full min-w-[120px] rounded-lg bg-surface px-2 text-xs border border-outline-variant text-on-surface-variant';
 
   const createdSortValue = sortBy?.startsWith('created_') ? sortBy : '';
   const updatedSortValue = sortBy?.startsWith('updated_') ? sortBy : '';

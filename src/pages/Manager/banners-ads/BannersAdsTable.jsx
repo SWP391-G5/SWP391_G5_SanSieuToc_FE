@@ -27,7 +27,7 @@ export default function BannersAdsTable({ loading, items, onEdit, onDelete, onTo
           {items.map((b, idx) => (
             <tr key={b?.id || b?._id}>
               <td className="py-3 pr-4 text-on-surface-variant">{idx + 1}</td>
-              <td className="py-3 pr-4 text-black font-semibold">{b?.title || '-'}</td>
+              <td className="py-3 pr-4 text-on-surface-variant font-semibold">{b?.title || '-'}</td>
               <td className="py-3 pr-4 text-on-surface-variant">{b?.placement || '-'}</td>
               <td className="py-3 pr-4">
                 <input
@@ -35,7 +35,7 @@ export default function BannersAdsTable({ loading, items, onEdit, onDelete, onTo
                   min={0}
                   step={1}
                   defaultValue={Number(b?.order) || 0}
-                  className="h-9 w-24 rounded-lg bg-surface px-2 text-sm border border-outline-variant text-black"
+                  className="h-9 w-24 rounded-lg bg-surface px-2 text-sm border border-outline-variant text-on-surface-variant"
                   onBlur={(e) => {
                     const next = Number(e.target.value);
                     if (Number.isNaN(next)) return;

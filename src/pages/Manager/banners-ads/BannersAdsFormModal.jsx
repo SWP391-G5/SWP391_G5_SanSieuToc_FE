@@ -48,7 +48,7 @@ export default function BannersAdsFormModal({ open, initial, busy, error, onClos
           <label className="space-y-1 block">
             <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Title</div>
             <input
-              className="h-11 w-full rounded-lg bg-white px-4 text-sm border border-outline-variant text-black"
+              className="h-11 w-full rounded-lg bg-white px-4 text-sm border border-outline-variant text-on-surface-variant"
               value={form?.title || ''}
               onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
               disabled={busy}
@@ -59,7 +59,7 @@ export default function BannersAdsFormModal({ open, initial, busy, error, onClos
             <label className="space-y-1 block">
               <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Placement</div>
               <select
-                className="h-11 w-full rounded-lg bg-surface px-4 text-sm border border-outline-variant text-black"
+                className="h-11 w-full rounded-lg bg-surface px-4 text-sm border border-outline-variant text-on-surface-variant"
                 value={form?.placement || 'home_hero'}
                 onChange={(e) => setForm((p) => ({ ...p, placement: e.target.value }))}
                 disabled={busy}
@@ -75,7 +75,7 @@ export default function BannersAdsFormModal({ open, initial, busy, error, onClos
               <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Order</div>
               <input
                 type="number"
-                className="h-11 w-full rounded-lg bg-white px-4 text-sm border border-outline-variant text-black"
+                className="h-11 w-full rounded-lg bg-white px-4 text-sm border border-outline-variant text-on-surface-variant"
                 value={form?.order ?? 0}
                 onChange={(e) => setForm((p) => ({ ...p, order: Number(e.target.value) }))}
                 disabled={busy}

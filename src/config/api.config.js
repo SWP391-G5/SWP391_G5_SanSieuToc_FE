@@ -38,8 +38,13 @@ export const API_CONFIG = {
       // Privacy
       PRIVACY: '/api/manager/privacy',
       PRIVACY_BY_ID: (id) => `/api/manager/privacy/${id}`,
-      // Deferred modules
-      // STATISTICS: '/api/manager/statistics',
+      // Statistics
+      STATISTICS_SUMMARY: '/api/manager/statistics/summary',
+      STATISTICS_BOOKINGS_TREND: '/api/manager/statistics/bookings-trend',
+      STATISTICS_REVENUE_TREND: '/api/manager/statistics/revenue-trend',
+      STATISTICS_HOT_FIELDS: '/api/manager/statistics/hot-fields',
+      // Scope (assigned owners)
+      SCOPE_OWNERS: '/api/manager/scope/owners',
     },
     BOOKING: {
       GET_MY_BOOKINGS: '/api/bookings/my',

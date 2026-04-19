@@ -114,13 +114,47 @@ const managerApi = {
   },
 
   // =========================
-  // Deferred modules (keep stubs)
+  // Statistics (Manager)
   // =========================
-  async getStatistics() {
-    // TODO: implement GET /api/manager/statistics
-    const { data } = await axiosInstance.get('/__todo__/manager/statistics');
+  async getStatisticsSummary(params) {
+    const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.STATISTICS_SUMMARY}${buildQuery(params)}`);
     return data;
   },
+
+  async getBookingsTrend(params) {
+    const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.STATISTICS_BOOKINGS_TREND}${buildQuery(params)}`);
+    return data;
+  },
+
+  async getRevenueTrend(params) {
+    const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.STATISTICS_REVENUE_TREND}${buildQuery(params)}`);
+    return data;
+  },
+
+  async getHotFields(params) {
+    const { data } = await axiosInstance.get(`${ENDPOINTS.MANAGER.STATISTICS_HOT_FIELDS}${buildQuery(params)}`);
+    return data;
+  },
+
+  // =========================
+  // Field detail (full)
+  // =========================
+  async getFieldByIdFull(fieldId) {
+    const { data } = await axiosInstance.get(`/api/fields/${fieldId}/full`);
+    return data;
+  },
+
+  // =========================
+  // Scope (Manager)
+  // =========================
+  async getManagedOwners() {
+    const { data } = await axiosInstance.get(ENDPOINTS.MANAGER.SCOPE_OWNERS);
+    return data;
+  },
+
+  // =========================
+  // Deferred modules (keep stubs)
+  // =========================
 };
 
 export default managerApi;

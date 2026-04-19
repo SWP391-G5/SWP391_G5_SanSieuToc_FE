@@ -870,7 +870,7 @@ export default function UserProfilePage() {
                 <div className="profile-terminal-avatar">
                   <div className="profile-terminal-avatar-preview">
                     <img src={avatarUrl} alt="Avatar" className="profile-terminal-avatar-img" />
-                    <div className="profile-terminal-avatar-lock">🔒</div>
+                    {/* <div className="profile-terminal-avatar-lock">🔒</div> */}
                   </div>
 
                   <div className="profile-terminal-avatar-meta">

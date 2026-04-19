@@ -206,7 +206,7 @@ export default function BannersAdsPage() {
           <label className="space-y-1">
             <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Placement</div>
             <select
-              className="h-10 w-full rounded-lg bg-surface px-3 text-sm border border-outline-variant text-black"
+              className="h-10 w-full rounded-lg bg-surface px-3 text-sm border border-outline-variant text-on-surface-variant"
               value={placement}
               onChange={(e) => setPlacement(e.target.value)}
             >
