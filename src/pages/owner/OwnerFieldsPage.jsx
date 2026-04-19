@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { ownerFieldService } from '../../services/owner/ownerFieldService';
-import { useNotification } from '../../context/NotificationContext';
-import FieldFormModal from '../../components/owner/FieldFormModal';
-import ServiceManagementModal from '../../components/owner/ServiceManagementModal';
+import React, { useEffect, useState } from "react";
+import { ownerFieldService } from "../../services/owner/ownerFieldService";
+import { useNotification } from "../../context/NotificationContext";
+import FieldFormModal from "../../components/owner/FieldFormModal";
+import ServiceManagementModal from "../../components/owner/ServiceManagementModal";
 
 export default function OwnerFieldsPage() {
   const [fields, setFields] = useState([]);
@@ -32,7 +32,7 @@ export default function OwnerFieldsPage() {
   }, []);
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa sân này không?')) return;
+    if (!window.confirm("Bạn có chắc chắn muốn xóa sân này không?")) return;
     try {
       await ownerFieldService.deleteField(id);
       notifySuccess();
@@ -82,7 +82,8 @@ export default function OwnerFieldsPage() {
             Fields &amp; <span className="text-primary italic">Services</span>
           </h2>
           <p className="text-on-surface-variant mt-4 font-body max-w-md">
-            Control your arena's inventory. Manage field availability, amenities, and pricing from a single hub.
+            Control your arena's inventory. Manage field availability,
+            amenities, and pricing from a single hub.
           </p>
         </div>
         <button
@@ -100,13 +101,17 @@ export default function OwnerFieldsPage() {
           <span className="w-2 h-6 bg-primary"></span>
           Active Pitch Inventory
         </h3>
-        <span className="text-on-surface-variant text-xs font-label">{fields.length} TOTAL FIELDS</span>
+        <span className="text-on-surface-variant text-xs font-label">
+          {fields.length} TOTAL FIELDS
+        </span>
       </div>
 
       {/* Fields List */}
       <div className="space-y-6">
         {loading ? (
-          <div className="text-center py-10 text-on-surface-variant">Đang tải dữ liệu...</div>
+          <div className="text-center py-10 text-on-surface-variant">
+            Đang tải dữ liệu...
+          </div>
         ) : fields.length === 0 ? (
           <div className="text-center py-10 bg-surface-container rounded-xl border border-outline-variant/10 text-on-surface-variant">
             Bạn chưa có sân nào. Hãy tạo sân mới!
@@ -128,8 +133,12 @@ export default function OwnerFieldsPage() {
                     />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-on-surface-variant/30">
-                      <span className="material-symbols-outlined text-4xl mb-2">stadium</span>
-                      <span className="text-xs uppercase font-label">No Image</span>
+                      <span className="material-symbols-outlined text-4xl mb-2">
+                        stadium
+                      </span>
+                      <span className="text-xs uppercase font-label">
+                        No Image
+                      </span>
                     </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest to-transparent"></div>
@@ -145,25 +154,51 @@ export default function OwnerFieldsPage() {
                       <h4 className="headline-font text-2xl font-bold group-hover:text-primary transition-colors">
                         {field.fieldName}
                       </h4>
-                      <p className="text-tertiary text-xs font-label uppercase tracking-wider">{field.fieldType}</p>
+                      <p className="text-tertiary text-xs font-label uppercase tracking-wider">
+                        {field.fieldType}
+                      </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-on-surface-variant text-[10px] font-label uppercase">Sức chứa/Slot</p>
+                      <p className="text-on-surface-variant text-[10px] font-label uppercase">
+                        Sức chứa/Slot
+                      </p>
                       <p className="text-xl font-bold text-on-surface">
                         {field.slotDuration}
-                        <span className="text-xs text-on-surface-variant"> min</span>
+                        <span className="text-xs text-on-surface-variant">
+                          {" "}
+                          min
+                        </span>
                       </p>
                     </div>
                   </div>
+                  <div className="mt-2 text-on-surface-variant text-sm">
+                    Giá/giờ:{" "}
+                    <span className="font-semibold text-on-surface">
+                      {(field.hourlyPrice ?? field.price ?? 0).toLocaleString(
+                        "vi-VN",
+                      )}
+                      đ
+                    </span>
+                  </div>
                   <div className="mt-6 flex flex-wrap gap-4 items-center">
                     <div className="flex items-center gap-1.5 text-on-surface-variant text-sm">
-                      <span className="material-symbols-outlined text-sm">calendar_today</span>
-                      <span>Daily: {field.openingTime || '06:00'} - {field.closingTime || '22:00'}</span>
+                      <span className="material-symbols-outlined text-sm">
+                        calendar_today
+                      </span>
+                      <span>
+                        Daily: {field.openingTime || "06:00"} -{" "}
+                        {field.closingTime || "22:00"}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1.5 text-on-surface-variant text-sm">
-                      <span className="material-symbols-outlined text-sm">location_on</span>
-                      <span className="truncate max-w-[200px]" title={field.address}>
-                        {field.address || 'Chưa cập nhật'}
+                      <span className="material-symbols-outlined text-sm">
+                        location_on
+                      </span>
+                      <span
+                        className="truncate max-w-[200px]"
+                        title={field.address}
+                      >
+                        {field.address || "Chưa cập nhật"}
                       </span>
                     </div>
                   </div>
@@ -172,21 +207,27 @@ export default function OwnerFieldsPage() {
                       onClick={() => setServiceTargetField(field)}
                       className="px-4 py-2 text-xs font-bold font-label uppercase text-tertiary/70 hover:text-tertiary hover:bg-tertiary/10 border border-transparent rounded transition-colors flex items-center gap-2"
                     >
-                      <span className="material-symbols-outlined text-lg">concierge</span>
+                      <span className="material-symbols-outlined text-lg">
+                        concierge
+                      </span>
                       Services
                     </button>
                     <button
                       onClick={() => handleEdit(field)}
                       className="px-4 py-2 text-xs font-bold font-label uppercase text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded transition-colors flex items-center gap-2"
                     >
-                      <span className="material-symbols-outlined text-lg">edit</span>
+                      <span className="material-symbols-outlined text-lg">
+                        edit
+                      </span>
                       Edit Pitch
                     </button>
                     <button
                       onClick={() => handleDelete(field._id)}
                       className="px-4 py-2 text-xs font-bold font-label uppercase text-error/60 hover:text-error hover:bg-error/10 rounded transition-colors flex items-center gap-2"
                     >
-                      <span className="material-symbols-outlined text-lg">delete</span>
+                      <span className="material-symbols-outlined text-lg">
+                        delete
+                      </span>
                       Remove
                     </button>
                   </div>

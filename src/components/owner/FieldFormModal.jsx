@@ -1,17 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
-export default function FieldFormModal({ isOpen, onClose, onSave, initialData, isLoading }) {
+export default function FieldFormModal({
+  isOpen,
+  onClose,
+  onSave,
+  initialData,
+  isLoading,
+}) {
   const [formData, setFormData] = useState({
-    fieldName: '',
-    fieldType: 'Sân 5 người',
-    address: '',
-    description: '',
+    fieldName: "",
+    fieldType: "Sân 5 người",
+    address: "",
+    description: "",
+    hourlyPrice: "",
     slotDuration: 60,
-    openingTime: '06:00',
-    closingTime: '22:00',
-    utilities: '',
-    status: 'Active',
-    image: []
+    openingTime: "06:00",
+    closingTime: "22:00",
+    utilities: "",
+    status: "Active",
+    image: [],
   });
 
   const [previewImages, setPreviewImages] = useState([]);
@@ -20,22 +27,26 @@ export default function FieldFormModal({ isOpen, onClose, onSave, initialData, i
     if (initialData) {
       setFormData({
         ...initialData,
-        utilities: initialData.utilities ? initialData.utilities.join(', ') : '',
-        status: initialData.status || 'Active'
+        utilities: initialData.utilities
+          ? initialData.utilities.join(", ")
+          : "",
+        status: initialData.status || "Active",
+        hourlyPrice: initialData.hourlyPrice ?? initialData.price ?? "",
       });
       setPreviewImages(initialData.image || []);
     } else {
       setFormData({
-        fieldName: '',
-        fieldType: 'Sân 5 người',
-        address: '',
-        description: '',
+        fieldName: "",
+        fieldType: "Sân 5 người",
+        address: "",
+        description: "",
+        hourlyPrice: "",
         slotDuration: 60,
-        openingTime: '06:00',
-        closingTime: '22:00',
-        utilities: '',
-        status: 'Active',
-        image: []
+        openingTime: "06:00",
+        closingTime: "22:00",
+        utilities: "",
+        status: "Active",
+        image: [],
       });
       setPreviewImages([]);
     }
@@ -62,7 +73,10 @@ export default function FieldFormModal({ isOpen, onClose, onSave, initialData, i
     });
 
     Promise.all(promises).then((base64Images) => {
-      setFormData((prev) => ({ ...prev, image: [...prev.image, ...base64Images] }));
+      setFormData((prev) => ({
+        ...prev,
+        image: [...prev.image, ...base64Images],
+      }));
       setPreviewImages((prev) => [...prev, ...base64Images]);
     });
   };
@@ -82,10 +96,13 @@ export default function FieldFormModal({ isOpen, onClose, onSave, initialData, i
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const hourlyPrice =
+      formData.hourlyPrice === "" ? undefined : Number(formData.hourlyPrice);
     const payload = {
       ...formData,
+      hourlyPrice,
       utilities: formData.utilities
-        .split(',')
+        .split(",")
         .map((u) => u.trim())
         .filter(Boolean),
     };
@@ -97,7 +114,7 @@ export default function FieldFormModal({ isOpen, onClose, onSave, initialData, i
       <div className="bg-surface-container-low border border-outline-variant/20 rounded-2xl w-full max-w-3xl my-8 overflow-hidden shadow-2xl">
         <div className="p-6 border-b border-outline-variant/10 flex justify-between items-center">
           <h3 className="headline-font text-2xl font-bold text-on-surface">
-            {initialData ? 'Cập nhật Sân Bóng' : 'Thêm Sân Mới'}
+            {initialData ? "Cập nhật Sân Bóng" : "Thêm Sân Mới"}
           </h3>
           <button
             onClick={onClose}
@@ -111,7 +128,9 @@ export default function FieldFormModal({ isOpen, onClose, onSave, initialData, i
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Field Name */}
             <div className="space-y-2">
-              <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">Tên sân bóng</label>
+              <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
+                Tên sân bóng
+              </label>
               <input
                 required
                 type="text"
@@ -126,7 +145,9 @@ export default function FieldFormModal({ isOpen, onClose, onSave, initialData, i
             {/* Field Type & Status */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">Loại Sân</label>
+                <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
+                  Loại Sân
+                </label>
                 <select
                   name="fieldType"
                   value={formData.fieldType}
@@ -139,7 +160,9 @@ export default function FieldFormModal({ isOpen, onClose, onSave, initialData, i
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">Tình trạng</label>
+                <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
+                  Tình trạng
+                </label>
                 <select
                   name="status"
                   value={formData.status}
@@ -154,7 +177,9 @@ export default function FieldFormModal({ isOpen, onClose, onSave, initialData, i
 
             {/* Address */}
             <div className="space-y-2 md:col-span-2">
-              <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">Địa chỉ cụ thể</label>
+              <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
+                Địa chỉ cụ thể
+              </label>
               <input
                 type="text"
                 name="address"
@@ -167,7 +192,9 @@ export default function FieldFormModal({ isOpen, onClose, onSave, initialData, i
 
             {/* Timings & Duration */}
             <div className="space-y-2">
-              <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">Thời gian Slot (phút)</label>
+              <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
+                Thời gian Slot (phút)
+              </label>
               <input
                 type="number"
                 name="slotDuration"
@@ -179,9 +206,26 @@ export default function FieldFormModal({ isOpen, onClose, onSave, initialData, i
                 className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-on-surface focus:border-primary focus:outline-none"
               />
             </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
+                Giá/giờ (VND)
+              </label>
+              <input
+                type="number"
+                name="hourlyPrice"
+                min="0"
+                step="1000"
+                value={formData.hourlyPrice}
+                onChange={handleChange}
+                className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-on-surface focus:border-primary focus:outline-none"
+                placeholder="VD: 200000"
+              />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">Giờ mở cửa</label>
+                <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
+                  Giờ mở cửa
+                </label>
                 <input
                   type="time"
                   name="openingTime"
@@ -191,7 +235,9 @@ export default function FieldFormModal({ isOpen, onClose, onSave, initialData, i
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">Giờ đóng cửa</label>
+                <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
+                  Giờ đóng cửa
+                </label>
                 <input
                   type="time"
                   name="closingTime"
@@ -204,7 +250,9 @@ export default function FieldFormModal({ isOpen, onClose, onSave, initialData, i
 
             {/* Description & Utilities */}
             <div className="space-y-2 md:col-span-2">
-              <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">Mô tả giới thiệu</label>
+              <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
+                Mô tả giới thiệu
+              </label>
               <textarea
                 name="description"
                 rows="3"
@@ -216,7 +264,9 @@ export default function FieldFormModal({ isOpen, onClose, onSave, initialData, i
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">Tiện ích (Ngăn cách bằng dấu phẩy)</label>
+              <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
+                Tiện ích (Ngăn cách bằng dấu phẩy)
+              </label>
               <input
                 type="text"
                 name="utilities"
@@ -229,7 +279,9 @@ export default function FieldFormModal({ isOpen, onClose, onSave, initialData, i
 
             {/* Image Upload */}
             <div className="space-y-2 md:col-span-2">
-              <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">Hình ảnh sân (Kéo thả hoặc chọn file)</label>
+              <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
+                Hình ảnh sân (Kéo thả hoặc chọn file)
+              </label>
               <div className="border-2 border-dashed border-outline-variant/30 rounded-xl p-6 bg-surface-container text-center hover:bg-surface-container-high transition-colors">
                 <input
                   type="file"
@@ -243,25 +295,40 @@ export default function FieldFormModal({ isOpen, onClose, onSave, initialData, i
                   htmlFor="image-upload"
                   className="cursor-pointer flex flex-col items-center justify-center text-on-surface-variant"
                 >
-                  <span className="material-symbols-outlined text-4xl mb-2">cloud_upload</span>
-                  <span className="font-semibold text-sm">Bấm để tải ảnh lên</span>
-                  <span className="text-xs opacity-70 mt-1">Hỗ trợ JPG, PNG, WEBP</span>
+                  <span className="material-symbols-outlined text-4xl mb-2">
+                    cloud_upload
+                  </span>
+                  <span className="font-semibold text-sm">
+                    Bấm để tải ảnh lên
+                  </span>
+                  <span className="text-xs opacity-70 mt-1">
+                    Hỗ trợ JPG, PNG, WEBP
+                  </span>
                 </label>
               </div>
-              
+
               {/* Image Previews */}
               {previewImages.length > 0 && (
                 <div className="mt-4 grid grid-cols-4 sm:grid-cols-6 gap-4">
                   {previewImages.map((src, idx) => (
-                    <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden bg-black">
-                      <img src={src} alt="preview" className="w-full h-full object-cover opacity-80" />
+                    <div
+                      key={idx}
+                      className="relative group aspect-square rounded-lg overflow-hidden bg-black"
+                    >
+                      <img
+                        src={src}
+                        alt="preview"
+                        className="w-full h-full object-cover opacity-80"
+                      />
                       <button
                         type="button"
                         onClick={() => handleRemoveImage(idx)}
                         className="absolute top-1 right-1 bg-error text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                         title="Xóa ảnh này"
                       >
-                        <span className="material-symbols-outlined text-xs block">close</span>
+                        <span className="material-symbols-outlined text-xs block">
+                          close
+                        </span>
                       </button>
                     </div>
                   ))}
@@ -286,11 +353,13 @@ export default function FieldFormModal({ isOpen, onClose, onSave, initialData, i
             >
               {isLoading ? (
                 <>
-                  <span className="material-symbols-outlined animate-spin">refresh</span>
+                  <span className="material-symbols-outlined animate-spin">
+                    refresh
+                  </span>
                   Đang lưu...
                 </>
               ) : (
-                'Lưu Sân Bóng'
+                "Lưu Sân Bóng"
               )}
             </button>
           </div>
