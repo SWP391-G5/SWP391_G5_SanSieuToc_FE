@@ -1,7 +1,3 @@
-/**
- * publicApi.js
- * API layer for public (non-auth) pages.
- */
 
 import axiosInstance from '../axios';
 
@@ -43,8 +39,25 @@ const publicApi = {
     return data;
   },
 
+
+  async getPosts(params) {
+    const { data } = await axiosInstance.get(`/api/public/posts${buildQuery(params)}`);
+    return data;
+  },
+
+  async getPostById(id) {
+    const { data } = await axiosInstance.get(`/api/public/posts/${id}`);
+    return data;
+  },
+
+  async getPrivacies() {
+    const { data } = await axiosInstance.get('/api/privacy');
+    return data;
+  },
+
   async getFieldById(fieldId) {
     const { data } = await axiosInstance.get(`/api/fields/${fieldId}/full`);
+
     return data;
   },
 

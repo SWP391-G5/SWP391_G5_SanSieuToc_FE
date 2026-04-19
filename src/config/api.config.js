@@ -27,6 +27,12 @@ export const API_CONFIG = {
       EMAIL_CHANGE_REQUEST: '/api/admin/profile/email/request',
       EMAIL_CHANGE_VERIFY: '/api/admin/profile/email/verify',
     },
+    WISHLIST: {
+      GET_MY: '/api/user/wishlist',
+      ADD: '/api/user/wishlist',
+      REMOVE: '/api/user/wishlist',
+      MERGE: '/api/user/wishlist/merge',
+    },
     MANAGER: {
       // Posts
       POSTS: '/api/manager/posts',
@@ -54,6 +60,8 @@ export const API_CONFIG = {
       GET_MY_BOOKINGS: '/api/bookings/my',
       CREATE: '/api/bookings',
       CANCEL: '/api/bookings/cancel',
+      FEEDBACK_ELIGIBILITY: (bookingId) => `/api/bookings/${bookingId}/feedback-eligibility`,
+      FEEDBACK_CREATE: '/api/bookings/feedback',
     },
     WALLET: {
       TOP_UP: '/api/wallets/topup',
@@ -62,12 +70,11 @@ export const API_CONFIG = {
     },
     SERVICE: {
       GET_BY_BOOKING_DETAIL: '/api/services/booking-detail',
+      GET_MY_HISTORY: '/api/services/my',
       BOOK: '/api/services',
     },
     UPLOADS: {
       UPLOAD_IMAGES: '/api/uploads/images',
     },
-      GET_MY_HISTORY: '/api/services/my',
-      BOOK: '/api/services',
-    },
-  }
+  },
+};
