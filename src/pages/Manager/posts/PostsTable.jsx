@@ -12,15 +12,15 @@ import { formatDateTime, isLocalDraftPost, normalizeOwnerLabel } from './postFor
 const SERVER_STATUSES = ['Pending', 'Posted', 'Rejected', 'Deleted'];
 
 const CREATED_SORT_OPTIONS = [
-  { value: '', label: 'All' },
-  { value: 'created_desc', label: 'Newest' },
-  { value: 'created_asc', label: 'Oldest' },
+  { value: '', label: 'Tất cả' },
+  { value: 'created_desc', label: 'Mới nhất' },
+  { value: 'created_asc', label: 'Cũ nhất' },
 ];
 
 const UPDATED_SORT_OPTIONS = [
-  { value: '', label: 'All' },
-  { value: 'updated_desc', label: 'Newest' },
-  { value: 'updated_asc', label: 'Oldest' },
+  { value: '', label: 'Tất cả' },
+  { value: 'updated_desc', label: 'Mới nhất' },
+  { value: 'updated_asc', label: 'Cũ nhất' },
 ];
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -79,56 +79,84 @@ function ActionGroup({
   canEditPost,
   onApprove,
   onDelete,
+  onReject,
+  userId,
 }) {
   const id = post?._id || post?.id;
   const isPending = String(post?.status) === 'Pending';
 
-  // Shared button class fragments
   const base = 'h-8 rounded-md px-2.5 text-xs font-semibold transition-colors whitespace-nowrap';
   const ghost = `${base} border border-outline-variant text-on-surface-variant hover:bg-surface`;
   const primary = `${base} bg-primary text-on-primary hover:opacity-90`;
   const danger = `${base} border border-error text-error hover:bg-error hover:text-on-error`;
 
+  const canEdit = !isDraft ? !!canEditPost?.(post) : false;
+
+  const postOwnerModel = String(post?.postOwnerModel || '').trim();
+  const isOwnerPost = postOwnerModel === 'UserAccount';
+
+  const rawOwner = post?.postOwnerID || post?.postOwnerId || post?.ownerId || post?.postOwner || '';
+  const ownerId = typeof rawOwner === 'object' && rawOwner !== null ? String(rawOwner._id || rawOwner.id || '') : String(rawOwner || '');
+  const isMyManagerPost = postOwnerModel === 'AdminAccount' && ownerId && userId && String(ownerId) === String(userId);
+
+  // Pending posts: business rule → manager should Reject, not Delete
+  const showReject = !isDraft && isPending;
+
+  // Non-pending posts: allow delete for
+  // - Owner posts (UserAccount)
+  // - Manager posts only if it is my own manager post
+  const showDelete = !isDraft && !isPending && (isOwnerPost || isMyManagerPost);
+
   return (
     <div className="flex flex-col gap-1.5 items-end">
-      {/* Preview is always shown */}
       <button type="button" onClick={() => onPreview?.(post)} className={ghost} title="Preview">
-        Preview
+        Xem
       </button>
 
       {isDraft ? (
         /* ── Draft row buttons ── */
         <div className="flex gap-1.5">
           <button type="button" onClick={() => onEditDraft?.(id)} className={ghost}>
-            Edit
+            Sửa
           </button>
           <button type="button" onClick={() => onPublishDraft?.(id)} className={primary}>
-            Publish
+            Đăng
           </button>
           <button type="button" onClick={() => onDeleteDraft?.(id)} className={danger}>
-            Delete
+            Xóa
           </button>
         </div>
       ) : (
         /* ── Server post row buttons ── */
         <div className="flex gap-1.5">
-          <button
-            type="button"
-            onClick={() => onEdit?.(post)}
-            className={ghost}
-          >
-            Edit
-          </button>
-
-          {isPending && (
-            <button type="button" onClick={() => onApprove?.(post)} className={primary}>
-              Approve
+          {canEdit ? (
+            <button type="button" onClick={() => onEdit?.(post)} className={ghost}>
+              Sửa
             </button>
-          )}
+          ) : null}
 
-          <button type="button" onClick={() => onDelete?.(post)} className={danger}>
-            Delete
-          </button>
+          {isPending ? (
+            <button
+              type="button"
+              onClick={() => onApprove?.(post)}
+              className={primary}
+              title="Approve"
+            >
+              Duyệt
+            </button>
+          ) : null}
+
+          {showReject ? (
+            <button type="button" onClick={() => onReject?.(post)} className={danger}>
+              Từ chối
+            </button>
+          ) : null}
+
+          {showDelete ? (
+            <button type="button" onClick={() => onDelete?.(post)} className={danger}>
+              Xóa
+            </button>
+          ) : null}
         </div>
       )}
     </div>
@@ -157,6 +185,8 @@ function ActionGroup({
  * @param {Function} canEditPost     - Returns true if current user may edit a post
  * @param {Function} onApprove       - Trigger approve confirm
  * @param {Function} onDelete        - Trigger delete confirm
+ * @param {Function} onReject        - Trigger reject confirm
+ * @param {string}   userId         - Current user's ID
  */
 export default function PostsTable({
   loading,
@@ -177,11 +207,13 @@ export default function PostsTable({
   canEditPost,
   onApprove,
   onDelete,
+  onReject,
+  userId,
 }) {
   // Make ALL header filters uniform.
   // Use full width of the column and keep labels visible (stacked).
   const filterClass =
-    'h-8 w-full min-w-[120px] rounded-lg bg-surface px-2 text-xs border border-outline-variant text-black';
+    'h-8 w-full min-w-[120px] rounded-lg bg-surface px-2 text-xs border border-outline-variant text-on-surface-variant';
 
   const createdSortValue = sortBy?.startsWith('created_') ? sortBy : '';
   const updatedSortValue = sortBy?.startsWith('updated_') ? sortBy : '';
@@ -207,15 +239,15 @@ export default function PostsTable({
         <thead>
           <tr className="text-left text-xs uppercase tracking-widest text-on-surface-variant border-b border-outline-variant">
             <th className="py-3 pr-4">No</th>
-            <th className="py-3 pr-4">Title</th>
+            <th className="py-3 pr-4">Tiêu đề</th>
 
             {/* Status */}
             <th className="py-3 pr-4">
               <div className="flex flex-col gap-1">
-                <span>Status</span>
+                <span>Trạng thái</span>
                 <select className={filterClass} value={status} onChange={(e) => onChangeStatus?.(e.target.value)}>
-                  <option value="">All</option>
-                  <option value="Draft">Draft</option>
+                  <option value="">Tất cả</option>
+                  <option value="Draft">Nháp</option>
                   {SERVER_STATUSES.map((s) => (
                     <option key={s} value={s}>
                       {s}
@@ -228,12 +260,12 @@ export default function PostsTable({
             {/* Owner */}
             <th className="py-3 pr-4">
               <div className="flex flex-col gap-1">
-                <span>Owner</span>
+                <span>Người sở hữu</span>
                 <select className={filterClass} value={tableOwner} onChange={(e) => onChangeOwner?.(e.target.value)}>
-                  <option value="">All</option>
-                  <option value="Draft">Draft</option>
-                  <option value="AdminAccount">Manager</option>
-                  <option value="UserAccount">Owner</option>
+                  <option value="">Tất cả</option>
+                  <option value="Draft">Nháp</option>
+                  <option value="AdminAccount">Quản lý</option>
+                  <option value="UserAccount">Người dùng</option>
                 </select>
               </div>
             </th>
@@ -241,7 +273,7 @@ export default function PostsTable({
             {/* Created */}
             <th className="py-3 pr-4">
               <div className="flex flex-col gap-1">
-                <span>Created</span>
+                <span>Ngày tạo</span>
                 <select
                   className={filterClass}
                   value={createdSortValue}
@@ -263,7 +295,7 @@ export default function PostsTable({
             {/* Updated */}
             <th className="py-3 pr-4">
               <div className="flex flex-col gap-1">
-                <span>Updated</span>
+                <span>Ngày cập nhật</span>
                 <select
                   className={filterClass}
                   value={updatedSortValue}
@@ -282,7 +314,7 @@ export default function PostsTable({
               </div>
             </th>
 
-            <th className="py-3 text-right">Actions</th>
+            <th className="py-3 text-right">Hành động</th>
           </tr>
         </thead>
 
@@ -345,6 +377,8 @@ export default function PostsTable({
                     canEditPost={canEditPost}
                     onApprove={onApprove}
                     onDelete={onDelete}
+                    onReject={onReject}
+                    userId={userId}
                   />
                 </td>
               </tr>
@@ -355,7 +389,7 @@ export default function PostsTable({
           {!loading && items.length === 0 ? (
             <tr>
               <td colSpan={7} className="py-8 text-center text-sm text-on-surface-variant">
-                No posts found.
+                Không tìm thấy bài viết nào.
               </td>
             </tr>
           ) : null}

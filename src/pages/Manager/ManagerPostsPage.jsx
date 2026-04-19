@@ -327,8 +327,8 @@ export default function ManagerPostsPage() {
     }
   };
 
-  const approve = async (post) => {
-    const id = post?._id || post?.id;
+  const approve = async (postOrId) => {
+    const id = typeof postOrId === 'string' ? postOrId : postOrId?._id || postOrId?.id;
     if (!id) return;
     requestConfirm(
       createConfirmAction({
@@ -343,6 +343,31 @@ export default function ManagerPostsPage() {
             notify.notifySuccess('Post approved successfully');
           } catch (e) {
             notify.notifyError(e?.response?.data?.message || e?.message || 'Approve failed');
+            throw e;
+          }
+        },
+      })
+    );
+  };
+
+  const reject = async (post) => {
+    const id = post?._id || post?.id;
+    if (!id) return;
+
+    requestConfirm(
+      createConfirmAction({
+        type: 'delete',
+        message: 'Bạn chắc chắn muốn từ chối (Reject) bài đăng này?',
+        confirmText: 'Reject',
+        variant: 'danger',
+        onConfirm: async () => {
+          try {
+            await managerApi.rejectPost(id);
+            await load();
+            notify.notifySuccess('Đã từ chối bài đăng');
+          } catch (e) {
+            const msg = e?.response?.data?.message || e?.message || 'Reject failed';
+            notify.notifyError(msg);
             throw e;
           }
         },
@@ -438,7 +463,7 @@ export default function ManagerPostsPage() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-headline font-bold text-on-surface">Posts</h1>
-          <p className="text-sm text-on-surface-variant">Manage all system posts and approve owner submissions.</p>
+          <p className="text-sm text-on-surface-variant">Quản lý bài viết hệ thống và duyệt bài do Owner gửi.</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -450,14 +475,14 @@ export default function ManagerPostsPage() {
             }}
             className="rounded-lg border border-outline-variant px-4 py-2 text-xs font-extrabold uppercase tracking-widest text-on-surface hover:bg-surface transition-all"
           >
-            Refresh
+            Làm mới
           </button>
           <button
             type="button"
             onClick={openCreate}
             className="rounded-lg bg-primary/20 px-4 py-2 text-xs font-extrabold uppercase tracking-widest text-primary hover:bg-primary hover:text-on-primary transition-all"
           >
-            New Post
+            Thêm bài viết
           </button>
         </div>
       </header>
@@ -502,7 +527,9 @@ export default function ManagerPostsPage() {
           onEdit={openEdit}
           canEditPost={canEditPost}
           onApprove={approve}
+          onReject={reject}
           onDelete={remove}
+          userId={userId}
         />
 
         {/* Numeric pagination */}

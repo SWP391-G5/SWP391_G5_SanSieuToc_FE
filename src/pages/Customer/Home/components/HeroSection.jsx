@@ -1,5 +1,6 @@
 export default function HeroSection({
   backgroundImageSrc,
+  activeCopy,
   heroSearchRef,
   minDate,
   selectedDate,
@@ -19,7 +20,7 @@ export default function HeroSection({
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#0d0f0b] via-[#0d0f0b]/80 to-transparent" />
         <img
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover transition-opacity duration-1000"
           src={backgroundImageSrc}
           alt="Football match under stadium lights"
           loading="eager"
@@ -28,12 +29,14 @@ export default function HeroSection({
 
       <div className="relative z-20 mx-auto w-full max-w-4xl">
         <span className="mb-4 inline-block font-label text-sm uppercase tracking-[0.3em] text-[#8eff71]">
-          Electric Pitch Performance
+          {activeCopy?.badge || 'Electric Pitch Performance'}
         </span>
-        <h1 className="mb-8 font-headline text-5xl font-black italic tracking-tighter text-[#fdfdf6] md:text-8xl leading-[0.9]">
-          BOOK A FIELD <span className="text-[#8eff71]">IN SECONDS</span>,
+        <h1 className="mb-8 font-headline text-5xl font-black italic tracking-tighter text-[#fdfdf6] md:text-7xl leading-[0.9]">
+          {activeCopy?.title1 || 'BOOK A FIELD '}
+          <span className="text-[#8eff71]">{activeCopy?.highlight || 'IN SECONDS'}</span>
+          {activeCopy?.title2 || ','}
           <br />
-          LIGHT UP YOUR GAME!
+          {activeCopy?.subtitle || 'LIGHT UP YOUR GAME!'}
         </h1>
 
         <form

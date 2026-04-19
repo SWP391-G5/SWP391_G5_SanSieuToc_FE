@@ -18,7 +18,7 @@
 export function createConfirmAction({ type, message, confirmText, variant, onConfirm }) {
   return {
     type,
-    title: 'Confirm',
+    title: 'Xác nhận',
     message,
     confirmText,
     variant,

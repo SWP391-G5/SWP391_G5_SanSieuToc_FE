@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { DEFAULT_FIELDS_LIST_ADS_SLIDES } from '../../../assets/defaultSliders';
 import SimpleImageSlider from '../../../components/ads/SimpleImageSlider';
 import Pagination from '../../../components/common/Pagination';
-import useBanners from '../../../hooks/useBanners';
+import useCustomerBanners from '../../../hooks/useCustomerBanners';
 
-import { FIELD_LIST_ADS_COPY } from '../../../data/ads/fieldListAdsCopy';
+import { FIELD_LIST_HORIZONTAL_POOL } from '../../../data/ads/fieldListAdsCopy';
+import { getRandomAdsFromPool } from '../../../utils/adUtils';
 import { useWishlist } from '../../../hooks/useWishlist';
 import useFields from '../../../hooks/useFields';
 
@@ -19,30 +19,23 @@ export default function FieldListPage() {
   // Ads banner (text is hard-coded; manager only changes images)
   const ADS_SLIDE_COUNT = 6;
 
-  const { items: adsBanners } = useBanners({ placement: 'fields_list_ads' });
+  const { banners: fetchedBanners } = useCustomerBanners('fields_list_ads');
+  
   const adsSlides = useMemo(() => {
-    return (adsBanners || [])
-      .map((x) => x?.imageUrl)
-      .filter(Boolean)
-      .slice(0, ADS_SLIDE_COUNT);
-  }, [adsBanners]);
-
-  const adsFallbackSlides = useMemo(() => {
-    return (DEFAULT_FIELDS_LIST_ADS_SLIDES || []).slice(0, ADS_SLIDE_COUNT);
-  }, []);
+    return fetchedBanners.map((b) => b?.imageUrl).filter(Boolean).slice(0, ADS_SLIDE_COUNT);
+  }, [fetchedBanners]);
 
   const adsCopy = useMemo(() => {
-    return (FIELD_LIST_ADS_COPY || []).slice(0, ADS_SLIDE_COUNT);
+    return getRandomAdsFromPool(FIELD_LIST_HORIZONTAL_POOL, ADS_SLIDE_COUNT);
   }, []);
 
   const [adsIndex, setAdsIndex] = useState(0);
 
   const activeAdsCopy = useMemo(() => {
-    const list = Array.isArray(adsSlides) && adsSlides.length ? adsSlides : adsFallbackSlides;
-    const len = list.length || ADS_SLIDE_COUNT;
+    const len = adsSlides.length || ADS_SLIDE_COUNT;
     const idx = len ? ((adsIndex % len) + len) % len : 0;
     return adsCopy[idx] || adsCopy[0];
-  }, [adsCopy, adsFallbackSlides, adsIndex, adsSlides]);
+  }, [adsCopy, adsIndex, adsSlides.length]);
 
   const [searchText, setSearchText] = useState(initialSearchText);
   const [sortBy, setSortBy] = useState('topRated');
@@ -272,7 +265,6 @@ export default function FieldListPage() {
               <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#0d0f0b] via-[#0d0f0b]/75 to-transparent" />
               <SimpleImageSlider
                 images={adsSlides}
-                fallbackImages={adsFallbackSlides}
                 intervalMs={5000}
                 className="absolute inset-0"
                 imgClassName="h-full w-full object-cover"

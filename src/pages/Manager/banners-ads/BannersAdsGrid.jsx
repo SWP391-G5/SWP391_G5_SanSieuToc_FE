@@ -91,7 +91,7 @@ export default function BannersAdsGrid({ items, placementLabel, onEdit, onDelete
                     onBlur={() => {
                       onUpdateOrder?.(b, clampOrder(orderVal));
                     }}
-                    className="h-9 w-20 rounded-lg border border-outline-variant bg-white px-3 text-sm font-bold text-black"
+                    className="h-9 w-20 rounded-lg border border-outline-variant bg-white px-3 text-sm font-bold text-on-surface-variant"
                   />
                   <button
                     type="button"
