@@ -2193,6 +2193,7 @@
   gap: 0.5rem;
 }
 
+<<<<<<< HEAD
 .booking-feedback-btn {
   display: inline-flex;
   align-items: center;
@@ -2224,6 +2225,8 @@
   transform: translateY(0);
 }
 
+=======
+>>>>>>> 7e69d7a00fce46422ee11b9daa719483bca17673
 .booking-cancel-btn {
   background: rgba(255, 77, 77, 0.1);
   color: #ff4d4d;
@@ -2509,6 +2512,7 @@
   gap: 0.5rem;
 }
 
+<<<<<<< HEAD
 .booking-feedback-btn {
   display: inline-flex;
   align-items: center;
@@ -2540,6 +2544,8 @@
   transform: translateY(0);
 }
 
+=======
+>>>>>>> 7e69d7a00fce46422ee11b9daa719483bca17673
 .booking-cancel-btn {
   background: rgba(255, 77, 77, 0.1);
   color: #ff4d4d;

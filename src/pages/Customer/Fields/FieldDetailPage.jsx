@@ -1,39 +1,66 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import axiosInstance from '../../../services/axios';
-import DEFAULT_FIELD_IMAGE_URL from '../../../utils/defaultFieldImage';
-import { usePreviewMode } from '../../../context/PreviewModeContext';
-import useCustomerBanners from '../../../hooks/useCustomerBanners';
-import AdBannerVertical from '../Community/components/AdBannerVertical';
-import AdBannerHorizontal from '../Community/components/AdBannerHorizontal';
-import { FIELD_DETAIL_VERTICAL_POOL } from '../../../data/ads/fieldDetailAdsCopy';
-import { FIELD_DETAIL_HORIZONTAL_POOL } from '../../../data/ads/fieldDetailHorizontalCopy';
-import { getRandomAdsFromPool } from '../../../utils/adUtils';
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import axiosInstance from "../../../services/axios";
+import DEFAULT_FIELD_IMAGE_URL from "../../../utils/defaultFieldImage";
+import { usePreviewMode } from "../../../context/PreviewModeContext";
+import useCustomerBanners from "../../../hooks/useCustomerBanners";
+import AdBannerVertical from "../Community/components/AdBannerVertical";
+import AdBannerHorizontal from "../Community/components/AdBannerHorizontal";
+import { FIELD_DETAIL_VERTICAL_POOL } from "../../../data/ads/fieldDetailAdsCopy";
+import { FIELD_DETAIL_HORIZONTAL_POOL } from "../../../data/ads/fieldDetailHorizontalCopy";
+import { getRandomAdsFromPool } from "../../../utils/adUtils";
 
 const UTILITY_LABELS = {
-  parking: 'Parking',
-  lighting: 'Lighting',
-  wifi: 'WiFi',
-  shower: 'Shower',
+  parking: "Parking",
+  lighting: "Lighting",
+  wifi: "WiFi",
+  shower: "Shower",
 };
 
 const UTILITY_ICONS = {
-  parking: 'local_parking',
-  lighting: 'light_mode',
-  wifi: 'wifi',
-  shower: 'shower',
+  parking: "local_parking",
+  lighting: "light_mode",
+  wifi: "wifi",
+  shower: "shower",
 };
 
-const timeSlots = [
-  '06:00 - 07:00', '07:00 - 08:00', '08:00 - 09:00', '09:00 - 10:00',
-  '10:00 - 11:00', '11:00 - 12:00', '12:00 - 13:00', '13:00 - 14:00',
-  '14:00 - 15:00', '15:00 - 16:00', '16:00 - 17:00', '17:00 - 18:00',
-  '18:00 - 19:00', '19:00 - 20:00', '20:00 - 21:00', '21:00 - 22:00',
-];
+const pad2 = (value) => String(value).padStart(2, "0");
+
+const toMinutes = (value) => {
+  if (!value) return null;
+  const [hours, minutes] = String(value)
+    .split(":")
+    .map((v) => Number(v));
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+  return hours * 60 + minutes;
+};
+
+const buildTimeSlots = (openingTime, closingTime, slotDuration) => {
+  const startMinutes = toMinutes(openingTime || "06:00");
+  const endMinutes = toMinutes(closingTime || "22:00");
+  const duration = Number(slotDuration) || 60;
+
+  if (startMinutes === null || endMinutes === null || duration <= 0) return [];
+  if (endMinutes <= startMinutes) return [];
+
+  const slots = [];
+  for (let t = startMinutes; t + duration <= endMinutes; t += duration) {
+    const startH = Math.floor(t / 60);
+    const startM = t % 60;
+    const end = t + duration;
+    const endH = Math.floor(end / 60);
+    const endM = end % 60;
+    slots.push(`${pad2(startH)}:${pad2(startM)} - ${pad2(endH)}:${pad2(endM)}`);
+  }
+
+  return slots;
+};
 
 function CalendarPicker({ selectedDate, onSelectDate }) {
   const today = new Date();
-  const [currentMonth, setCurrentMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [currentMonth, setCurrentMonth] = useState(
+    new Date(today.getFullYear(), today.getMonth(), 1),
+  );
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
@@ -51,7 +78,11 @@ function CalendarPicker({ selectedDate, onSelectDate }) {
 
   const isPastDate = (day) => {
     const dateTs = new Date(year, month, day).setHours(0, 0, 0, 0);
-    const todayTs = new Date(today.getFullYear(), today.getMonth(), today.getDate()).setHours(0, 0, 0, 0);
+    const todayTs = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    ).setHours(0, 0, 0, 0);
     return dateTs < todayTs;
   };
 
@@ -70,14 +101,26 @@ function CalendarPicker({ selectedDate, onSelectDate }) {
     if (isPastDate(day)) return;
     const date = new Date(year, month, day);
     const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
     onSelectDate(`${y}-${m}-${d}`);
   };
 
-  const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'];
+  const weekDays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
 
   const days = [];
   for (let i = 0; i < firstDayOfMonth; i++) {
@@ -95,7 +138,9 @@ function CalendarPicker({ selectedDate, onSelectDate }) {
           onClick={prevMonth}
           className="flex h-8 w-8 items-center justify-center rounded-lg text-[#abaca5] transition-colors hover:bg-[#242721] hover:text-[#fdfdf6]"
         >
-          <span className="material-symbols-outlined text-base">chevron_left</span>
+          <span className="material-symbols-outlined text-base">
+            chevron_left
+          </span>
         </button>
         <span className="font-headline text-sm font-bold text-[#fdfdf6]">
           {monthNames[month]} {year}
@@ -105,13 +150,18 @@ function CalendarPicker({ selectedDate, onSelectDate }) {
           onClick={nextMonth}
           className="flex h-8 w-8 items-center justify-center rounded-lg text-[#abaca5] transition-colors hover:bg-[#242721] hover:text-[#fdfdf6]"
         >
-          <span className="material-symbols-outlined text-base">chevron_right</span>
+          <span className="material-symbols-outlined text-base">
+            chevron_right
+          </span>
         </button>
       </div>
 
       <div className="grid grid-cols-7 gap-1">
         {weekDays.map((day) => (
-          <div key={day} className="text-center font-headline text-xs font-bold text-[#abaca5] py-1">
+          <div
+            key={day}
+            className="text-center font-headline text-xs font-bold text-[#abaca5] py-1"
+          >
             {day}
           </div>
         ))}
@@ -124,12 +174,12 @@ function CalendarPicker({ selectedDate, onSelectDate }) {
                 disabled={isPastDate(day)}
                 className={
                   isPastDate(day)
-                    ? 'flex h-full w-full items-center justify-center rounded-lg font-headline text-xs text-[#555] cursor-not-allowed'
+                    ? "flex h-full w-full items-center justify-center rounded-lg font-headline text-xs text-[#555] cursor-not-allowed"
                     : isSelected(day)
-                    ? 'flex h-full w-full items-center justify-center rounded-lg bg-[#8eff71] font-headline text-xs font-bold text-[#0d6100]'
-                    : isToday(day)
-                    ? 'flex h-full w-full items-center justify-center rounded-lg bg-[#242721] font-headline text-xs font-bold text-[#8eff71] transition-colors hover:bg-[#474944]/50'
-                    : 'flex h-full w-full items-center justify-center rounded-lg font-headline text-xs text-[#fdfdf6] transition-colors hover:bg-[#474944]/50'
+                      ? "flex h-full w-full items-center justify-center rounded-lg bg-[#8eff71] font-headline text-xs font-bold text-[#0d6100]"
+                      : isToday(day)
+                        ? "flex h-full w-full items-center justify-center rounded-lg bg-[#242721] font-headline text-xs font-bold text-[#8eff71] transition-colors hover:bg-[#474944]/50"
+                        : "flex h-full w-full items-center justify-center rounded-lg font-headline text-xs text-[#fdfdf6] transition-colors hover:bg-[#474944]/50"
                 }
               >
                 {day}
@@ -144,11 +194,13 @@ function CalendarPicker({ selectedDate, onSelectDate }) {
 
 function getPrimaryFieldImage(imageValue) {
   if (Array.isArray(imageValue)) {
-    const firstValid = imageValue.find((img) => typeof img === 'string' && img.trim());
+    const firstValid = imageValue.find(
+      (img) => typeof img === "string" && img.trim(),
+    );
     return firstValid || DEFAULT_FIELD_IMAGE_URL;
   }
 
-  if (typeof imageValue === 'string' && imageValue.trim()) {
+  if (typeof imageValue === "string" && imageValue.trim()) {
     return imageValue;
   }
 
@@ -162,13 +214,12 @@ function normalizeRate(value) {
 }
 
 function getInitials(name) {
-  const text = String(name || '').trim();
-  if (!text) return 'U';
+  const text = String(name || "").trim();
+  if (!text) return "U";
   const words = text.split(/\s+/).filter(Boolean);
   if (words.length === 1) return words[0].slice(0, 1).toUpperCase();
   return `${words[0].slice(0, 1)}${words[words.length - 1].slice(0, 1)}`.toUpperCase();
 }
-
 export default function FieldDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -177,27 +228,35 @@ export default function FieldDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { banners: detailBanners } = useCustomerBanners('field_detail_banner');
-  const { banners: horizontalBanners } = useCustomerBanners('field_detail_horizontal');
+  const { banners: detailBanners } = useCustomerBanners("field_detail_banner");
+  const { banners: horizontalBanners } = useCustomerBanners(
+    "field_detail_horizontal",
+  );
 
-  const horizontalCopies = useMemo(() => getRandomAdsFromPool(FIELD_DETAIL_HORIZONTAL_POOL, 3), []);
-  const verticalCopies = useMemo(() => getRandomAdsFromPool(FIELD_DETAIL_VERTICAL_POOL, 3), []);
+  const horizontalCopies = useMemo(
+    () => getRandomAdsFromPool(FIELD_DETAIL_HORIZONTAL_POOL, 3),
+    [],
+  );
+  const verticalCopies = useMemo(
+    () => getRandomAdsFromPool(FIELD_DETAIL_VERTICAL_POOL, 3),
+    [],
+  );
 
-  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState("");
   const [selectedSlots, setSelectedSlots] = useState([]);
   const [bookedSlots, setBookedSlots] = useState([]);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
   const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
+  const todayStr = now.toISOString().split("T")[0];
 
   const isSlotPast = (slot) => {
-    const startHour = parseInt(slot.split(':')[0], 10);
-    if (selectedDate === todayStr) {
-      const currentHour = now.getHours();
-      if (currentHour > startHour) return true;
-    }
-    return false;
+    if (selectedDate !== todayStr) return false;
+    const start = slot.split(" - ")[0];
+    const startMinutes = toMinutes(start);
+    if (startMinutes === null) return false;
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    return currentMinutes >= startMinutes;
   };
 
   useEffect(() => {
@@ -207,11 +266,11 @@ export default function FieldDetailPage() {
         if (response.data.success) {
           setField(response.data.data);
         } else {
-          setError('Field not found');
+          setError("Field not found");
         }
       } catch (err) {
-        console.error('Error fetching field:', err);
-        setError('Failed to load field data');
+        console.error("Error fetching field:", err);
+        setError("Failed to load field data");
       } finally {
         setLoading(false);
       }
@@ -223,12 +282,14 @@ export default function FieldDetailPage() {
     const fetchBookedSlots = async () => {
       if (!selectedDate || !id) return;
       try {
-        const response = await axiosInstance.get(`/api/bookings/field/${id}/slots?date=${selectedDate}`);
+        const response = await axiosInstance.get(
+          `/api/bookings/field/${id}/slots?date=${selectedDate}`,
+        );
         if (response.data.success) {
           setBookedSlots(response.data.bookedSlots || []);
         }
       } catch (err) {
-        console.error('Error fetching booked slots:', err);
+        console.error("Error fetching booked slots:", err);
       }
     };
     fetchBookedSlots();
@@ -238,7 +299,7 @@ export default function FieldDetailPage() {
     if (bookedSlots.includes(slot)) return;
     if (isSlotPast(slot)) return;
     setSelectedSlots((prev) =>
-      prev.includes(slot) ? prev.filter((s) => s !== slot) : [...prev, slot]
+      prev.includes(slot) ? prev.filter((s) => s !== slot) : [...prev, slot],
     );
   };
 
@@ -253,16 +314,18 @@ export default function FieldDetailPage() {
   if (error || !field) {
     return (
       <div className="mx-auto max-w-4xl px-6 py-20 text-center">
-        <h1 className="font-headline text-2xl font-bold text-[#ff4d6d]">Field not found</h1>
+        <h1 className="font-headline text-2xl font-bold text-[#ff4d6d]">
+          Field not found
+        </h1>
         <button
-          onClick={() => navigate('/fields')}
+          onClick={() => navigate("/fields")}
           className="mt-4 font-headline text-[#8eff71] underline"
         >
           Back to Fields
         </button>
       </div>
     );
-  };
+  }
 
   const fieldData = field.field || field;
   const services = field.services || [];
@@ -282,37 +345,48 @@ export default function FieldDetailPage() {
   const totalFeedback = Number(feedbackSummary?.total) || feedbacks.length;
 
   const parsePrice = (priceText) => {
-    const digits = String(priceText ?? '').replace(/[^\d]/g, '');
+    const digits = String(priceText ?? "").replace(/[^\d]/g, "");
     return Number(digits) || 0;
   };
 
-  const fieldPricePerHour = fieldData.hourlyPrice || parsePrice(fieldData.price);
-  const totalHours = selectedSlots.length;
-  const fieldTotal = fieldPricePerHour * totalHours;
+  const fieldPricePerHour =
+    fieldData.hourlyPrice || parsePrice(fieldData.price);
+  const timeSlots = buildTimeSlots(
+    fieldData.openingTime,
+    fieldData.closingTime,
+    fieldData.slotDuration,
+  );
+  const slotDurationMinutes = Number(fieldData.slotDuration) || 60;
+  const pricePerSlot = Math.round(
+    fieldPricePerHour * (slotDurationMinutes / 60),
+  );
+  const fieldTotal = pricePerSlot * selectedSlots.length;
   const grandTotal = fieldTotal;
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
+    return new Intl.NumberFormat("vi-VN").format(price) + "đ";
   };
 
   const handleBook = () => {
     if (isPreviewMode) {
-      alert('Bạn đang ở chế độ xem trước (preview mode) nên không thể đặt sân.');
+      alert(
+        "Bạn đang ở chế độ xem trước (preview mode) nên không thể đặt sân.",
+      );
       return;
     }
 
     if (!selectedDate || selectedSlots.length === 0) {
-      alert('Please select date and at least one time slot');
+      alert("Please select date and at least one time slot");
       return;
     }
     setBookingSuccess(true);
     setTimeout(() => {
       setBookingSuccess(false);
-      navigate('/booking-confirm', {
+      navigate("/booking-confirm", {
         state: {
           field: fieldData,
           date: selectedDate,
-          time: selectedSlots.join(', '),
+          time: selectedSlots.join(", "),
           total: grandTotal,
         },
       });
@@ -322,11 +396,13 @@ export default function FieldDetailPage() {
   return (
     <div className="mx-auto w-full max-w-7xl px-6 py-8">
       <button
-        onClick={() => navigate('/fields')}
+        onClick={() => navigate("/fields")}
         className="mb-6 flex items-center gap-2 text-[#abaca5] transition-colors hover:text-[#8eff71]"
       >
         <span className="material-symbols-outlined text-base">arrow_back</span>
-        <span className="font-headline text-sm font-medium">Back to Fields</span>
+        <span className="font-headline text-sm font-medium">
+          Back to Fields
+        </span>
       </button>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -335,7 +411,7 @@ export default function FieldDetailPage() {
             banners={horizontalBanners}
             copyArray={horizontalCopies}
           />
-          
+
           <div className="relative overflow-hidden rounded-2xl shadow-lg">
             <img
               src={heroImage}
@@ -352,17 +428,25 @@ export default function FieldDetailPage() {
               <span className="font-headline text-[10px] text-[#abaca5]">({totalFeedback})</span>
             </div>
             <div className="absolute bottom-4 right-4 rounded-lg bg-[#8eff71] px-3 py-1">
-              <span className="font-headline text-xs font-black text-[#0d6100]">{fieldData.fieldType}</span>
+              <span className="font-headline text-xs font-black text-[#0d6100]">
+                {fieldData.fieldType}
+              </span>
             </div>
           </div>
 
           <div className="rounded-2xl bg-[#181a16] p-5 shadow-lg">
             <div className="flex items-start justify-between gap-4 mb-4">
               <div className="flex-1">
-                <h1 className="font-headline text-2xl font-black text-[#fdfdf6] leading-tight">{fieldData.fieldName}</h1>
+                <h1 className="font-headline text-2xl font-black text-[#fdfdf6] leading-tight">
+                  {fieldData.fieldName}
+                </h1>
                 <div className="mt-2 flex items-center gap-1 text-[#abaca5]">
-                  <span className="material-symbols-outlined text-sm">location_on</span>
-                  <span className="font-headline text-sm">{fieldData.address}, {fieldData.city}</span>
+                  <span className="material-symbols-outlined text-sm">
+                    location_on
+                  </span>
+                  <span className="font-headline text-sm">
+                    {fieldData.address}, {fieldData.city}
+                  </span>
                 </div>
                 <div className="mt-2 flex items-center gap-2">
                   <span className="material-symbols-outlined text-sm text-[#8eff71]">star</span>
@@ -371,9 +455,15 @@ export default function FieldDetailPage() {
                 </div>
               </div>
               <div className="text-right">
-                <span className="font-headline text-xs text-[#88f6ff] block">Price</span>
-                <span className="font-headline text-2xl font-black text-[#8eff71]">{formatPrice(fieldPricePerHour)}</span>
-                <span className="font-headline text-xs text-[#abaca5]">/hour</span>
+                <span className="font-headline text-xs text-[#88f6ff] block">
+                  Price
+                </span>
+                <span className="font-headline text-2xl font-black text-[#8eff71]">
+                  {formatPrice(fieldPricePerHour)}
+                </span>
+                <span className="font-headline text-xs text-[#abaca5]">
+                  /hour
+                </span>
               </div>
             </div>
 
@@ -384,7 +474,7 @@ export default function FieldDetailPage() {
                   className="inline-flex items-center gap-1.5 rounded-full bg-[#242721] px-3 py-1.5"
                 >
                   <span className="material-symbols-outlined text-sm text-[#8eff71]">
-                    {UTILITY_ICONS[util] || 'check_circle'}
+                    {UTILITY_ICONS[util] || "check_circle"}
                   </span>
                   <span className="font-headline text-xs font-medium text-[#fdfdf6]">
                     {UTILITY_LABELS[util] || util}
@@ -394,23 +484,37 @@ export default function FieldDetailPage() {
             </div>
 
             <div className="border-t border-[#474944]/30 pt-4">
-              <h3 className="font-headline text-sm font-bold text-[#8eff71] mb-2">About this field</h3>
+              <h3 className="font-headline text-sm font-bold text-[#8eff71] mb-2">
+                About this field
+              </h3>
               <p className="font-headline text-sm text-[#abaca5] leading-relaxed">
-                {fieldData.description || `${fieldData.fieldName} là một trong những sân cỏ nhân tạo chất lượng cao tại ${fieldData.city}.`}
+                {fieldData.description ||
+                  `${fieldData.fieldName} là một trong những sân cỏ nhân tạo chất lượng cao tại ${fieldData.city}.`}
               </p>
             </div>
 
             {services.length > 0 && (
               <div className="border-t border-[#474944]/30 pt-4 mt-4">
-                <h3 className="font-headline text-sm font-bold text-[#8eff71] mb-2">Services</h3>
+                <h3 className="font-headline text-sm font-bold text-[#8eff71] mb-2">
+                  Services
+                </h3>
                 <div className="grid grid-cols-2 gap-2">
                   {services.map((service) => (
-                    <div key={service._id} className="flex items-center justify-between rounded-lg bg-[#242721] p-3">
+                    <div
+                      key={service._id}
+                      className="flex items-center justify-between rounded-lg bg-[#242721] p-3"
+                    >
                       <div>
-                        <p className="font-headline text-sm font-bold text-[#fdfdf6]">{service.serviceName}</p>
-                        <p className="font-headline text-xs text-[#abaca5]">{service.description}</p>
+                        <p className="font-headline text-sm font-bold text-[#fdfdf6]">
+                          {service.serviceName}
+                        </p>
+                        <p className="font-headline text-xs text-[#abaca5]">
+                          {service.description}
+                        </p>
                       </div>
-                      <span className="font-headline text-sm font-bold text-[#8eff71]">{formatPrice(service.price)}</span>
+                      <span className="font-headline text-sm font-bold text-[#8eff71]">
+                        {formatPrice(service.price)}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -482,104 +586,125 @@ export default function FieldDetailPage() {
           <div className="sticky top-28 flex flex-col gap-6">
             <div className="rounded-2xl bg-[#181a16] shadow-xl overflow-hidden">
               <div className="bg-gradient-to-r from-[#8eff71]/20 to-[#8eff71]/5 p-4 border-b border-[#8eff71]/20">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="font-headline text-xs text-[#88f6ff]">Booking</span>
-                  <p className="font-headline text-sm font-bold text-[#fdfdf6]">Select your schedule</p>
-                </div>
-                <div className="text-right">
-                  <span className="font-headline text-2xl font-black text-[#8eff71]">{formatPrice(fieldPricePerHour)}</span>
-                  <span className="font-headline text-xs text-[#abaca5]">/hr</span>
-                </div>
-              </div>
-            </div>
-
-            {bookingSuccess ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <span className="material-symbols-outlined text-6xl text-[#8eff71]">check_circle</span>
-                <p className="mt-4 font-headline text-lg font-bold text-[#fdfdf6]">
-                  Booking Successful!
-                </p>
-                <p className="mt-2 text-sm text-[#abaca5]">Redirecting to checkout...</p>
-              </div>
-            ) : (
-              <div className="p-4 space-y-4">
-                <div className="space-y-2">
-                  <label className="font-headline flex items-center gap-2 text-xs font-bold uppercase text-[#abaca5]">
-                    <span className="material-symbols-outlined text-sm">calendar_today</span>
-                    Select Date
-                  </label>
-                  <CalendarPicker
-                    selectedDate={selectedDate}
-                    onSelectDate={setSelectedDate}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="font-headline flex items-center gap-2 text-xs font-bold uppercase text-[#abaca5]">
-                    <span className="material-symbols-outlined text-sm">schedule</span>
-                    Time Slots
-                  </label>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {timeSlots.map((slot) => {
-                      const isBooked = bookedSlots.includes(slot);
-                      const isSelected = selectedSlots.includes(slot);
-                      const isPast = isSlotPast(slot);
-                      return (
-                        <button
-                          key={slot}
-                          type="button"
-                          onClick={() => toggleSlot(slot)}
-                          disabled={isBooked || isPast}
-                          className={
-                            isPast
-                              ? 'font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through'
-                              : isBooked
-                              ? 'font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through'
-                              : isSelected
-                              ? 'font-headline rounded-lg bg-[#8eff71] px-1 py-2 text-[10px] font-bold text-[#0d6100]'
-                              : 'font-headline rounded-lg bg-[#242721] px-1 py-2 text-[10px] font-bold text-[#abaca5] transition-colors hover:bg-[#474944]/50 hover:text-[#fdfdf6]'
-                          }
-                        >
-                          {slot}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {selectedSlots.length > 0 && (
-                  <div className="rounded-lg bg-[#8eff71]/10 p-2.5">
-                    <p className="font-headline text-xs text-[#8eff71]">
-                      {selectedSlots.length} slot(s): {selectedSlots.join(', ')}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-headline text-xs text-[#88f6ff]">
+                      Booking
+                    </span>
+                    <p className="font-headline text-sm font-bold text-[#fdfdf6]">
+                      Select your schedule
                     </p>
                   </div>
-                )}
-
-                <div className="rounded-xl bg-[#121410] p-3 border border-[#8eff71]/20">
-                  <div className="flex justify-between items-center">
-                    <span className="font-headline font-bold text-[#fdfdf6]">Total</span>
-                    <span className="font-headline text-xl font-black text-[#8eff71]">
-                      {formatPrice(grandTotal)}
+                  <div className="text-right">
+                    <span className="font-headline text-2xl font-black text-[#8eff71]">
+                      {formatPrice(fieldPricePerHour)}
+                    </span>
+                    <span className="font-headline text-xs text-[#abaca5]">
+                      /hr
                     </span>
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={handleBook}
-                  disabled={!selectedDate || selectedSlots.length === 0}
-                  className="w-full rounded-xl bg-gradient-to-r from-[#8eff71] to-[#2ff801] py-3.5 font-headline text-sm font-black text-[#0d6100] transition-all hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(142,255,113,0.3)] disabled:scale-100 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Book Now
-                </button>
-
-                <div className="flex items-center gap-2 text-[10px] text-[#abaca5]">
-                  <span className="material-symbols-outlined text-sm text-[#88f6ff]">info</span>
-                  Free cancellation up to 24 hours before booking
-                </div>
               </div>
-            )}
+
+              {bookingSuccess ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <span className="material-symbols-outlined text-6xl text-[#8eff71]">
+                    check_circle
+                  </span>
+                  <p className="mt-4 font-headline text-lg font-bold text-[#fdfdf6]">
+                    Booking Successful!
+                  </p>
+                  <p className="mt-2 text-sm text-[#abaca5]">
+                    Redirecting to checkout...
+                  </p>
+                </div>
+              ) : (
+                <div className="p-4 space-y-4">
+                  <div className="space-y-2">
+                    <label className="font-headline flex items-center gap-2 text-xs font-bold uppercase text-[#abaca5]">
+                      <span className="material-symbols-outlined text-sm">
+                        calendar_today
+                      </span>
+                      Select Date
+                    </label>
+                    <CalendarPicker
+                      selectedDate={selectedDate}
+                      onSelectDate={setSelectedDate}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="font-headline flex items-center gap-2 text-xs font-bold uppercase text-[#abaca5]">
+                      <span className="material-symbols-outlined text-sm">
+                        schedule
+                      </span>
+                      Time Slots
+                    </label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {timeSlots.map((slot) => {
+                        const isBooked = bookedSlots.includes(slot);
+                        const isSelected = selectedSlots.includes(slot);
+                        const isPast = isSlotPast(slot);
+                        return (
+                          <button
+                            key={slot}
+                            type="button"
+                            onClick={() => toggleSlot(slot)}
+                            disabled={isBooked || isPast}
+                            className={
+                              isPast
+                                ? "font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through"
+                                : isBooked
+                                  ? "font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through"
+                                  : isSelected
+                                    ? "font-headline rounded-lg bg-[#8eff71] px-1 py-2 text-[10px] font-bold text-[#0d6100]"
+                                    : "font-headline rounded-lg bg-[#242721] px-1 py-2 text-[10px] font-bold text-[#abaca5] transition-colors hover:bg-[#474944]/50 hover:text-[#fdfdf6]"
+                            }
+                          >
+                            {slot}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {selectedSlots.length > 0 && (
+                    <div className="rounded-lg bg-[#8eff71]/10 p-2.5">
+                      <p className="font-headline text-xs text-[#8eff71]">
+                        {selectedSlots.length} slot(s):{" "}
+                        {selectedSlots.join(", ")}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="rounded-xl bg-[#121410] p-3 border border-[#8eff71]/20">
+                    <div className="flex justify-between items-center">
+                      <span className="font-headline font-bold text-[#fdfdf6]">
+                        Total
+                      </span>
+                      <span className="font-headline text-xl font-black text-[#8eff71]">
+                        {formatPrice(grandTotal)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleBook}
+                    disabled={!selectedDate || selectedSlots.length === 0}
+                    className="w-full rounded-xl bg-gradient-to-r from-[#8eff71] to-[#2ff801] py-3.5 font-headline text-sm font-black text-[#0d6100] transition-all hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(142,255,113,0.3)] disabled:scale-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Book Now
+                  </button>
+
+                  <div className="flex items-center gap-2 text-[10px] text-[#abaca5]">
+                    <span className="material-symbols-outlined text-sm text-[#88f6ff]">
+                      info
+                    </span>
+                    Free cancellation up to 24 hours before booking
+                  </div>
+                </div>
+              )}
             </div>
             {detailBanners.length > 0 && (
               <AdBannerVertical

@@ -7,6 +7,15 @@ import profileService from '../../services/profileService';
 import { setAuthToken } from '../../services/axios';
 import { Modal } from '../../components/Modal';
 
+function formatPrice(price) {
+  return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
 export default function ServicePage() {
   const navigate = useNavigate();
   const auth = useAuth();
@@ -28,14 +37,11 @@ export default function ServicePage() {
 
   const fetchBookings = async () => {
     try {
-      if (auth.accessToken) {
-        setAuthToken(auth.accessToken);
-      }
+      if (auth.accessToken) setAuthToken(auth.accessToken);
       const data = await bookingService.getMyBookings();
       setBookings(data.bookings || []);
       
       const allEntries = [];
-      
       for (const b of (data.bookings || [])) {
         const allTimes = [];
         for (const dateGroup of (b.allDates || [])) {
@@ -45,7 +51,6 @@ export default function ServicePage() {
         }
         allEntries.push({
           id: b.id,
-          bookingId: b.id,
           fieldName: b.fieldName,
           timeSlots: allTimes.join(', '),
           status: b.status,
@@ -54,11 +59,7 @@ export default function ServicePage() {
           createdAt: b.createdAt
         });
       }
-      
-      const withServices = allEntries
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      
-      setServicesList(withServices);
+      setServicesList(allEntries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
     } catch (err) {
       console.error('Failed to fetch:', err);
     } finally {
@@ -66,7 +67,6 @@ export default function ServicePage() {
     }
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchBookings(); }, []);
 
   const handleSlotClick = async (slot, booking) => {
@@ -79,14 +79,12 @@ export default function ServicePage() {
       const profileData = profileRes?.data || profileRes;
       setWalletBalance(Number(profileData?.wallet?.balance || 0));
     } catch (err) {
-      console.error('Failed to fetch wallet:', err);
       setWalletBalance(0);
     }
 
     try {
       const data = await serviceService.getServicesByBookingDetail(slot.id);
       setAvailableServices(data.services || []);
-      
       const existing = data.existingServices || [];
       setSelectedServices(existing.map(s => ({
         serviceId: s.serviceId,
@@ -95,7 +93,6 @@ export default function ServicePage() {
         quantity: s.quantity || 1,
       })));
     } catch (err) {
-      console.error('Failed to fetch services:', err);
       setAvailableServices([]);
     } finally {
       setLoadingServices(false);
@@ -105,43 +102,16 @@ export default function ServicePage() {
   const toggleService = (service) => {
     setSelectedServices(prev => {
       const exists = prev.find(s => s.serviceId === service._id);
-      if (exists) {
-        return prev.filter(s => s.serviceId !== service._id);
-      }
-      return [...prev, {
-        serviceId: service._id,
-        serviceName: service.serviceName,
-        price: service.price,
-        quantity: 1,
-      }];
+      if (exists) return prev.filter(s => s.serviceId !== service._id);
+      return [...prev, { serviceId: service._id, serviceName: service.serviceName, price: service.price, quantity: 1 }];
     });
   };
 
-  const updateQuantity = (serviceId, delta) => {
-    setSelectedServices(prev => prev.map(s => {
-      if (s.serviceId === serviceId) {
-        return { ...s, quantity: Math.max(1, s.quantity + delta) };
-      }
-      return s;
-    }));
-  };
-
   const handleBookServices = async () => {
-    if (selectedServices.length === 0) {
-      alert('Please select at least one service');
-      return;
-    }
-
-    if (walletBalance < totalServicesPrice) {
-      alert('Insufficient wallet balance. Please top up your wallet.');
-      return;
-    }
-
+    if (selectedServices.length === 0 || walletBalance < totalServicesPrice) return;
     setSubmitting(true);
     try {
-      if (auth.accessToken) {
-        setAuthToken(auth.accessToken);
-      }
+      if (auth.accessToken) setAuthToken(auth.accessToken);
       await serviceService.bookServices({
         bookingDetailId: selectedSlot.id,
         services: selectedServices,
@@ -151,13 +121,9 @@ export default function ServicePage() {
       setShowModal(false);
       setShowSuccess(true);
       fetchBookings();
-      setTimeout(() => {
-        setShowSuccess(false);
-        setShowHistory(true);
-      }, 2000);
+      setTimeout(() => { setShowSuccess(false); setShowHistory(true); }, 1500);
     } catch (err) {
       console.error('Failed to book services:', err);
-      alert('Failed to book services. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -166,334 +132,226 @@ export default function ServicePage() {
   const totalServicesPrice = selectedServices.reduce((sum, s) => sum + (s.price * s.quantity), 0);
   const walletSufficient = walletBalance >= totalServicesPrice;
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
-  };
-
-  const formatDate = (dateStr) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric', month: 'short' });
-  };
-
-  const isUpcoming = (dateStr) => {
-    return new Date(dateStr) >= new Date(new Date().setHours(0, 0, 0, 0));
-  };
-
-  const isActive = (status) => {
-    return status === 'Confirmed' || status === 'Booked';
-  };
+  const activeBookings = bookings.filter(b => b.status === 'Confirmed' || b.status === 'Booked');
+  const totalPages = Math.ceil(servicesList.length / itemsPerPage);
+  const paginatedServices = servicesList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   if (!auth.isAuthenticated) {
     return (
-      <div className="mx-auto max-w-4xl px-6 py-20 text-center">
-        <h1 className="font-headline text-2xl font-bold text-[#ff4d6d]">Please sign in to view your bookings</h1>
-        <button
-          onClick={() => navigate('/auth')}
-          className="mt-4 font-headline text-[#8eff71] underline"
-        >
-          Log In
-        </button>
+      <div className="min-h-screen flex items-center justify-center bg-[#0d0d0d]">
+        <div className="text-center p-8">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#1a1a1a] flex items-center justify-center">
+            <svg className="w-8 h-8 text-[#4ade80]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12m-6-4v2m-6-4V7a4 4 0 014-4h4a4 4 0 014 4v8a4 4 0 01-4 4h-4a4 4 0 01-4-4z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-white mb-2">Đăng nhập để tiếp tục</h2>
+          <p className="text-gray-500 mb-4">Quản lý dịch vụ đặt sân</p>
+          <button onClick={() => navigate('/auth')} className="px-6 py-2 bg-[#4ade80] text-black font-medium rounded-lg hover:bg-[#22c55e] transition">Đăng nhập</button>
+        </div>
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#8eff71] border-t-transparent" />
+      <div className="min-h-screen flex items-center justify-center bg-[#0d0d0d]">
+        <div className="w-8 h-8 border-4 border-[#4ade80] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-6 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="font-headline text-3xl font-black text-[#fdfdf6] mb-2">Services</h1>
-          <p className="font-headline text-[#abaca5]">{showHistory ? 'Your service booking history' : 'Select a booking slot to add services'}</p>
-        </div>
-        <button
-          onClick={() => setShowHistory(!showHistory)}
-          className="px-4 py-2 rounded-lg font-headline text-sm font-bold transition-all"
-          style={{ 
-            background: showHistory ? '#8eff71' : '#242721',
-            color: showHistory ? '#0d6100' : '#abaca5'
-          }}
-        >
-          {showHistory ? '← Back to Book' : '📋 View History'}
-        </button>
-      </div>
-
-      {showHistory ? (
-        <div className="rounded-xl bg-[#181a16] p-6">
-          {servicesList.length === 0 ? (
-            <div className="text-center py-8">
-              <span className="material-symbols-outlined text-5xl text-[#474944]">receipt_long</span>
-              <p className="mt-4 font-headline text-lg text-[#abaca5]">No services booked yet</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {servicesList
-                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                .map((group, idx) => (
-                  <div key={idx} className="rounded-lg bg-[#242721] border border-[#474944] overflow-hidden">
-                    <div className="flex items-center justify-between p-3 bg-[#1a1c18]">
-                      <div>
-                        <p className="font-headline text-sm font-bold text-[#fdfdf6]">{group.fieldName}</p>
-                        <p className="font-headline text-xs text-[#abaca5]">
-                          {new Date(group.date).toLocaleDateString('vi-VN')} | {group.timeSlots}
-                        </p>
-                        <p className="font-headline text-xs text-[#88f6ff]">
-                          Booked: {new Date(group.createdAt).toLocaleString('vi-VN')}
-                        </p>
-                      </div>
-                      <span className={`px-2 py-0.5 rounded text-xs ${group.status === 'Booked' || group.status === 'Confirmed' ? 'bg-[#8eff71]/20 text-[#8eff71]' : 'bg-[#abaca5]/20 text-[#abaca5]'}`}>
-                        {group.status}
-                      </span>
-                    </div>
-                    <div className="p-3 space-y-1">
-                      {(group.services && group.services.length > 0) ? (
-                        group.services.map((s, sIdx) => (
-                          <div key={sIdx} className="flex justify-between text-sm">
-                            <span className="text-[#fdfdf6]">{s.serviceName}</span>
-                            <span className="text-[#ffc864]">{formatPrice(s.price)} {s.quantity > 1 && `x${s.quantity}`}</span>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-sm text-[#abaca5] italic">No services booked</p>
-                      )}
-                    </div>
-                    {group.services && group.services.length > 0 && (
-                      <div className="p-2 bg-[#121410] flex justify-between">
-                        <span className="text-xs text-[#abaca5]">Total</span>
-                        <span className="font-headline text-sm font-bold text-[#8eff71]">{formatPrice(group.totalPrice)}</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              
-              {servicesList.length > itemsPerPage && (
-                <div className="flex justify-center items-center gap-4 mt-6">
-                  <button
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1 rounded bg-[#242721] text-[#abaca5] disabled:opacity-50"
-                  >
-                    ← Prev
-                  </button>
-                  <span className="font-headline text-sm text-[#abaca5]">
-                    Page {currentPage} of {Math.ceil(servicesList.length / itemsPerPage)}
-                  </span>
-                  <button
-                    onClick={() => setCurrentPage(p => Math.min(Math.ceil(servicesList.length / itemsPerPage), p + 1))}
-                    disabled={currentPage >= Math.ceil(servicesList.length / itemsPerPage)}
-                    className="px-3 py-1 rounded bg-[#242721] text-[#abaca5] disabled:opacity-50"
-                  >
-                    Next →
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      ) : (
-        <>
-      {bookings.length === 0 ? (
-        <div className="rounded-xl bg-[#181a16] p-12 text-center">
-          <span className="material-symbols-outlined text-6xl text-[#474944]">sports_soccer</span>
-          <p className="mt-4 font-headline text-lg text-[#abaca5]">No bookings found</p>
+    <div className="min-h-screen bg-[#0d0d0d] p-4">
+      <div className="max-w-lg mx-auto">
+        <div className="flex items-center justify-between mb-6 pt-2">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Dịch vụ</h1>
+            <p className="text-sm text-gray-500">{showHistory ? 'Lịch sử đặt' : 'Chọn slot để thêm dịch vụ'}</p>
+          </div>
           <button
-            onClick={() => navigate('/fields')}
-            className="mt-4 font-headline text-[#8eff71] underline"
+            onClick={() => setShowHistory(!showHistory)}
+            className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
+              showHistory ? 'bg-[#4ade80] text-black' : 'bg-[#1a1a1a] text-gray-400 hover:text-white'
+            }`}
           >
-            Book a field
+            {showHistory ? '← Quay lại' : '📋 Lịch sử'}
           </button>
         </div>
-      ) : (
-        <div className="space-y-6">
-          {bookings.map((booking) => (
-            <div key={booking.id} className="rounded-xl bg-[#181a16] p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <img
-                  src={booking.fieldImage}
-                  alt={booking.fieldName}
-                  className="h-16 w-20 rounded-lg object-cover"
-                />
-                <div className="flex-1">
-                  <h3 className="font-headline text-lg font-bold text-[#fdfdf6]">{booking.fieldName}</h3>
-                  <p className="font-headline text-sm text-[#abaca5]">
-                    {booking.allDates?.map(d => formatDate(d.date)).join(', ') || formatDate(booking.date)}
-                  </p>
-                </div>
-                <span className={`px-3 py-1 rounded-full font-headline text-xs font-bold ${
-                  isActive(booking.status)
-                    ? 'bg-[#8eff71]/20 text-[#8eff71]'
-                    : 'bg-[#474944]/20 text-[#abaca5]'
-                }`}>
-                  {booking.status}
-                </span>
-              </div>
 
-              <div className="border-t border-[#474944]/30 pt-4">
-                <h4 className="font-headline text-sm font-bold text-[#88f6ff] mb-3">Available Slots</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                  {booking.allDates?.flatMap(dateObj =>
-                    dateObj.slots.map((slot, idx) => ({
-                      id: slot.id || `${booking.id}-${dateObj.date}-${idx}`,
-                      date: dateObj.date,
-                      start: slot.start,
-                      end: slot.end,
-                      bookingId: booking.id,
-                      fieldName: booking.fieldName,
-                      status: booking.status,
-                    }))
-                  ).filter(slot => isUpcoming(slot.date) && isActive(slot.status)).map((slot) => (
+        {showHistory ? (
+          <div className="space-y-3">
+            {servicesList.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <svg className="w-12 h-12 mx-auto mb-3 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <p>Chưa có dịch vụ nào</p>
+              </div>
+            ) : (
+              <>
+                {paginatedServices.map((group, idx) => (
+                  <div key={idx} className="bg-[#1a1a1a] rounded-xl p-4 border border-gray-800">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="font-semibold text-white">{group.fieldName}</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">{group.timeSlots}</p>
+                      </div>
+                      <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded-full font-medium">{group.status}</span>
+                    </div>
+                    <div className="space-y-1.5 pt-2 border-t border-gray-800">
+                      {group.services?.length > 0 ? group.services.map((s, i) => (
+                        <div key={i} className="flex justify-between text-sm">
+                          <span className="text-gray-300">{s.serviceName}</span>
+                          <span className="text-green-400 font-medium">{formatPrice(s.price)}</span>
+                        </div>
+                      )) : <p className="text-sm text-gray-600">Chưa đặt dịch vụ</p>}
+                    </div>
+                  </div>
+                ))}
+
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-6">
                     <button
-                      key={slot.id}
-                      onClick={() => handleSlotClick(slot, booking)}
-                      className="rounded-lg bg-[#242721] p-3 text-center transition-all hover:bg-[#8eff71]/20 hover:text-[#8eff71]"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="w-10 h-10 rounded-lg bg-[#1a1a1a] text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-800 flex items-center justify-center"
                     >
-                      <p className="font-headline text-xs text-[#88f6ff]">{formatDate(slot.date)}</p>
-                      <p className="font-headline text-sm font-bold text-[#fdfdf6]">{slot.start} - {slot.end}</p>
-                      <span className="material-symbols-outlined text-sm text-[#8eff71]">add_circle</span>
+                      ←
                     </button>
-                  )) || (
-                    <p className="col-span-full text-center font-headline text-sm text-[#abaca5] py-4">
-                      No upcoming slots available
-                    </p>
-                  )}
-                </div>
+                    <div className="flex gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-10 h-10 rounded-lg font-medium transition ${
+                            currentPage === page
+                              ? 'bg-[#4ade80] text-black'
+                              : 'bg-[#1a1a1a] text-gray-400 hover:bg-gray-800'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage >= totalPages}
+                      className="w-10 h-10 rounded-lg bg-[#1a1a1a] text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-800 flex items-center justify-center"
+                    >
+                      →
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        ) : (
+          <>
+            {bookings.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <svg className="w-16 h-16 mx-auto mb-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                </svg>
+                <p className="text-lg mb-2">Chưa có lịch đặt sân</p>
+                <button onClick={() => navigate('/fields')} className="text-green-400 hover:underline">Đặt sân ngay →</button>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-      </>
-      )}
+            ) : activeBookings.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <p>Không có lịch nào khả dụng</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {activeBookings.map((booking) => (
+                  <div key={booking.id} className="bg-[#1a1a1a] rounded-xl p-4 border border-gray-800">
+                    <div className="flex items-center gap-3 mb-3">
+                      <img src={booking.fieldImage} alt={booking.fieldName} className="h-12 w-14 rounded-lg object-cover" />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-white truncate">{booking.fieldName}</h3>
+                        <p className="text-xs text-gray-500">{booking.allDates?.map(d => formatDate(d.date)).join(', ')}</p>
+                      </div>
+                      <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded-full font-medium shrink-0">{booking.status}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {booking.allDates?.flatMap(dateObj =>
+                        dateObj.slots.map((slot) => {
+                          const slotEnd = new Date(`${slot.date}T${slot.end}:00.000`);
+                          const isEnded = slot.status === 'End' || slot.status === 'Cancel' || slotEnd < new Date();
+                          return { ...slot, isEnded };
+                        }).filter(s => !s.isEnded)
+                      ).map((slot) => (
+                        <button
+                          key={slot.id}
+                          onClick={() => handleSlotClick(slot, booking)}
+                          className="px-3 py-1.5 bg-[#262626] rounded-lg text-xs hover:bg-[#4ade80]/20 hover:text-green-400 transition flex items-center gap-1.5"
+                        >
+                          <span className="text-cyan-400">{formatDate(slot.date)}</span>
+                          <span className="text-white font-medium">{slot.start}-{slot.end}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={`Services for ${selectedSlot?.fieldName}`}>
-        <div className="space-y-4">
-          <p className="font-headline text-sm text-[#abaca5]">
-            {selectedSlot && `${formatDate(selectedSlot.date)} | ${selectedSlot.start} - ${selectedSlot.end}`}
-          </p>
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={<span className="text-white font-semibold">Chọn dịch vụ</span>}>
+        <div className="space-y-3">
+          <div className="pb-2 border-b border-gray-800 space-y-1">
+            <p className="text-sm text-gray-400">
+              {selectedSlot && `${formatDate(selectedSlot.date)} • ${selectedSlot.start} - ${selectedSlot.end}`}
+            </p>
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-gray-500">Số dư ví</span>
+              <span className="text-green-400 font-medium">{formatPrice(walletBalance)}</span>
+            </div>
+          </div>
 
           {loadingServices ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#8eff71] border-t-transparent" />
+            <div className="py-8 text-center">
+              <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
             </div>
           ) : availableServices.length === 0 ? (
-            <div className="rounded-lg bg-[#242721] p-6 text-center">
-              <span className="material-symbols-outlined text-4xl text-[#474944]">info</span>
-              <p className="mt-2 font-headline text-sm text-[#abaca5]">No services available for this field</p>
-            </div>
+            <div className="py-8 text-center text-gray-500">Không có dịch vụ cho sân này</div>
           ) : (
             <>
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-64 overflow-y-auto">
                 {availableServices.map((service) => {
                   const isSelected = selectedServices.some(s => s.serviceId === service._id);
-                  const selectedItem = selectedServices.find(s => s.serviceId === service._id);
                   return (
                     <div
                       key={service._id}
-                      className={`rounded-lg border p-4 transition-all ${
-                        isSelected
-                          ? 'border-[#8eff71] bg-[#8eff71]/10'
-                          : 'border-[#474944]/30 bg-[#121410] hover:border-[#8eff71]/50'
+                      onClick={() => toggleService(service)}
+                      className={`p-3 rounded-lg cursor-pointer flex justify-between items-center transition ${
+                        isSelected ? 'bg-green-500/20 border border-green-500' : 'bg-[#262626] border border-transparent hover:border-green-500/50'
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => toggleService(service)}
-                            className="flex h-6 w-6 items-center justify-center rounded border transition-all"
-                          >
-                            {isSelected ? (
-                              <span className="material-symbols-outlined text-[#8eff71] text-lg">check_box</span>
-                            ) : (
-                              <span className="material-symbols-outlined text-[#474944] text-lg">check_box_outline_blank</span>
-                            )}
-                          </button>
-                          <div>
-                            <p className="font-headline text-sm font-bold text-[#fdfdf6]">{service.serviceName}</p>
-                            <p className="font-headline text-xs text-[#abaca5]">Stock: {service.stock}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-headline text-sm font-bold text-[#8eff71]">{formatPrice(service.price)}</p>
-                        </div>
-                      </div>
-                      {isSelected && (
-                        <div className="mt-3 flex items-center justify-between border-t border-[#474944]/30 pt-3">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => updateQuantity(service._id, -1)}
-                              className="flex h-8 w-8 items-center justify-center rounded bg-[#242721] text-[#fdfdf6] hover:bg-[#474944]"
-                            >
-                              -
-                            </button>
-                            <span className="w-8 text-center font-headline text-sm font-bold text-[#fdfdf6]">
-                              {selectedItem?.quantity || 1}
-                            </span>
-                            <button
-                              onClick={() => updateQuantity(service._id, 1)}
-                              className="flex h-8 w-8 items-center justify-center rounded bg-[#242721] text-[#fdfdf6] hover:bg-[#474944]"
-                            >
-                              +
-                            </button>
-                          </div>
-                          <p className="font-headline text-sm font-bold text-[#88f6ff]">
-                            {formatPrice((selectedItem?.quantity || 1) * service.price)}
-                          </p>
-                        </div>
-                      )}
+                      <span className={isSelected ? 'text-green-400' : 'text-white'}>{service.serviceName}</span>
+                      <span className="text-green-400 font-medium">{formatPrice(service.price)}</span>
                     </div>
                   );
                 })}
               </div>
 
               {selectedServices.length > 0 && (
-                <div className="space-y-3">
-                  <div className="rounded-lg bg-[#121410] p-4 border border-[#8eff71]/20">
-                    <div className="flex justify-between items-center">
-                      <span className="font-headline font-bold text-[#fdfdf6]">Total</span>
-                      <span className="font-headline text-xl font-black text-[#8eff71]">
-                        {formatPrice(totalServicesPrice)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="rounded-lg border-2 border-[#8eff71] bg-[#8eff71]/10 p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-[#8eff71]">
-                          account_balance_wallet
-                        </span>
-                        <div>
-                          <p className="font-headline text-sm font-bold text-[#8eff71]">
-                            Wallet Balance
-                          </p>
-                          <p className="font-headline text-xs text-[#abaca5]">
-                            Số dư: {formatPrice(walletBalance)}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="material-symbols-outlined text-[#8eff71]">check_circle</span>
-                    </div>
-                    {!walletSufficient && (
-                      <p className="mt-3 font-headline text-xs text-[#ff4d6d]">
-                        Số dư không đủ. Vui lòng nạp thêm tiền.
-                      </p>
-                    )}
-                  </div>
+                <div className="p-3 bg-[#262626] rounded-lg flex justify-between items-center">
+                  <span className="text-gray-400">{selectedServices.length} dịch vụ</span>
+                  <span className="text-green-400 font-bold text-lg">{formatPrice(totalServicesPrice)}</span>
                 </div>
               )}
 
+              {!walletSufficient && selectedServices.length > 0 && (
+                <p className="text-xs text-red-400 text-center">Số dư không đủ • Cần thêm {formatPrice(totalServicesPrice - walletBalance)}</p>
+              )}
               <button
                 onClick={handleBookServices}
                 disabled={selectedServices.length === 0 || submitting || !walletSufficient}
-                className="w-full rounded-xl bg-gradient-to-r from-[#8eff71] to-[#2ff801] py-4 font-headline text-sm font-black text-[#0d6100] transition-all hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(142,255,113,0.3)] disabled:scale-100 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full py-3 bg-[#4ade80] text-black font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#22c55e] transition"
               >
-                {submitting ? 'Processing...' : 'Book Services'}
+                {submitting ? 'Đang xử lý...' : 'Đặt dịch vụ'}
               </button>
             </>
           )}
@@ -501,14 +359,15 @@ export default function ServicePage() {
       </Modal>
 
       {showSuccess && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="animate-[bounce-in_0.5s_ease-out] mx-4 max-w-sm rounded-2xl bg-[#181a16] p-8 text-center shadow-2xl border border-[#8eff71]/30">
-            <div className="mb-4 flex h-20 w-20 mx-auto items-center justify-center rounded-full bg-[#8eff71]/20">
-              <span className="material-symbols-outlined text-6xl text-[#8eff71]">check_circle</span>
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-[#1a1a1a] p-8 rounded-2xl text-center border border-green-500/50">
+            <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-green-500/20 flex items-center justify-center">
+              <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
             </div>
-            <h2 className="font-headline text-2xl font-black text-[#fdfdf6]">Thành công!</h2>
-            <p className="mt-2 font-headline text-sm text-[#abaca5]">Dịch vụ đã được đặt thành công</p>
-            <p className="mt-1 font-headline text-xs text-[#8eff71]">Đang chuyển hướng...</p>
+            <p className="text-white font-semibold text-lg">Thành công!</p>
+            <p className="text-gray-500 text-sm mt-1">Dịch vụ đã được đặt</p>
           </div>
         </div>
       )}

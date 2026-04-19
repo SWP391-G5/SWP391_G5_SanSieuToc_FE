@@ -805,13 +805,15 @@ FIELD BOOKING
             </button>
           ) : null}
 
-          <button
-            type="button"
-            className={`profile-terminal-tab ${activeTab === 'transactions' ? 'active' : ''}`}
-            onClick={() => setActiveTab('transactions')}
-          >
-            TRANSACTION HISTORY
-          </button>
+          {isCustomer && (
+            <button
+              type="button"
+              className={`profile-terminal-tab ${activeTab === 'transactions' ? 'active' : ''}`}
+              onClick={() => setActiveTab('transactions')}
+            >
+              TRANSACTION HISTORY
+            </button>
+          )}
           
         </div>
         
