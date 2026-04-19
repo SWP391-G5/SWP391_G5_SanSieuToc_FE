@@ -18,12 +18,62 @@ import {
 
 import '../styles/UserProfilePage.css';
 
-const checkSlotEnded = (date, slotEnd) => {
-  const now = new Date();
-  const slotDate = new Date(date);
-  const [hours, minutes] = (slotEnd || '23:59').split(':').map(Number);
-  slotDate.setHours(hours, minutes, 0, 0);
-  return now > slotDate;
+const computeBookingEnded = (booking) => {
+  if (!booking || typeof booking !== 'object') return false;
+
+  const nowMs = Date.now();
+  let latestEndMs = null;
+  let hasAnySlot = false;
+  let allSlotsStatusEnded = true;
+
+  if (Array.isArray(booking.allDates) && booking.allDates.length > 0) {
+    for (const d of booking.allDates) {
+      const dateText = d?.date;
+      const slots = Array.isArray(d?.slots) ? d.slots : [];
+      for (const slot of slots) {
+        hasAnySlot = true;
+        const statusKey = String(slot?.status || '').trim().toLowerCase();
+        if (statusKey !== 'end') {
+          allSlotsStatusEnded = false;
+        }
+
+        if (dateText && slot?.end) {
+          const base = new Date(dateText);
+          const [h, m] = String(slot.end).split(':').map(Number);
+          if (!Number.isNaN(base.getTime()) && Number.isFinite(h) && Number.isFinite(m)) {
+            base.setHours(h, m, 0, 0);
+            const endMs = base.getTime();
+            if (latestEndMs === null || endMs > latestEndMs) {
+              latestEndMs = endMs;
+            }
+          }
+        }
+      }
+    }
+  } else if (booking.date && Array.isArray(booking.timeSlots) && booking.timeSlots.length > 0) {
+    hasAnySlot = true;
+    for (const rawSlot of booking.timeSlots) {
+      const slot = typeof rawSlot === 'object' ? rawSlot : { end: rawSlot };
+      const statusKey = String(slot?.status || '').trim().toLowerCase();
+      if (statusKey && statusKey !== 'end') {
+        allSlotsStatusEnded = false;
+      }
+
+      const base = new Date(booking.date);
+      const [h, m] = String(slot?.end || '').split(':').map(Number);
+      if (!Number.isNaN(base.getTime()) && Number.isFinite(h) && Number.isFinite(m)) {
+        base.setHours(h, m, 0, 0);
+        const endMs = base.getTime();
+        if (latestEndMs === null || endMs > latestEndMs) {
+          latestEndMs = endMs;
+        }
+      }
+    }
+  }
+
+  if (hasAnySlot && allSlotsStatusEnded) return true;
+  if (latestEndMs !== null) return nowMs > latestEndMs;
+  return false;
 };
 
 function formatVnd(amount) {
@@ -61,23 +111,7 @@ function BookingCard({ booking, onCancel, onFeedback }) {
 
   useEffect(() => {
     const checkStatus = () => {
-      if (booking.allDates && booking.allDates.length > 0) {
-        for (const d of booking.allDates) {
-          if (d.slots && d.slots.length > 0) {
-            const lastSlot = d.slots[d.slots.length - 1];
-            if (lastSlot?.end && checkSlotEnded(d.date, lastSlot.end)) {
-              setIsEnded(true);
-              break;
-            }
-          }
-        }
-      } else if (booking.date && booking.timeSlots && booking.timeSlots.length > 0) {
-        const lastSlot = booking.timeSlots[booking.timeSlots.length - 1];
-        const slotEnd = typeof lastSlot === 'object' ? lastSlot.end : lastSlot;
-        if (checkSlotEnded(booking.date, slotEnd)) {
-          setIsEnded(true);
-        }
-      }
+      setIsEnded(computeBookingEnded(booking));
     };
     
     checkStatus();
@@ -86,7 +120,10 @@ function BookingCard({ booking, onCancel, onFeedback }) {
   }, [booking]);
 
   const canCancel = booking.status === 'Confirmed' && booking.statusPayment === 'Paid' && !isEnded;
-  const canFeedback = isEnded && (booking.status === 'Confirmed' || booking.status === 'Cancelled');
+  const canFeedback =
+    typeof booking.canFeedback === 'boolean'
+      ? booking.canFeedback
+      : isEnded && booking.status === 'Confirmed' && booking.statusPayment === 'Paid' && !booking.hasFeedback;
 
   const handleCancel = async () => {
     if (!window.confirm('Bạn có chắc muốn hủy đơn đặt sân này?\nTiền sẽ được hoàn lại sau khi Owner xác nhận.')) {
@@ -133,9 +170,9 @@ function BookingCard({ booking, onCancel, onFeedback }) {
               <button
                 className="booking-feedback-btn"
                 onClick={() => onFeedback && onFeedback(booking)}
-                style={{ background: '#ffc864', color: '#121410' }}
               >
-                ⭐ Đánh giá
+                <span className="material-symbols-outlined booking-feedback-btn-icon">star</span>
+                <span>Đánh giá</span>
               </button>
             )}
             {canCancel && (

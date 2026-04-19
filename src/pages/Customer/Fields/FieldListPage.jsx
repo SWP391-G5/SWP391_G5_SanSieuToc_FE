@@ -39,6 +39,7 @@ export default function FieldListPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const initialSearchText = typeof location.state?.searchText === 'string' ? location.state.searchText : '';
+  const initialSearchDate = typeof location.state?.searchDate === 'string' ? location.state.searchDate : '';
 
   // Ads banner (text is hard-coded; manager only changes images)
   const ADS_SLIDE_COUNT = 6;
@@ -62,6 +63,7 @@ export default function FieldListPage() {
   }, [adsCopy, adsIndex, adsSlides.length]);
 
   const [searchText, setSearchText] = useState(initialSearchText);
+  const [searchDate, setSearchDate] = useState(initialSearchDate);
   const [sortBy, setSortBy] = useState('topRated');
 
   const { wishlistIds, toggleWishlist } = useWishlist();
@@ -92,6 +94,7 @@ export default function FieldListPage() {
       priceMax: priceMaxK * 1000,
       utilities: selectedUtilities.length ? selectedUtilities.join(',') : undefined,
       sortBy,
+      // Date is not currently used to filter fields in the list, but we keep it in state for consistency
     };
   }, [priceMaxK, searchText, selectedCity, selectedDistrict, selectedSize, selectedStreet, sortBy, utilities]);
 
@@ -140,6 +143,8 @@ export default function FieldListPage() {
     setSelectedSize(null);
     setPriceMaxK(350);
     setUtilities({ parking: false, lighting: false, wifi: false, shower: false });
+    setSearchText('');
+    setSearchDate('');
   };
 
   const displayFields = useMemo(() => {
@@ -444,11 +449,18 @@ export default function FieldListPage() {
                 <h1 className="font-headline whitespace-nowrap text-4xl font-black tracking-tight">
                   Showing {displayFields.length} <span className="italic text-[#8eff71]">Fields</span>
                 </h1>
-                {searchText.trim() ? (
-                  <div className="mt-1 text-xs text-[#abaca5]">
-                    Result for: <span className="text-[#fdfdf6]">{searchText}</span>
-                  </div>
-                ) : null}
+                <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#abaca5]">
+                  {searchText.trim() ? (
+                    <span>
+                      Result for: <span className="text-[#fdfdf6]">{searchText}</span>
+                    </span>
+                  ) : null}
+                  {searchDate ? (
+                    <span>
+                      Date: <span className="text-[#88f6ff]">{searchDate}</span>
+                    </span>
+                  ) : null}
+                </div>
               </div>
             </div>
 

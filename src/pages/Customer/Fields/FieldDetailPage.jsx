@@ -155,6 +155,20 @@ function getPrimaryFieldImage(imageValue) {
   return DEFAULT_FIELD_IMAGE_URL;
 }
 
+function normalizeRate(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(5, n));
+}
+
+function getInitials(name) {
+  const text = String(name || '').trim();
+  if (!text) return 'U';
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length === 1) return words[0].slice(0, 1).toUpperCase();
+  return `${words[0].slice(0, 1)}${words[words.length - 1].slice(0, 1)}`.toUpperCase();
+}
+
 export default function FieldDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -252,7 +266,20 @@ export default function FieldDetailPage() {
 
   const fieldData = field.field || field;
   const services = field.services || [];
+  const feedbacks = Array.isArray(field.feedbacks) ? field.feedbacks : [];
+  const feedbackSummary = field.feedbackSummary || {};
   const heroImage = getPrimaryFieldImage(fieldData?.image);
+
+  const fromSummary = Number(feedbackSummary?.avgRate);
+  const fromField = Number(fieldData?.rating);
+  const avgRateNumber = Number.isFinite(fromSummary) && fromSummary > 0
+    ? normalizeRate(fromSummary)
+    : Number.isFinite(fromField) && fromField > 0
+    ? normalizeRate(fromField)
+    : 5;
+
+  const avgRateText = avgRateNumber.toFixed(1);
+  const totalFeedback = Number(feedbackSummary?.total) || feedbacks.length;
 
   const parsePrice = (priceText) => {
     const digits = String(priceText ?? '').replace(/[^\d]/g, '');
@@ -321,7 +348,8 @@ export default function FieldDetailPage() {
             />
             <div className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-[#0d0f0b]/80 px-3 py-1 backdrop-blur-md">
               <span className="material-symbols-outlined fill-icon text-xs text-[#8eff71]">star</span>
-              <span className="font-headline text-xs font-bold text-white">4.9</span>
+              <span className="font-headline text-xs font-bold text-white">{avgRateText}</span>
+              <span className="font-headline text-[10px] text-[#abaca5]">({totalFeedback})</span>
             </div>
             <div className="absolute bottom-4 right-4 rounded-lg bg-[#8eff71] px-3 py-1">
               <span className="font-headline text-xs font-black text-[#0d6100]">{fieldData.fieldType}</span>
@@ -335,6 +363,11 @@ export default function FieldDetailPage() {
                 <div className="mt-2 flex items-center gap-1 text-[#abaca5]">
                   <span className="material-symbols-outlined text-sm">location_on</span>
                   <span className="font-headline text-sm">{fieldData.address}, {fieldData.city}</span>
+                </div>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm text-[#8eff71]">star</span>
+                  <span className="font-headline text-sm font-bold text-[#fdfdf6]">{avgRateText}/5</span>
+                  <span className="font-headline text-xs text-[#abaca5]">{totalFeedback} đánh giá</span>
                 </div>
               </div>
               <div className="text-right">
@@ -383,6 +416,65 @@ export default function FieldDetailPage() {
                 </div>
               </div>
             )}
+
+            <div className="border-t border-[#474944]/30 pt-4 mt-4">
+              <h3 className="font-headline text-sm font-bold text-[#8eff71] mb-3">Feedback từ người chơi</h3>
+
+              {feedbacks.length === 0 ? (
+                <div className="rounded-lg border border-[#474944]/30 bg-[#121410] p-4 text-sm text-[#abaca5]">
+                  Chưa có feedback nào cho sân này.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {feedbacks.slice(0, 10).map((fb) => {
+                    const userName = fb?.user?.name || 'User';
+                    const userAvatar = String(fb?.user?.image || '').trim();
+                    const rate = normalizeRate(fb?.rate);
+                    const rateText = rate.toFixed(1);
+
+                    return (
+                      <div key={fb.id} className="rounded-xl border border-[#474944]/30 bg-[#121410] p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            {userAvatar ? (
+                              <img
+                                src={userAvatar}
+                                alt={userName}
+                                className="h-10 w-10 rounded-full object-cover border border-[#474944]/30"
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = DEFAULT_FIELD_IMAGE_URL;
+                                }}
+                              />
+                            ) : (
+                              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#474944]/30 bg-[#242721] text-xs font-black text-[#8eff71]">
+                                {getInitials(userName)}
+                              </div>
+                            )}
+
+                            <div className="min-w-0">
+                              <div className="font-headline text-sm font-bold text-[#fdfdf6] truncate">{userName}</div>
+                              <div className="text-[11px] text-[#abaca5]">
+                                {fb?.createdAt ? new Date(fb.createdAt).toLocaleDateString('vi-VN') : ''}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="material-symbols-outlined text-sm text-[#ffc864]">star</span>
+                            <span className="font-headline text-sm font-black text-[#ffc864]">{rateText}</span>
+                          </div>
+                        </div>
+
+                        <div className="mt-2 text-sm text-[#fdfdf6] whitespace-pre-wrap break-words">
+                          {fb?.content || '(Không có nội dung)'}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

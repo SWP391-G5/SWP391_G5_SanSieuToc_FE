@@ -60,6 +60,8 @@ export const API_CONFIG = {
       GET_MY_BOOKINGS: '/api/bookings/my',
       CREATE: '/api/bookings',
       CANCEL: '/api/bookings/cancel',
+      FEEDBACK_ELIGIBILITY: (bookingId) => `/api/bookings/${bookingId}/feedback-eligibility`,
+      FEEDBACK_CREATE: '/api/bookings/feedback',
     },
     WALLET: {
       TOP_UP: '/api/wallets/topup',

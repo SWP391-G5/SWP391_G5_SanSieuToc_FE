@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import useCustomerBanners from '../../../hooks/useCustomerBanners';
+import { useAuth } from '../../../context/AuthContext';
 
 import AdBannerHorizontal from './components/AdBannerHorizontal';
 import AdBannerVertical from './components/AdBannerVertical';
 import CommunityCard from './components/CommunityCard';
+import CreatePostModal from './components/CreatePostModal';
 
 import { adaptPostToCommunityItem } from './communityApiAdapter';
 import publicApi from '../../../services/public/publicApi';
@@ -17,6 +19,7 @@ function clamp(n, min, max) {
 }
 
 export default function CommunityPage() {
+  const { isAuthenticated } = useAuth();
   const itemsPerPage = 6; // 2 columns x 3 rows
   const [page, setPage] = useState(1);
   const [items, setItems] = useState([]);
@@ -24,6 +27,7 @@ export default function CommunityPage() {
   const [error, setError] = useState('');
   const [totalPages, setTotalPages] = useState(1);
   const [searchText, setSearchText] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { banners: horizontalBanners } = useCustomerBanners('community_horizontal');
   const { banners: verticalBanners } = useCustomerBanners('community_vertical');
@@ -114,7 +118,7 @@ export default function CommunityPage() {
             copyArray={horizontalCopies}
           />
 
-          <div className="mb-8 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div className="mb-8 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <h1 className="font-headline text-4xl font-black tracking-tight">
                 Community <span className="italic text-[#8eff71]">Hub</span>
@@ -127,36 +131,57 @@ export default function CommunityPage() {
               ) : null}
             </div>
 
-            <div className="group relative w-full xl:max-w-sm">
-              <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#abaca5] transition-colors group-focus-within:text-[#8eff71]">
-                search
-              </span>
-              <input
-                type="text"
-                value={searchText}
-                onChange={(e) => {
-                  setSearchText(e.target.value);
-                  setPage(1);
-                }}
-                placeholder="Search posts"
-                className="w-full rounded-xl border border-[#474944]/30 bg-[#121410] py-2.5 pl-10 pr-10 text-sm text-[#fdfdf6] outline-none transition-all placeholder:text-[#abaca5]/50 focus:border-[#8eff71] focus:ring-2 focus:ring-[#8eff71]/40"
-              />
-
-              {searchText ? (
+            <div className="flex flex-col gap-4 sm:flex-row md:items-center">
+              {isAuthenticated && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setSearchText('');
+                  onClick={() => setIsModalOpen(true)}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-[#8eff71] px-6 py-2.5 text-sm font-black uppercase tracking-widest text-[#0d6100] transition-all hover:scale-[1.03] active:scale-[0.97]"
+                >
+                  <span className="material-symbols-outlined text-xl">add_comment</span>
+                  Post
+                </button>
+              )}
+
+              <div className="group relative w-full xl:max-w-sm">
+                <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#abaca5] transition-colors group-focus-within:text-[#8eff71]">
+                  search
+                </span>
+                <input
+                  type="text"
+                  value={searchText}
+                  onChange={(e) => {
+                    setSearchText(e.target.value);
                     setPage(1);
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-[#abaca5] transition-colors hover:bg-[#242721] hover:text-[#fdfdf6]"
-                  aria-label="Clear post search"
-                >
-                  <span className="material-symbols-outlined text-base">close</span>
-                </button>
-              ) : null}
+                  placeholder="Search posts"
+                  className="w-full rounded-xl border border-[#474944]/30 bg-[#121410] py-2.5 pl-10 pr-10 text-sm text-[#fdfdf6] outline-none transition-all placeholder:text-[#abaca5]/50 focus:border-[#8eff71] focus:ring-2 focus:ring-[#8eff71]/40"
+                />
+
+                {searchText ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchText('');
+                      setPage(1);
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-[#abaca5] transition-colors hover:bg-[#242721] hover:text-[#fdfdf6]"
+                    aria-label="Clear post search"
+                  >
+                    <span className="material-symbols-outlined text-base">close</span>
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
+
+          <CreatePostModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSuccess={() => {
+              // The post is pending
+            }}
+          />
 
           {/* Grid 2x3 */}
           {error ? (

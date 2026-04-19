@@ -33,6 +33,16 @@ const bookingService = {
     const { data } = await axiosInstance.put(`${ENDPOINTS.BOOKING.CANCEL}/${bookingId}`);
     return data;
   },
+
+  async getFeedbackEligibility(bookingId) {
+    const { data } = await axiosInstance.get(ENDPOINTS.BOOKING.FEEDBACK_ELIGIBILITY(bookingId));
+    return data;
+  },
+
+  async createFeedback(payload) {
+    const { data } = await axiosInstance.post(ENDPOINTS.BOOKING.FEEDBACK_CREATE, payload);
+    return data;
+  },
 };
 
 export default bookingService;
