@@ -7,7 +7,21 @@ import { useEffect, useMemo, useState } from 'react';
 import publicApi from '../services/public/publicApi';
 
 export default function useFields(params = {}) {
-  const stableParams = useMemo(() => params, [JSON.stringify(params || {})]);
+  const paramsKey = useMemo(() => {
+    try {
+      return JSON.stringify(params || {});
+    } catch {
+      return '{}';
+    }
+  }, [params]);
+
+  const stableParams = useMemo(() => {
+    try {
+      return JSON.parse(paramsKey);
+    } catch {
+      return {};
+    }
+  }, [paramsKey]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -29,8 +43,9 @@ export default function useFields(params = {}) {
         setError(e?.response?.data?.message || e?.message || 'Failed to load fields');
         setItems([]);
       } finally {
-        if (!alive) return;
-        setLoading(false);
+        if (alive) {
+          setLoading(false);
+        }
       }
     })();
 

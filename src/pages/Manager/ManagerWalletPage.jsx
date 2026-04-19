@@ -75,7 +75,7 @@ export default function ManagerWalletPage() {
             Ví của Manager
           </h1>
           <p className="text-sm text-[#abaca5]">
-            Hoa hồng 10% từ doanh thu của các sân
+            
           </p>
         </div>
         <button
@@ -86,7 +86,7 @@ export default function ManagerWalletPage() {
         </button>
       </header>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-xl border border-[#474944]/30 bg-[#121410] p-6">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[#8eff71]">
@@ -98,20 +98,6 @@ export default function ManagerWalletPage() {
           </div>
           <div className="mt-2 text-2xl font-black text-[#fdfdf6]">
             {formatVnd(wallet?.balance || 0)}
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-[#474944]/30 bg-[#121410] p-6">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#fbff2e]">
-              pending
-            </span>
-            <span className="text-xs font-medium uppercase tracking-wider text-[#abaca5]">
-              Chờ xử lý
-            </span>
-          </div>
-          <div className="mt-2 text-2xl font-black text-[#fdfdf6]">
-            {formatVnd(0)}
           </div>
         </div>
 
