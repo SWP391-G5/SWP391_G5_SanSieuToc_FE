@@ -95,7 +95,7 @@ function UserMenu({ auth, navigate, profilePath, showProfile = true, showLogout 
         onClick={() => navigate('/auth')}
         className="scale-95 rounded-md bg-gradient-to-br from-[#8eff71] to-[#2ff801] px-6 py-2 font-bold text-[#0d6100] transition-transform duration-200 hover:scale-100"
       >
-        Sign In
+        Log In
       </button>
     );
   }

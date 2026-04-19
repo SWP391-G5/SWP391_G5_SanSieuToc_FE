@@ -1961,18 +1961,18 @@
 }
 
 .booking-status-badge {
-  font-size: 0.55rem;
+  font-size: 0.5rem;
   font-weight: 700;
-  padding: 0.2rem 0.5rem;
+  padding: 0.12rem 0.35rem;
   border-radius: 99px;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .booking-payment-badge {
-  font-size: 0.5rem;
+  font-size: 0.45rem;
   font-weight: 600;
-  padding: 0.15rem 0.4rem;
+  padding: 0.1rem 0.3rem;
   border-radius: 4px;
   text-transform: uppercase;
   white-space: nowrap;
@@ -1989,148 +1989,20 @@
 }
 
 .booking-status-badge.status-cancelled {
-  background: rgba(255, 77, 77, 0.15);
-  color: #ff4d4d;
+  background: #fee2e2;
+  color: #dc2626;
 }
 
-.booking-payment-badge.paid {
-  background: rgba(109, 255, 158, 0.15);
-  color: #6dff9e;
+.booking-status-badge.status-ended {
+  background: #1e293b;
+  color: #94a3b8;
+  border: 1px solid #475569;
 }
 
-.booking-payment-badge.pending-payment {
-  background: rgba(255, 235, 59, 0.15);
-  color: #ffeb3b;
-}
-
-.booking-payment-badge.pending-refund {
-  background: rgba(255, 150, 50, 0.15);
-  color: #ff9632;
-}
-
-.booking-payment-badge.refunded {
-  background: rgba(150, 150, 150, 0.15);
-  color: #9e9e9e;
-}
-
-.booking-card-date,
-.booking-card-time {
-  font-size: 0.7rem;
-  color: rgba(231, 249, 238, 0.7);
-  margin: 0;
-}
-
-.booking-card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.booking-card-price {
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: #6dff9e;
-}
-
-.booking-card-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.booking-cancel-btn {
-  background: rgba(255, 77, 77, 0.1);
-  color: #ff4d4d;
-  border: 1px solid rgba(255, 77, 77, 0.3);
-  padding: 0.25rem 0.6rem;
-  border-radius: 6px;
-  font-size: 0.65rem;
+.booking-payment-badge {
+  font-size: 0.5rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.booking-cancel-btn:hover {
-  background: rgba(255, 77, 77, 0.2);
-}
-
-.booking-cancel-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.booking-expand-btn {
-  background: rgba(109, 255, 158, 0.1);
-  color: #6dff9e;
-  border: none;
-  padding: 0.25rem 0.6rem;
-  border-radius: 6px;
-  font-size: 0.65rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.booking-expand-btn:hover {
-  background: rgba(109, 255, 158, 0.2);
-}
-
-.booking-expanded-content {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  animation: slideDown 0.2s ease;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.booking-detail-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin-bottom: 0.5rem;
-}
-
-.booking-detail-label {
-  font-size: 0.6rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: rgba(231, 249, 238, 0.5);
-}
-
-.booking-slots-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
-
-.booking-date-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.booking-date-label {
-  font-size: 0.7rem;
-  color: rgba(231, 249, 238, 0.7);
-}
-
-.booking-slot-badge {
-  background: rgba(136, 246, 255, 0.1);
-  color: #88f6ff;
-  padding: 0.15rem 0.5rem;
+  padding: 0.15rem 0.4rem;
   border-radius: 4px;
   font-size: 0.65rem;
   font-weight: 600;
@@ -2436,4 +2308,48 @@
 
 .profile-terminal-btn.primary:hover {
   background: rgba(142, 255, 113, 0.22);
+}
+
+.booking-card-details {
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 0.5rem;
+}
+
+.booking-services-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.booking-service-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+
+.booking-service-item .service-name {
+  color: rgba(231, 249, 238, 0.8);
+}
+
+.booking-service-item .service-price {
+  color: #6dff9e;
+  font-weight: 500;
+}
+
+.booking-card-expand-btn {
+  background: transparent;
+  border: 1px solid rgba(109, 255, 158, 0.3);
+  color: #6dff9e;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.booking-card-expand-btn:hover {
+  background: rgba(109, 255, 158, 0.1);
 }

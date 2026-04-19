@@ -37,26 +37,25 @@ export default function ServicePage() {
       const allEntries = [];
       
       for (const b of (data.bookings || [])) {
+        const allTimes = [];
         for (const dateGroup of (b.allDates || [])) {
           for (const slot of (dateGroup.slots || [])) {
-            allEntries.push({
-              id: `${b.id}_${dateGroup.date}_${slot.start}`,
-              bookingId: b.id,
-              fieldName: b.fieldName,
-              date: dateGroup.date,
-              timeSlots: `${slot.start} - ${slot.end}`,
-              status: b.status,
-              services: b.services || [],
-              totalPrice: b.servicesTotal || 0,
-              createdAt: b.createdAt
-            });
+            allTimes.push(`${dateGroup.date} ${slot.start}-${slot.end}`);
           }
         }
+        allEntries.push({
+          id: b.id,
+          bookingId: b.id,
+          fieldName: b.fieldName,
+          timeSlots: allTimes.join(', '),
+          status: b.status,
+          services: b.services || [],
+          totalPrice: b.servicesTotal || 0,
+          createdAt: b.createdAt
+        });
       }
       
-      // Filter and sort by newest
       const withServices = allEntries
-        .filter(e => e.services && e.services.length > 0)
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       
       setServicesList(withServices);
@@ -192,7 +191,7 @@ export default function ServicePage() {
           onClick={() => navigate('/auth')}
           className="mt-4 font-headline text-[#8eff71] underline"
         >
-          Sign In
+          Log In
         </button>
       </div>
     );
