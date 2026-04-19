@@ -121,7 +121,10 @@ function App() {
                 </RequireAdmin>
               }
             >
-              <Route index element={<Navigate to="/admin/managers" replace />} />
+              <Route
+                index
+                element={<Navigate to="/admin/managers" replace />}
+              />
               <Route path="managers" element={<ManagerAccountsPage />} />
               <Route path="owners" element={<OwnerAccountsPage />} />
               <Route path="customers" element={<CustomerAccountsPage />} />
@@ -134,47 +137,53 @@ function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Route>
 
-            {/* Owner Area */}
-            <Route
-              path="/owner"
-              element={
-                <RequireOwner>
-                  <OwnerLayout />
-                </RequireOwner>
-              }
-            >
-              <Route index element={<Navigate to="/owner/fields" replace />} />
-              <Route path="dashboard" element={<OwnerDashboardPage />} />
-              <Route path="fields" element={<OwnerFieldsPage />} />
-              <Route path="bookings" element={<OwnerBookingsPage />} />
-              <Route path="refunds" element={<OwnerRefundsPage />} />
-              <Route path="wallet" element={<OwnerWalletPage />} />
-              <Route path="withdraw" element={<OwnerWithdrawPage />} />
-              <Route path="*" element={<NotFoundPage />} />
-            </Route>
+          {/* Owner Area */}
+          <Route
+            path="/owner"
+            element={
+              <RequireOwner>
+                <OwnerLayout />
+              </RequireOwner>
+            }
+          >
+            <Route index element={<Navigate to="/owner/fields" replace />} />
+            <Route path="dashboard" element={<OwnerDashboardPage />} />
+            <Route path="fields" element={<OwnerFieldsPage />} />
+            <Route path="bookings" element={<OwnerBookingsPage />} />
+            <Route path="refunds" element={<OwnerRefundsPage />} />
+            <Route path="wallet" element={<OwnerWalletPage />} />
+            <Route path="withdraw" element={<OwnerWithdrawPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
 
-            {/* Manager Area */}
+          {/* Manager Area */}
+          <Route
+            path="/manager"
+            element={
+              <RequireManager>
+                <ManagerLayout />
+              </RequireManager>
+            }
+          >
             <Route
-              path="/manager"
-              element={
-                <RequireManager>
-                  <ManagerLayout />
-                </RequireManager>
-              }
-            >
-              <Route index element={<Navigate to="/manager/statistics" replace />} />
-              <Route path="statistics" element={<ManagerStatisticsPage />} />
-              <Route path="posts" element={<ManagerPostsPage />} />
-              <Route path="banners-ads" element={<ManagerMarketingImagesPage />} />
-              <Route path="wallet" element={<ManagerWalletPage />} />
-              <Route path="withdraw" element={<ManagerWithdrawPage />} />
-              <Route path="privacy" element={<ManagerPrivacyPage />} />
-              <Route path="feedback" element={<ManagerFeedbackPage />} />
-              <Route path="profile" element={<UserProfilePage />} />
-              <Route path="*" element={<NotFoundPage />} />
-            </Route>
-          </Routes>
-        </PreviewModeProvider>
+              index
+              element={<Navigate to="/manager/statistics" replace />}
+            />
+            <Route path="statistics" element={<ManagerStatisticsPage />} />
+            <Route path="posts" element={<ManagerPostsPage />} />
+            <Route
+              path="banners-ads"
+              element={<ManagerMarketingImagesPage />}
+            />
+            <Route path="wallet" element={<ManagerWalletPage />} />
+            <Route path="withdraw" element={<ManagerWithdrawPage />} />
+            <Route path="privacy" element={<ManagerPrivacyPage />} />
+            <Route path="feedback" element={<ManagerFeedbackPage />} />
+            <Route path="profile" element={<UserProfilePage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+        </Routes>
+      </PreviewModeProvider>
     </Router>
   );
 }

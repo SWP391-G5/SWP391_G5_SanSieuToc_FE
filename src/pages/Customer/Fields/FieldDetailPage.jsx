@@ -200,11 +200,19 @@ export default function FieldDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { banners: detailBanners } = useCustomerBanners('field_detail_banner');
-  const { banners: horizontalBanners } = useCustomerBanners('field_detail_horizontal');
+  const { banners: detailBanners } = useCustomerBanners("field_detail_banner");
+  const { banners: horizontalBanners } = useCustomerBanners(
+    "field_detail_horizontal",
+  );
 
-  const horizontalCopies = useMemo(() => getRandomAdsFromPool(FIELD_DETAIL_HORIZONTAL_POOL, 3), []);
-  const verticalCopies = useMemo(() => getRandomAdsFromPool(FIELD_DETAIL_VERTICAL_POOL, 3), []);
+  const horizontalCopies = useMemo(
+    () => getRandomAdsFromPool(FIELD_DETAIL_HORIZONTAL_POOL, 3),
+    [],
+  );
+  const verticalCopies = useMemo(
+    () => getRandomAdsFromPool(FIELD_DETAIL_VERTICAL_POOL, 3),
+    [],
+  );
 
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedSlots, setSelectedSlots] = useState([]);
@@ -319,7 +327,9 @@ export default function FieldDetailPage() {
 
   const handleBook = () => {
     if (isPreviewMode) {
-      alert('Bạn đang ở chế độ xem trước (preview mode) nên không thể đặt sân.');
+      alert(
+        "Bạn đang ở chế độ xem trước (preview mode) nên không thể đặt sân.",
+      );
       return;
     }
 
@@ -359,7 +369,7 @@ export default function FieldDetailPage() {
             banners={horizontalBanners}
             copyArray={horizontalCopies}
           />
-          
+
           <div className="relative overflow-hidden rounded-2xl shadow-lg">
             <img
               src={
@@ -471,124 +481,125 @@ export default function FieldDetailPage() {
           <div className="sticky top-28 flex flex-col gap-6">
             <div className="rounded-2xl bg-[#181a16] shadow-xl overflow-hidden">
               <div className="bg-gradient-to-r from-[#8eff71]/20 to-[#8eff71]/5 p-4 border-b border-[#8eff71]/20">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="font-headline text-xs text-[#88f6ff]">
-                    Booking
-                  </span>
-                  <p className="font-headline text-sm font-bold text-[#fdfdf6]">
-                    Select your schedule
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="font-headline text-2xl font-black text-[#8eff71]">
-                    {formatPrice(fieldPricePerHour)}
-                  </span>
-                  <span className="font-headline text-xs text-[#abaca5]">
-                    /hr
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {bookingSuccess ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <span className="material-symbols-outlined text-6xl text-[#8eff71]">
-                  check_circle
-                </span>
-                <p className="mt-4 font-headline text-lg font-bold text-[#fdfdf6]">
-                  Booking Successful!
-                </p>
-                <p className="mt-2 text-sm text-[#abaca5]">
-                  Redirecting to checkout...
-                </p>
-              </div>
-            ) : (
-              <div className="p-4 space-y-4">
-                <div className="space-y-2">
-                  <label className="font-headline flex items-center gap-2 text-xs font-bold uppercase text-[#abaca5]">
-                    <span className="material-symbols-outlined text-sm">
-                      calendar_today
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-headline text-xs text-[#88f6ff]">
+                      Booking
                     </span>
-                    Select Date
-                  </label>
-                  <CalendarPicker
-                    selectedDate={selectedDate}
-                    onSelectDate={setSelectedDate}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="font-headline flex items-center gap-2 text-xs font-bold uppercase text-[#abaca5]">
-                    <span className="material-symbols-outlined text-sm">
-                      schedule
-                    </span>
-                    Time Slots
-                  </label>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {timeSlots.map((slot) => {
-                      const isBooked = bookedSlots.includes(slot);
-                      const isSelected = selectedSlots.includes(slot);
-                      const isPast = isSlotPast(slot);
-                      return (
-                        <button
-                          key={slot}
-                          type="button"
-                          onClick={() => toggleSlot(slot)}
-                          disabled={isBooked || isPast}
-                          className={
-                            isPast
-                              ? "font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through"
-                              : isBooked
-                                ? "font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through"
-                                : isSelected
-                                  ? "font-headline rounded-lg bg-[#8eff71] px-1 py-2 text-[10px] font-bold text-[#0d6100]"
-                                  : "font-headline rounded-lg bg-[#242721] px-1 py-2 text-[10px] font-bold text-[#abaca5] transition-colors hover:bg-[#474944]/50 hover:text-[#fdfdf6]"
-                          }
-                        >
-                          {slot}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {selectedSlots.length > 0 && (
-                  <div className="rounded-lg bg-[#8eff71]/10 p-2.5">
-                    <p className="font-headline text-xs text-[#8eff71]">
-                      {selectedSlots.length} slot(s): {selectedSlots.join(", ")}
+                    <p className="font-headline text-sm font-bold text-[#fdfdf6]">
+                      Select your schedule
                     </p>
                   </div>
-                )}
-
-                <div className="rounded-xl bg-[#121410] p-3 border border-[#8eff71]/20">
-                  <div className="flex justify-between items-center">
-                    <span className="font-headline font-bold text-[#fdfdf6]">
-                      Total
+                  <div className="text-right">
+                    <span className="font-headline text-2xl font-black text-[#8eff71]">
+                      {formatPrice(fieldPricePerHour)}
                     </span>
-                    <span className="font-headline text-xl font-black text-[#8eff71]">
-                      {formatPrice(grandTotal)}
+                    <span className="font-headline text-xs text-[#abaca5]">
+                      /hr
                     </span>
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={handleBook}
-                  disabled={!selectedDate || selectedSlots.length === 0}
-                  className="w-full rounded-xl bg-gradient-to-r from-[#8eff71] to-[#2ff801] py-3.5 font-headline text-sm font-black text-[#0d6100] transition-all hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(142,255,113,0.3)] disabled:scale-100 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Book Now
-                </button>
-
-                <div className="flex items-center gap-2 text-[10px] text-[#abaca5]">
-                  <span className="material-symbols-outlined text-sm text-[#88f6ff]">
-                    info
-                  </span>
-                  Free cancellation up to 24 hours before booking
-                </div>
               </div>
-            )}
+
+              {bookingSuccess ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <span className="material-symbols-outlined text-6xl text-[#8eff71]">
+                    check_circle
+                  </span>
+                  <p className="mt-4 font-headline text-lg font-bold text-[#fdfdf6]">
+                    Booking Successful!
+                  </p>
+                  <p className="mt-2 text-sm text-[#abaca5]">
+                    Redirecting to checkout...
+                  </p>
+                </div>
+              ) : (
+                <div className="p-4 space-y-4">
+                  <div className="space-y-2">
+                    <label className="font-headline flex items-center gap-2 text-xs font-bold uppercase text-[#abaca5]">
+                      <span className="material-symbols-outlined text-sm">
+                        calendar_today
+                      </span>
+                      Select Date
+                    </label>
+                    <CalendarPicker
+                      selectedDate={selectedDate}
+                      onSelectDate={setSelectedDate}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="font-headline flex items-center gap-2 text-xs font-bold uppercase text-[#abaca5]">
+                      <span className="material-symbols-outlined text-sm">
+                        schedule
+                      </span>
+                      Time Slots
+                    </label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {timeSlots.map((slot) => {
+                        const isBooked = bookedSlots.includes(slot);
+                        const isSelected = selectedSlots.includes(slot);
+                        const isPast = isSlotPast(slot);
+                        return (
+                          <button
+                            key={slot}
+                            type="button"
+                            onClick={() => toggleSlot(slot)}
+                            disabled={isBooked || isPast}
+                            className={
+                              isPast
+                                ? "font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through"
+                                : isBooked
+                                  ? "font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through"
+                                  : isSelected
+                                    ? "font-headline rounded-lg bg-[#8eff71] px-1 py-2 text-[10px] font-bold text-[#0d6100]"
+                                    : "font-headline rounded-lg bg-[#242721] px-1 py-2 text-[10px] font-bold text-[#abaca5] transition-colors hover:bg-[#474944]/50 hover:text-[#fdfdf6]"
+                            }
+                          >
+                            {slot}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {selectedSlots.length > 0 && (
+                    <div className="rounded-lg bg-[#8eff71]/10 p-2.5">
+                      <p className="font-headline text-xs text-[#8eff71]">
+                        {selectedSlots.length} slot(s):{" "}
+                        {selectedSlots.join(", ")}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="rounded-xl bg-[#121410] p-3 border border-[#8eff71]/20">
+                    <div className="flex justify-between items-center">
+                      <span className="font-headline font-bold text-[#fdfdf6]">
+                        Total
+                      </span>
+                      <span className="font-headline text-xl font-black text-[#8eff71]">
+                        {formatPrice(grandTotal)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleBook}
+                    disabled={!selectedDate || selectedSlots.length === 0}
+                    className="w-full rounded-xl bg-gradient-to-r from-[#8eff71] to-[#2ff801] py-3.5 font-headline text-sm font-black text-[#0d6100] transition-all hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(142,255,113,0.3)] disabled:scale-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Book Now
+                  </button>
+
+                  <div className="flex items-center gap-2 text-[10px] text-[#abaca5]">
+                    <span className="material-symbols-outlined text-sm text-[#88f6ff]">
+                      info
+                    </span>
+                    Free cancellation up to 24 hours before booking
+                  </div>
+                </div>
+              )}
             </div>
             {detailBanners.length > 0 && (
               <AdBannerVertical
