@@ -834,7 +834,10 @@ export default function ManagerStatisticsPage() {
         </div>
 
         <div className="lg:col-span-4 space-y-4">
-          <h2 className="text-xl font-headline font-bold">Top Fields</h2>
+          <div>
+            <h2 className="text-xl font-headline font-bold">Top Fields</h2>
+            <p className="text-xs text-on-surface-variant mt-1">Xếp hạng theo tổng slot đã được đặt (Booking Detail) trong khoảng thời gian đang chọn.</p>
+          </div>
           <div className="bg-surface-container p-6 rounded-xl">
             {hotFields.length ? (
               <div className="space-y-3">
