@@ -59,6 +59,10 @@ const PRESETS = [
   { value: 'thisWeek', label: 'Tuần này' },
   { value: 'thisMonth', label: 'Tháng này' },
   { value: 'lastMonth', label: 'Tháng trước' },
+  // Year-based (<= 1 year)
+  { value: 'thisYear', label: 'Năm nay' },
+  { value: 'lastYear', label: 'Năm trước' },
+  { value: 'last12months', label: '12 tháng gần đây' },
 ];
 
 /**
@@ -70,7 +74,8 @@ export default function ManagerStatisticsPage() {
   const ownerId = String(searchParams.get('ownerId') || '').trim();
 
   const [preset, setPreset] = useState('thisMonth');
-  const [groupBy, setGroupBy] = useState('day');
+  // Default to month so "Xu hướng doanh thu" matches requirement
+  const [groupBy, setGroupBy] = useState('month');
   const [trendViewMode, setTrendViewMode] = useState('chart');
 
   const [loading, setLoading] = useState(true);
@@ -284,6 +289,14 @@ export default function ManagerStatisticsPage() {
     setFieldViewOpen(false);
     setFieldViewing(null);
   };
+
+  // Auto-adjust groupBy based on preset (year-based => month)
+  useEffect(() => {
+    const p = String(preset || '').trim();
+    if (p === 'thisYear' || p === 'lastYear' || p === 'last12months' || p === 'last365days') {
+      if (groupBy !== 'month') setGroupBy('month');
+    }
+  }, [preset]);
 
   return (
     <div className="space-y-8">
@@ -685,151 +698,160 @@ export default function ManagerStatisticsPage() {
       {/* Trend + Top fields */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8 space-y-4">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-headline font-bold">Xu hướng doanh thu</h2>
-              <p className="text-sm text-on-surface-variant">Field / Service / Gross / Refund / Net grouped by {groupBy}.</p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-                <label className="mr-2 text-xs uppercase tracking-widest text-on-surface-variant">Preset</label>
-                <select
-                  value={preset}
-                  onChange={(e) => setPreset(e.target.value)}
-                  disabled={loading}
-                  className="bg-transparent text-sm text-on-surface outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {PRESETS.map((p) => (
-                    <option key={p.value} value={p.value} className="bg-[#0d0f0b]">
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-                <label className="mr-2 text-xs uppercase tracking-widest text-on-surface-variant">Nhóm theo</label>
-                <select
-                  value={groupBy}
-                  onChange={(e) => setGroupBy(e.target.value)}
-                  disabled={loading}
-                  className="bg-transparent text-sm text-on-surface outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  { [
-                    { value: 'day', label: 'Ngày' },
-                    { value: 'week', label: 'Tuần' },
-                    { value: 'month', label: 'Tháng' },
-                  ].map((g) => (
-                    <option key={g.value} value={g.value} className="bg-[#0d0f0b]">
-                      {g.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-                <label className="mr-2 text-xs uppercase tracking-widest text-on-surface-variant">Chế độ xem</label>
-                <select
-                  value={trendViewMode}
-                  onChange={(e) => setTrendViewMode(e.target.value)}
-                  disabled={loading}
-                  className="bg-transparent text-sm text-on-surface outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {[{ value: 'chart', label: 'Biểu đồ' }, { value: 'list', label: 'Danh sách' }].map((x) => (
-                    <option key={x.value} value={x.value} className="bg-[#0d0f0b]">
-                      {x.label}
-                    </option>
-                  ))}
-                </select>
+          {/* Xu hướng doanh thu */}
+          <div className="mt-6">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-black text-[#fdfdf6]">Xu hướng doanh thu</h2>
+                <div className="mt-1 text-xs text-[#fdfdf6]/60">
+                  Field / Service / Gross / Refund / Net grouped by month
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="bg-surface-container p-6 rounded-xl">
-            {trendViewMode === 'chart' ? (
-              revenueTrend.length ? (
-                <div className="w-full" style={{ height: 320 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={revenueTrend} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
-                      <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-                      <XAxis dataKey="label" stroke="rgba(253,253,246,0.6)" tick={{ fontSize: 11 }} />
-                      <YAxis stroke="rgba(253,253,246,0.6)" tick={{ fontSize: 11 }} tickFormatter={formatVndTick} />
-                      <Tooltip content={<CurrencyTooltip />} />
-                      <Legend wrapperStyle={{ fontSize: 11, color: 'rgba(253,253,246,0.7)' }} />
+            {/* Sticky filter under title */}
+            <div className="sticky top-0 z-20 mt-3 rounded-xl border border-white/10 bg-[#0b0d09]/90 p-3 backdrop-blur">
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="block">
+                  <div className="mb-1 text-[11px] font-bold text-[#fdfdf6]/70">Khoảng thời gian</div>
+                  <select
+                    className="h-9 rounded-lg border border-white/10 bg-[#0d0f0b] px-3 text-sm text-[#fdfdf6]"
+                    value={preset}
+                    onChange={(e) => setPreset(e.target.value)}
+                  >
+                    {PRESETS.map((p) => (
+                      <option key={p.value} value={p.value}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-                      <Bar dataKey="fieldRevenue" name="Field" stackId="rev" fill="#8eff71" isAnimationActive={false} />
-                      <Bar dataKey="serviceRevenue" name="Service" stackId="rev" fill="#4cc9f0" isAnimationActive={false} />
-                      <Bar dataKey="refund" name="Refund" fill="#ff4d4d" isAnimationActive={false} />
+                <label className="block">
+                  <div className="mb-1 text-[11px] font-bold text-[#fdfdf6]/70">Nhóm theo</div>
+                  <select
+                    className="h-9 rounded-lg border border-white/10 bg-[#0d0f0b] px-3 text-sm text-[#fdfdf6]"
+                    value={groupBy}
+                    onChange={(e) => setGroupBy(e.target.value)}
+                  >
+                    <option value="day">Ngày</option>
+                    <option value="week">Tuần</option>
+                    <option value="month">Tháng</option>
+                  </select>
+                </label>
 
-                      <Line type="monotone" dataKey="net" name="Net" stroke="#fdfdf6" strokeWidth={2} dot={false} isAnimationActive={false} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div className="ml-auto flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTrendViewMode('chart')}
+                    className={`h-9 rounded-lg px-3 text-sm font-bold transition ${
+                      trendViewMode === 'chart'
+                        ? 'bg-[#f97316] text-[#0b0d09]'
+                        : 'border border-white/10 bg-[#0d0f0b] text-[#fdfdf6]'
+                    }`}
+                  >
+                    Chart
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTrendViewMode('table')}
+                    className={`h-9 rounded-lg px-3 text-sm font-bold transition ${
+                      trendViewMode === 'table'
+                        ? 'bg-[#f97316] text-[#0b0d09]'
+                        : 'border border-white/10 bg-[#0d0f0b] text-[#fdfdf6]'
+                    }`}
+                  >
+                    Table
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-surface-container p-6 rounded-xl">
+              {trendViewMode === 'chart' ? (
+                revenueTrend.length ? (
+                  <div className="w-full" style={{ height: 320 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={revenueTrend} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
+                        <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+                        <XAxis dataKey="label" stroke="rgba(253,253,246,0.6)" tick={{ fontSize: 11 }} />
+                        <YAxis stroke="rgba(253,253,246,0.6)" tick={{ fontSize: 11 }} tickFormatter={formatVndTick} />
+                        <Tooltip content={<CurrencyTooltip />} />
+                        <Legend wrapperStyle={{ fontSize: 11, color: 'rgba(253,253,246,0.7)' }} />
+
+                        <Bar dataKey="fieldRevenue" name="Field" stackId="rev" fill="#8eff71" isAnimationActive={false} />
+                        <Bar dataKey="serviceRevenue" name="Service" stackId="rev" fill="#4cc9f0" isAnimationActive={false} />
+                        <Bar dataKey="refund" name="Refund" fill="#ff4d4d" isAnimationActive={false} />
+
+                        <Line type="monotone" dataKey="net" name="Net" stroke="#fdfdf6" strokeWidth={2} dot={false} isAnimationActive={false} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="text-sm text-on-surface-variant">No revenue data for selected range.</div>
+                )
+              ) : revenueTrend.length ? (
+                <div className="space-y-2">
+                  {revenueTrend.map((it) => (
+                    <div key={it.label} className="flex items-center justify-between gap-4 border-b border-white/5 py-2">
+                      <div className="text-sm font-semibold text-on-surface">{it.label}</div>
+                      <div className="flex flex-wrap items-center gap-3 text-[11px]">
+                        <span className="text-primary">Field: {formatCompactNumber(it.fieldRevenue ?? 0)}</span>
+                        <span className="text-primary">Service: {formatCompactNumber(it.serviceRevenue ?? 0)}</span>
+                        <span className="text-primary">Gross: {formatCompactNumber(it.gross)}</span>
+                        <span className="text-error">Refund: {formatCompactNumber(it.refund)}</span>
+                        <span className="text-on-surface-variant">Net: {formatCompactNumber(it.net)}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="text-sm text-on-surface-variant">No revenue data for selected range.</div>
-              )
-            ) : revenueTrend.length ? (
-              <div className="space-y-2">
-                {revenueTrend.map((it) => (
-                  <div key={it.label} className="flex items-center justify-between gap-4 border-b border-white/5 py-2">
-                    <div className="text-sm font-semibold text-on-surface">{it.label}</div>
-                    <div className="flex flex-wrap items-center gap-3 text-[11px]">
-                      <span className="text-primary">Field: {formatCompactNumber(it.fieldRevenue ?? 0)}</span>
-                      <span className="text-primary">Service: {formatCompactNumber(it.serviceRevenue ?? 0)}</span>
-                      <span className="text-primary">Gross: {formatCompactNumber(it.gross)}</span>
-                      <span className="text-error">Refund: {formatCompactNumber(it.refund)}</span>
-                      <span className="text-on-surface-variant">Net: {formatCompactNumber(it.net)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-sm text-on-surface-variant">No revenue data for selected range.</div>
-            )}
-          </div>
+              )}
+            </div>
 
-          <div className="bg-surface-container p-6 rounded-xl">
-            <h3 className="text-sm font-bold mb-3">Bookings Trend</h3>
-            {trendViewMode === 'chart' ? (
-              bookingsTrend.length ? (
-                <div className="w-full" style={{ height: 240 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={bookingsTrend} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
-                      <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-                      <XAxis dataKey="label" stroke="rgba(253,253,246,0.6)" tick={{ fontSize: 11 }} />
-                      <YAxis stroke="rgba(253,253,246,0.6)" tick={{ fontSize: 11 }} allowDecimals={false} />
-                      <Tooltip
-                        content={({ active, payload, label }) => {
-                          if (!active || !payload?.length) return null;
-                          return (
-                            <div className="rounded-lg border border-white/10 bg-[#0d0f0b]/95 px-3 py-2 shadow-lg">
-                              <div className="text-xs font-black text-[#fdfdf6]">{label}</div>
-                              <div className="mt-1 text-[11px] text-[#fdfdf6]/80">Lượt đặt sân: {formatCompactNumber(payload[0].value)}</div>
-                            </div>
-                          );
-                        }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: 11, color: 'rgba(253,253,246,0.7)' }} />
-                      <Line type="monotone" dataKey="bookings" name="Bookings" stroke="#8eff71" strokeWidth={2} dot={false} isAnimationActive={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
+            <div className="bg-surface-container p-6 rounded-xl">
+              <h3 className="text-sm font-bold mb-3">Bookings Trend</h3>
+              {trendViewMode === 'chart' ? (
+                bookingsTrend.length ? (
+                  <div className="w-full" style={{ height: 240 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={bookingsTrend} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
+                        <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+                        <XAxis dataKey="label" stroke="rgba(253,253,246,0.6)" tick={{ fontSize: 11 }} />
+                        <YAxis stroke="rgba(253,253,246,0.6)" tick={{ fontSize: 11 }} allowDecimals={false} />
+                        <Tooltip
+                          content={({ active, payload, label }) => {
+                            if (!active || !payload?.length) return null;
+                            return (
+                              <div className="rounded-lg border border-white/10 bg-[#0d0f0b]/95 px-3 py-2 shadow-lg">
+                                <div className="text-xs font-black text-[#fdfdf6]">{label}</div>
+                                <div className="mt-1 text-[11px] text-[#fdfdf6]/80">Lượt đặt sân: {formatCompactNumber(payload[0].value)}</div>
+                              </div>
+                            );
+                          }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: 11, color: 'rgba(253,253,246,0.7)' }} />
+                        <Line type="monotone" dataKey="bookings" name="Bookings" stroke="#8eff71" strokeWidth={2} dot={false} isAnimationActive={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="text-sm text-on-surface-variant">No booking data for selected range.</div>
+                )
+              ) : bookingsTrend.length ? (
+                <div className="space-y-2">
+                  {bookingsTrend.map((it) => (
+                    <div key={it.label} className="flex items-center justify-between border-b border-white/5 py-2">
+                      <div className="text-sm text-on-surface">{it.label}</div>
+                      <div className="text-sm font-black text-on-surface">{formatCompactNumber(it.bookings)}</div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="text-sm text-on-surface-variant">No booking data for selected range.</div>
-              )
-            ) : bookingsTrend.length ? (
-              <div className="space-y-2">
-                {bookingsTrend.map((it) => (
-                  <div key={it.label} className="flex items-center justify-between border-b border-white/5 py-2">
-                    <div className="text-sm text-on-surface">{it.label}</div>
-                    <div className="text-sm font-black text-on-surface">{formatCompactNumber(it.bookings)}</div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-sm text-on-surface-variant">No booking data for selected range.</div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 
