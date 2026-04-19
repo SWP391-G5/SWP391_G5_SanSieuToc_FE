@@ -34,7 +34,6 @@ import {
   ManagerPrivacyPage,
   ManagerStatisticsPage,
   ManagerWalletPage,
-} from "./pages/Manager";
   ManagerWithdrawPage,
 } from "./pages/Manager";
 
