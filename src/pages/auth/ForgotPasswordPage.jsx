@@ -57,20 +57,20 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen text-white flex flex-col" style={heroStyle}>
       <header className="w-full pt-12 flex flex-col items-center gap-1 z-10">
         <h1 className="font-black text-4xl italic tracking-widest text-primary uppercase">Sân Siêu Tốc</h1>
-        <p className="text-[10px] tracking-[0.3em] text-white/60 uppercase">Electric Pitch Precision</p>
+        <p className="text-[10px] tracking-[0.3em] text-white/60 uppercase">Độ chính xác trên sân</p>
       </header>
 
       <main className="flex-grow flex items-center justify-center px-6 w-full max-w-md mx-auto z-10">
         <div className="w-full bg-surface-dark/70 backdrop-blur-2xl p-8 rounded-2xl border border-white/10 shadow-2xl">
           <div className="text-center mb-10">
-            <h2 className="font-extrabold text-2xl text-primary tracking-tight mb-3 uppercase">Forgot password</h2>
-            <p className="text-white/70 text-sm">Enter your email address to reset your password</p>
+            <h2 className="font-extrabold text-2xl text-primary tracking-tight mb-3 uppercase">Quên mật khẩu</h2>
+            <p className="text-white/70 text-sm">Nhập địa chỉ email để đặt lại mật khẩu</p>
           </div>
 
           <form onSubmit={onSubmit} className="space-y-8">
             <div className="space-y-2">
               <label className="text-xs uppercase tracking-widest text-white/70 ml-1" htmlFor="email">
-                Email Address
+                Địa chỉ email
               </label>
               <input
                 id="email"
@@ -89,7 +89,7 @@ export default function ForgotPasswordPage() {
               className="w-full bg-gradient-to-br from-primary to-primary/70 text-black font-extrabold py-4 rounded-lg tracking-wider shadow-lg shadow-primary/20 disabled:opacity-60 uppercase"
               type="submit"
             >
-              {loading ? 'Loading...' : 'Reset password'}
+              {loading ? 'Đang tải...' : 'Đặt lại mật khẩu'}
             </button>
           </form>
 
@@ -100,7 +100,7 @@ export default function ForgotPasswordPage() {
               className="text-white/70 hover:text-primary transition-colors text-sm font-medium inline-flex items-center gap-2 group"
             >
               <span className="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_back</span>
-              Back to Login
+              Quay lại đăng nhập
             </button>
           </div>
         </div>
@@ -108,11 +108,11 @@ export default function ForgotPasswordPage() {
 
       <footer className="w-full py-12 flex flex-col items-center justify-center space-y-4 text-[10px] uppercase tracking-tighter text-white/30 z-10">
         <div className="flex gap-6">
-          <span className="opacity-80">Support</span>
-          <span className="opacity-80">Privacy Policy</span>
-          <span className="opacity-80">Terms of Service</span>
+          <span className="opacity-80">Hỗ trợ</span>
+          <span className="opacity-80">Chính sách quyền riêng tư</span>
+          <span className="opacity-80">Điều khoản dịch vụ</span>
         </div>
-        <p className="text-center">© 2024 San Sieu Toc</p>
+        <p className="text-center">© 2024 Sân Siêu Tốc</p>
       </footer>
     </div>
   );

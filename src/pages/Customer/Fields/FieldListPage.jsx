@@ -361,15 +361,15 @@ export default function FieldListPage() {
             <div className="space-y-3">
               <label className="font-headline flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#abaca5]">
                 <span className="material-symbols-outlined text-sm">sports_soccer</span>
-                Utilities
+                Tiện ích
               </label>
 
               <div className="space-y-2">
                 {[
-                  { key: 'parking', label: 'Parking' },
-                  { key: 'lighting', label: 'Lighting' },
+                  { key: 'parking', label: 'Bãi đỗ xe' },
+                  { key: 'lighting', label: 'Đèn chiếu sáng' },
                   { key: 'wifi', label: 'WiFi' },
-                  { key: 'shower', label: 'Shower' },
+                  { key: 'shower', label: 'Phòng tắm' },
                 ].map((a) => (
                   <label key={a.key} className="group flex cursor-pointer items-center gap-3">
                     <input
@@ -396,7 +396,7 @@ export default function FieldListPage() {
               }}
               className="font-headline w-full rounded-lg border border-[#8eff71]/20 bg-[#242721] py-3 text-sm font-bold text-[#8eff71] transition-all duration-300 hover:bg-[#8eff71] hover:text-[#0d6100]"
             >
-              Reset Filters
+              Đặt lại bộ lọc
             </button>
           </div>
         </aside>
@@ -412,7 +412,7 @@ export default function FieldListPage() {
                 intervalMs={5000}
                 className="absolute inset-0"
                 imgClassName="h-full w-full object-cover"
-                alt="Field list ad slider"
+                alt="Trình chiếu quảng cáo danh sách sân"
                 onIndexChange={setAdsIndex}
               />
             </div>
@@ -447,17 +447,17 @@ export default function FieldListPage() {
             <div className="flex w-full items-center gap-4 xl:w-auto">
               <div>
                 <h1 className="font-headline whitespace-nowrap text-4xl font-black tracking-tight">
-                  Showing {displayFields.length} <span className="italic text-[#8eff71]">Fields</span>
+                  Hiển thị {displayFields.length} <span className="italic text-[#8eff71]">Sân</span>
                 </h1>
                 <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#abaca5]">
                   {searchText.trim() ? (
                     <span>
-                      Result for: <span className="text-[#fdfdf6]">{searchText}</span>
+                      Kết quả cho: <span className="text-[#fdfdf6]">{searchText}</span>
                     </span>
                   ) : null}
                   {searchDate ? (
                     <span>
-                      Date: <span className="text-[#88f6ff]">{searchDate}</span>
+                      Ngày: <span className="text-[#88f6ff]">{searchDate}</span>
                     </span>
                   ) : null}
                 </div>
@@ -474,7 +474,7 @@ export default function FieldListPage() {
                   setSearchText(e.target.value);
                   setPage(1);
                 }}
-                placeholder="Search by field name"
+                placeholder="Tìm theo tên sân"
                 className="font-headline w-full rounded-xl border border-[#474944]/30 bg-[#121410] py-3 pl-12 pr-12 text-sm font-medium outline-none transition-all placeholder:text-[#abaca5]/50 focus:border-[#8eff71] focus:ring-2 focus:ring-[#8eff71]"
               />
               {searchText ? (
@@ -485,7 +485,7 @@ export default function FieldListPage() {
                     setPage(1);
                   }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-[#abaca5] transition-colors hover:bg-[#242721] hover:text-[#fdfdf6]"
-                  aria-label="Clear search"
+                  aria-label="Xóa tìm kiếm"
                 >
                   <span className="material-symbols-outlined text-base">close</span>
                 </button>
@@ -509,7 +509,7 @@ export default function FieldListPage() {
                   aria-pressed={sortBy === 'topRated'}
                 >
                   <span className="material-symbols-outlined fill-icon text-base">star</span>
-                  Top rated
+                  Đánh giá cao
                 </button>
 
                 <button
@@ -526,7 +526,7 @@ export default function FieldListPage() {
                   aria-pressed={sortBy === 'priceAsc'}
                 >
                   <span className="material-symbols-outlined text-base">arrow_upward</span>
-                  Price up
+                  Giá tăng
                 </button>
 
                 <button
@@ -543,7 +543,7 @@ export default function FieldListPage() {
                   aria-pressed={sortBy === 'priceDesc'}
                 >
                   <span className="material-symbols-outlined text-base">arrow_downward</span>
-                  Price down
+                  Giá giảm
                 </button>
               </div>
             </div>
@@ -553,18 +553,18 @@ export default function FieldListPage() {
           <div className="mb-12 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {fieldsError ? (
               <div className="col-span-full rounded-xl border border-[#474944]/30 bg-[#121410] p-10 text-center">
-                <div className="font-headline text-xl font-black">Failed to load fields</div>
+                <div className="font-headline text-xl font-black">Không thể tải danh sách sân</div>
                 <div className="mt-2 text-sm text-[#abaca5]">{fieldsError}</div>
               </div>
             ) : fieldsLoading ? (
               <div className="col-span-full rounded-xl border border-[#474944]/30 bg-[#121410] p-10 text-center">
-                <div className="font-headline text-xl font-black">Loading fields...</div>
-                <div className="mt-2 text-sm text-[#abaca5]">Please wait a moment.</div>
+                <div className="font-headline text-xl font-black">Đang tải danh sách sân...</div>
+                <div className="mt-2 text-sm text-[#abaca5]">Vui lòng chờ một chút.</div>
               </div>
             ) : displayFields.length === 0 ? (
               <div className="col-span-full rounded-xl border border-[#474944]/30 bg-[#121410] p-10 text-center">
-                <div className="font-headline text-xl font-black">No fields found</div>
-                <div className="mt-2 text-sm text-[#abaca5]">Try another keyword (partial search works).</div>
+                <div className="font-headline text-xl font-black">Không tìm thấy sân</div>
+                <div className="mt-2 text-sm text-[#abaca5]">Thử từ khóa khác (có hỗ trợ tìm kiếm một phần).</div>
               </div>
             ) : (
               pagedFields.map((f) => (

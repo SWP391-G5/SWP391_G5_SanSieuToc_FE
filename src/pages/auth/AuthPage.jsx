@@ -12,10 +12,10 @@ import {
 } from '../../utils/validators';
 
 const ROLES = [
-  { value: 'Customer', label: 'Customer', icon: 'person' },
-  { value: 'Owner', label: 'Owner', icon: 'stadium' },
-  { value: 'Manager', label: 'Manager', icon: 'leaderboard' },
-  { value: 'Admin', label: 'Admin', icon: 'admin_panel_settings' },
+  { value: 'Customer', label: 'Khách hàng', icon: 'person' },
+  { value: 'Owner', label: 'Chủ sân', icon: 'stadium' },
+  { value: 'Manager', label: 'Quản lý', icon: 'leaderboard' },
+  { value: 'Admin', label: 'Quản trị viên', icon: 'admin_panel_settings' },
 ];
 
 function isAdminGroup(role) {
@@ -109,12 +109,12 @@ export default function AuthPage() {
     const password = loginForm.password;
 
     if (!username || !password) {
-      setError('Vui lòng nhập username và mật khẩu.');
+      setError('Vui lòng nhập tên đăng nhập và mật khẩu.');
       return;
     }
 
     if (!isValidUsername(username)) {
-      setError('Username không hợp lệ.');
+      setError('Tên đăng nhập không hợp lệ.');
       return;
     }
 
@@ -184,7 +184,7 @@ export default function AuthPage() {
     }
 
     if (!isValidUsername(username)) {
-      setError('Username không hợp lệ.');
+      setError('Tên đăng nhập không hợp lệ.');
       return;
     }
 
@@ -218,7 +218,7 @@ export default function AuthPage() {
   };
 
   const onBackToSignupFromVerify = () => {
-    notifyError('Hãy xác thực tài khoản để trở thành Customer.');
+    notifyError('Hãy xác thực tài khoản để trở thành Khách hàng.');
     setMode('signup');
   };
 
@@ -372,7 +372,7 @@ export default function AuthPage() {
             <h1 className="font-black text-4xl md:text-5xl italic tracking-tight text-primary drop-shadow uppercase">
               Sân Siêu Tốc
             </h1>
-            <p className="text-xs tracking-[0.2em] uppercase text-white/70 mt-2">Electric Pitch Precision</p>
+            <p className="text-xs tracking-[0.2em] uppercase text-white/70 mt-2">Độ chính xác trên sân</p>
           </div>
 
           <div className="rounded-2xl overflow-hidden border border-white/10 bg-surface-dark/70 backdrop-blur-2xl shadow-2xl">
@@ -386,7 +386,7 @@ export default function AuthPage() {
                     : 'text-white/70 hover:text-white'
                 }`}
               >
-                Login
+                Đăng nhập
               </button>
               <button
                 type="button"
@@ -397,7 +397,7 @@ export default function AuthPage() {
                     : 'text-white/70 hover:text-white'
                 }`}
               >
-                Register
+                Đăng ký
               </button>
             </div>
 
@@ -412,7 +412,7 @@ export default function AuthPage() {
                 <>
                   <div className="mb-8">
                     <label className="block text-[10px] font-bold uppercase tracking-widest text-white/70 mb-4">
-                      Select Access Role
+                      Chọn vai trò truy cập
                     </label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                       {ROLES.map((r) => {
@@ -444,20 +444,20 @@ export default function AuthPage() {
                   <form onSubmit={onLoginSubmit} className="space-y-6">
                     <div className="space-y-2">
                       <label className="block text-[10px] font-bold uppercase tracking-widest text-white/70 px-1">
-                        Username
+                        Tên đăng nhập
                       </label>
                       <input
                         value={loginForm.username}
                         onChange={(e) => setLoginForm((p) => ({ ...p, username: e.target.value }))}
                         className="w-full bg-black/25 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 placeholder:text-white/30"
-                        placeholder="your_username"
+                        placeholder="ten_dang_nhap"
                         autoComplete="username"
                       />
                     </div>
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-end px-1">
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-white/70">Password</label>
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-white/70">Mật khẩu</label>
                       </div>
                       <div className="relative">
                         <input
@@ -494,7 +494,7 @@ export default function AuthPage() {
                       disabled={loading}
                       className="w-full py-4 rounded-lg font-black uppercase tracking-widest bg-gradient-to-br from-primary to-primary/70 text-black shadow-lg shadow-primary/20 disabled:opacity-60"
                     >
-                      {loading ? 'Loading...' : 'Login'}
+                      {loading ? 'Đang tải...' : 'Đăng nhập'}
                     </button>
                   </form>
 
@@ -502,7 +502,7 @@ export default function AuthPage() {
                     <div className="mt-6 p-4 rounded-lg bg-white/5 border border-white/10 text-sm text-white/80">
                       Đã đăng nhập: <span className="font-semibold text-white">{auth.user?.name}</span> ({auth.user?.role})
                       <button type="button" onClick={() => auth.logout()} className="ml-3 text-primary font-bold hover:opacity-80">
-                        Logout
+                        Đăng xuất
                       </button>
                     </div>
                   ) : null}
@@ -511,14 +511,14 @@ export default function AuthPage() {
                 <>
                   <div className="mb-8">
                     <div className="text-center">
-                      <h2 className="text-lg font-extrabold uppercase tracking-widest text-primary">Customer Register</h2>
-                      <p className="text-xs text-white/70 mt-2">Hiện tại hệ thống chỉ cho phép đăng ký tài khoản Customer.</p>
+                      <h2 className="text-lg font-extrabold uppercase tracking-widest text-primary">Đăng ký Khách hàng</h2>
+                      <p className="text-xs text-white/70 mt-2">Hiện tại hệ thống chỉ cho phép đăng ký tài khoản Khách hàng.</p>
                     </div>
                   </div>
 
                   <form onSubmit={onSignupSubmit} className="space-y-6">
                     <div className="space-y-2">
-                      <label className="block text-[10px] font-bold uppercase tracking-widest text-white/70 px-1">Full Name</label>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest text-white/70 px-1">Họ và tên</label>
                       <input
                         value={signupForm.name}
                         onChange={(e) => setSignupForm((p) => ({ ...p, name: e.target.value }))}
@@ -530,12 +530,12 @@ export default function AuthPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-white/70 px-1">Username</label>
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-white/70 px-1">Tên đăng nhập</label>
                         <input
                           value={signupForm.username}
                           onChange={(e) => setSignupForm((p) => ({ ...p, username: e.target.value }))}
                           className="w-full bg-black/25 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 placeholder:text-white/30"
-                          placeholder="username"
+                          placeholder="ten_dang_nhap"
                           autoComplete="username"
                         />
                       </div>
@@ -554,7 +554,7 @@ export default function AuthPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-white/70 px-1">Password</label>
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-white/70 px-1">Mật khẩu</label>
                         <div className="relative">
                           <input
                             type={showSignupPassword ? 'text' : 'password'}
@@ -576,7 +576,7 @@ export default function AuthPage() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-white/70 px-1">Confirm</label>
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-white/70 px-1">Xác nhận</label>
                         <div className="relative">
                           <input
                             type={showSignupConfirmPassword ? 'text' : 'password'}
@@ -608,7 +608,7 @@ export default function AuthPage() {
                         id="terms"
                       />
                       <label htmlFor="terms" className="text-[10px] text-white/70 leading-relaxed">
-                        I agree to the Terms of Service and Privacy Policy.
+                        Tôi đồng ý với Điều khoản dịch vụ và Chính sách quyền riêng tư.
                       </label>
                     </div>
 
@@ -616,7 +616,7 @@ export default function AuthPage() {
                       disabled={loading}
                       className="w-full py-4 rounded-lg font-black uppercase tracking-widest bg-gradient-to-br from-primary to-primary/70 text-black shadow-lg shadow-primary/20 disabled:opacity-60"
                     >
-                      {loading ? 'Loading...' : 'Create Account'}
+                      {loading ? 'Đang tải...' : 'Tạo tài khoản'}
                     </button>
                   </form>
                 </>
@@ -658,7 +658,7 @@ export default function AuthPage() {
                       disabled={loading}
                       className="w-full py-4 rounded-lg font-black uppercase tracking-widest bg-gradient-to-br from-primary to-primary/70 text-black shadow-lg shadow-primary/20 disabled:opacity-60"
                     >
-                      {loading ? 'Loading...' : 'Xác thực'}
+                      {loading ? 'Đang tải...' : 'Xác thực'}
                     </button>
 
                     <button
@@ -684,12 +684,12 @@ export default function AuthPage() {
 
             <div className="bg-black/10 p-6 text-center">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">
-                Need assistance? <span className="text-primary">Contact Arena Support</span>
+                Cần hỗ trợ? <span className="text-primary">Liên hệ hỗ trợ Sân Siêu Tốc</span>
               </p>
             </div>
           </div>
 
-          <div className="text-center mt-8 text-[10px] uppercase tracking-widest text-white/40">© 2024 San Sieu Toc</div>
+          <div className="text-center mt-8 text-[10px] uppercase tracking-widest text-white/40">© 2024 Sân Siêu Tốc</div>
         </div>
       </main>
     </div>

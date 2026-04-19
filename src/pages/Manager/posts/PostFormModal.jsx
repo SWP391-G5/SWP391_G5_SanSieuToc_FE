@@ -318,7 +318,7 @@ export default function PostFormModal({
                       const src = typeof img === 'string' ? img : img?.previewUrl;
                       return (
                         <div key={idx} className="relative rounded-lg overflow-hidden border border-outline-variant bg-surface">
-                          {src ? <img src={src} alt="preview" className="h-28 w-full object-cover" /> : null}
+                          {src ? <img src={src} alt="Ảnh xem trước" className="h-28 w-full object-cover" /> : null}
                           <button
                             type="button"
                             onClick={() => removeImageAt(idx)}

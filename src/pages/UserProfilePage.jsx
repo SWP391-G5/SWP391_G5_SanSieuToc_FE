@@ -126,7 +126,7 @@ function BookingCard({ booking, onCancel, onFeedback }) {
       : isEnded && booking.status === 'Confirmed' && booking.statusPayment === 'Paid' && !booking.hasFeedback;
 
   const handleCancel = async () => {
-    if (!window.confirm('Bạn có chắc muốn hủy đơn đặt sân này?\nTiền sẽ được hoàn lại sau khi Owner xác nhận.')) {
+    if (!window.confirm('Bạn có chắc muốn hủy đơn đặt sân này?\nTiền sẽ được hoàn lại sau khi Chủ sân xác nhận.')) {
       return;
     }
     
@@ -501,7 +501,7 @@ export default function UserProfilePage() {
         setAuthToken(auth.accessToken);
       }
       await bookingService.cancelBooking(bookingId);
-      notifySuccess('Yêu cầu hủy đã được gửi. Vui lòng chờ Owner xác nhận hoàn tiền.');
+      notifySuccess('Yêu cầu hủy đã được gửi. Vui lòng chờ Chủ sân xác nhận hoàn tiền.');
       const data = await bookingService.getMyBookings();
       setBookings(data?.bookings || []);
     } catch (err) {
@@ -763,7 +763,7 @@ export default function UserProfilePage() {
     return (
       <div className="profile-terminal-page">
         <div className="profile-terminal-container">
-          <div className="profile-terminal-loading">Loading...</div>
+          <div className="profile-terminal-loading">Đang tải...</div>
         </div>
       </div>
     );
@@ -881,7 +881,7 @@ FIELD BOOKING
                       disabled={saving || uploading || emailOtpLoading}
                       onClick={onSaveProfile}
                     >
-                      {saving ? 'SAVING...' : emailOtpLoading ? 'SENDING OTP...' : 'SAVE INFORMATION'}
+                      {saving ? 'ĐANG LƯU...' : emailOtpLoading ? 'ĐANG GỬI OTP...' : 'LƯU THÔNG TIN'}
                     </button>
                   </div>
                 </div>
@@ -966,7 +966,7 @@ FIELD BOOKING
                     <div className="profile-terminal-avatar-title">AVATAR TERMINAL</div>
                     <div className="profile-terminal-avatar-sub">Upload a square image for best performance. Max 5MB.</div>
                     <button type="button" className="profile-terminal-btn" onClick={onPickAvatar} disabled={uploading}>
-                      {uploading ? 'UPLOADING...' : 'REPLACE VISUAL'}
+                      {uploading ? 'ĐANG TẢI LÊN...' : 'THAY ẢNH'}
                     </button>
                     <input ref={fileInputRef} type="file" accept="image/*" onChange={onAvatarFileChange} style={{ display: 'none' }} />
                   </div>
@@ -984,11 +984,11 @@ FIELD BOOKING
                 </div>
                 {bookingsLoading ? (
                   <div className="profile-terminal-loading" style={{ marginTop: '1rem' }}>
-                    Loading bookings...
+                    Đang tải đơn đặt sân...
                   </div>
                 ) : bookings.length === 0 ? (
                   <div style={{ padding: '1rem', textAlign: 'center', color: 'rgba(231, 249, 238, 0.65)' }}>
-                    No bookings found.
+                    Không có đơn đặt sân.
                   </div>
                 ) : (
                   <div className="booking-history-list">
@@ -1095,7 +1095,7 @@ FIELD BOOKING
                   <span className="material-symbols-outlined">mark_email_read</span>
                   Verify new email
                 </h3>
-                <button type="button" className="modal-close-btn" onClick={onCancelEmailOtp} aria-label="Close">
+                <button type="button" className="modal-close-btn" onClick={onCancelEmailOtp} aria-label="Đóng">
                   <span className="material-symbols-outlined">close</span>
                 </button>
               </div>
@@ -1124,7 +1124,7 @@ FIELD BOOKING
 
                 <div className="modal-actions">
                   <button type="button" className="modal-btn-cancel" onClick={onCancelEmailOtp}>
-                    Cancel
+                    Hủy
                   </button>
 
                   <button

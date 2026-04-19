@@ -43,7 +43,7 @@ export function NotificationProvider({ children }) {
                     : 'info'}
             </span>
             <div className="notification-message">{t.message}</div>
-            <button className="notification-close" onClick={() => remove(t.id)} aria-label="Close">
+            <button className="notification-close" onClick={() => remove(t.id)} aria-label="Đóng">
               <span className="material-symbols-outlined">close</span>
             </button>
           </div>

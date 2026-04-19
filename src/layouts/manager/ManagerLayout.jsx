@@ -77,8 +77,8 @@ export default function ManagerLayout() {
       {/* SideNavBar */}
       <aside className="bg-[#121410] dark:bg-[#121410] h-screen w-64 fixed left-0 top-0 flex flex-col py-8 z-50">
         <div className="px-6 mb-12">
-          <h1 className="text-2xl font-black tracking-tight text-[#fdfdf6] font-headline">San Sieu Toc HQ</h1>
-          <p className="text-xs uppercase tracking-widest text-primary/60 font-bold mt-1">Khu vực Manager</p>
+          <h1 className="text-2xl font-black tracking-tight text-[#fdfdf6] font-headline">Sân Siêu Tốc HQ</h1>
+          <p className="text-xs uppercase tracking-widest text-primary/60 font-bold mt-1">Khu vực Quản lý</p>
         </div>
 
         <nav className="flex-1 space-y-1">

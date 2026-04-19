@@ -22,21 +22,21 @@ export default function HeroSection({
         <img
           className="h-full w-full object-cover transition-opacity duration-1000"
           src={backgroundImageSrc}
-          alt="Football match under stadium lights"
+          alt="Trận bóng dưới ánh đèn sân vận động"
           loading="eager"
         />
       </div>
 
       <div className="relative z-20 mx-auto w-full max-w-4xl">
         <span className="mb-4 inline-block font-label text-sm uppercase tracking-[0.3em] text-[#8eff71]">
-          {activeCopy?.badge || 'Electric Pitch Performance'}
+          {activeCopy?.badge || 'Hiệu suất sân điện'}
         </span>
         <h1 className="mb-8 font-headline text-5xl font-black italic tracking-tighter text-[#fdfdf6] md:text-7xl leading-[0.9]">
-          {activeCopy?.title1 || 'BOOK A FIELD '}
-          <span className="text-[#8eff71]">{activeCopy?.highlight || 'IN SECONDS'}</span>
+          {activeCopy?.title1 || 'ĐẶT SÂN '}
+          <span className="text-[#8eff71]">{activeCopy?.highlight || 'TRONG VÀI GIÂY'}</span>
           {activeCopy?.title2 || ','}
           <br />
-          {activeCopy?.subtitle || 'LIGHT UP YOUR GAME!'}
+          {activeCopy?.subtitle || 'BÙNG CHÁY CÙNG TRẬN ĐẤU!'}
         </h1>
 
         <form
@@ -48,7 +48,7 @@ export default function HeroSection({
               <span className="material-symbols-outlined text-[#8eff71]">location_on</span>
               <input
                 className="w-full border-none bg-transparent text-[#fdfdf6] placeholder:text-[#abaca5]/50 focus:outline-none"
-                placeholder="Search by area or field name..."
+                placeholder="Tìm theo khu vực hoặc tên sân..."
                 type="text"
                 value={heroSearch}
                 onChange={(e) => {
@@ -71,7 +71,7 @@ export default function HeroSection({
                     onHeroSearchClose();
                   }}
                   className="rounded-lg p-1 text-[#abaca5] transition-colors hover:bg-[#1e201b] hover:text-[#fdfdf6]"
-                  aria-label="Clear search"
+                  aria-label="Xóa tìm kiếm"
                 >
                   <span className="material-symbols-outlined text-base">close</span>
                 </button>
@@ -84,7 +84,7 @@ export default function HeroSection({
                 className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-[#474944]/30 bg-[#121410] shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
               >
                 {heroSuggestions.length === 0 ? (
-                  <div className="px-4 py-3 text-sm text-[#abaca5]">No fields found</div>
+                  <div className="px-4 py-3 text-sm text-[#abaca5]">Không tìm thấy sân</div>
                 ) : (
                   heroSuggestions.map((f) => (
                     <button
@@ -119,7 +119,7 @@ export default function HeroSection({
                     className="w-full border-t border-[#474944]/30 bg-[#0d0f0b]/20 px-4 py-3 text-left text-xs font-black uppercase tracking-widest text-[#8eff71] hover:bg-[#181a16]"
                     onClick={onViewAllResults}
                   >
-                    View all results
+                    Xem tất cả kết quả
                   </button>
                 ) : null}
               </div>
@@ -141,7 +141,7 @@ export default function HeroSection({
             type="submit"
             className="rounded-lg bg-[#8eff71] px-8 py-4 font-black uppercase tracking-widest text-[#0d6100] transition-colors hover:bg-[#2ff801]"
           >
-            Search
+            Tìm kiếm
           </button>
         </form>
       </div>
