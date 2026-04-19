@@ -19,10 +19,10 @@ export default function PostsToolbar({ search, onSearchChange, onReset }) {
       {/* Left: search + reset */}
       <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
         <label className="space-y-1">
-          <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Search</div>
+          <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Tìm kiếm</div>
           <input
             className="h-10 w-full sm:w-80 rounded-lg bg-surface px-3 text-sm border border-outline-variant text-black placeholder:text-gray-400"
-            placeholder="Title / content..."
+            placeholder="Tiêu đề / nội dung..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
           />
@@ -32,9 +32,9 @@ export default function PostsToolbar({ search, onSearchChange, onReset }) {
           type="button"
           onClick={onReset}
           className="h-10 rounded-lg px-4 text-sm font-bold border border-outline-variant hover:bg-surface text-on-surface-variant"
-          title="Reset Status / Owner / Search"
+          title="Đặt lại Trạng thái / Người sở hữu / Tìm kiếm"
         >
-          Reset
+          Đặt lại
         </button>
       </div>
 

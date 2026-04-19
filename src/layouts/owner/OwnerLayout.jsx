@@ -27,14 +27,14 @@ export default function OwnerLayout() {
   };
 
   const navItems = [
-    { name: 'Dashboard', path: '/owner/dashboard', icon: 'dashboard' },
-    { name: 'Fields', path: '/owner/fields', icon: 'stadium', endIconAttr: { style: { fontVariationSettings: "'FILL' 1" } } },
-    { name: 'Bookings', path: '/owner/bookings', icon: 'event_available' },
-    { name: 'Refund Request', path: '/owner/refunds', icon: 'replay', badge: true },
-    { name: 'Wallet', path: '/owner/wallet', icon: 'account_balance_wallet' },
-    { name: 'Marketing', path: '/owner/marketing', icon: 'rss_feed' },
-    { name: 'Vouchers', path: '/owner/vouchers', icon: 'confirmation_number' },
-    { name: 'Revenue', path: '/owner/revenue', icon: 'insights' },
+    { name: 'Bảng điều khiển', path: '/owner/dashboard', icon: 'dashboard' },
+    { name: 'Sân', path: '/owner/fields', icon: 'stadium', endIconAttr: { style: { fontVariationSettings: "'FILL' 1" } } },
+    { name: 'Đặt sân', path: '/owner/bookings', icon: 'event_available' },
+    { name: 'Yêu cầu hoàn tiền', path: '/owner/refunds', icon: 'replay', badge: true },
+    { name: 'Ví', path: '/owner/wallet', icon: 'account_balance_wallet' },
+    { name: 'Tiếp thị', path: '/owner/marketing', icon: 'rss_feed' },
+    { name: 'Phiếu giảm giá', path: '/owner/vouchers', icon: 'confirmation_number' },
+    { name: 'Doanh thu', path: '/owner/revenue', icon: 'insights' },
   ];
 
   return (
@@ -42,8 +42,8 @@ export default function OwnerLayout() {
       {/* SideNavBar */}
       <aside className="h-screen w-64 fixed left-0 top-0 bg-surface-container-low flex flex-col py-8 z-40 hidden md:flex">
         <div className="px-6 mb-10">
-          <h1 className="text-primary font-bold text-2xl headline-font tracking-tighter">Owner Hub</h1>
-          <p className="text-on-surface-variant text-xs font-medium uppercase tracking-widest">Elite Operator</p>
+          <h1 className="text-primary font-bold text-2xl headline-font tracking-tighter">Khu vực Chủ sân</h1>
+          <p className="text-on-surface-variant text-xs font-medium uppercase tracking-widest">Nhà vận hành cao cấp</p>
         </div>
         <nav className="flex-1 space-y-1">
           {navItems.map((item) => {
@@ -75,16 +75,16 @@ export default function OwnerLayout() {
           <div className="mb-6">
             <button className="w-full impact-gradient text-on-primary font-bold py-3 px-4 rounded-md flex items-center justify-center gap-2 text-sm uppercase tracking-tight shadow-lg shadow-primary/10 hover:opacity-90">
               <span className="material-symbols-outlined text-sm">add_circle</span>
-              New Booking
+              Đặt sân mới
             </button>
           </div>
           <Link to="/owner/support" className="flex items-center py-2 text-on-surface/40 hover:text-primary transition-colors">
             <span className="material-symbols-outlined mr-3">help</span>
-            <span className="font-label text-sm">Support</span>
+            <span className="font-label text-sm">Hỗ trợ</span>
           </Link>
           <button onClick={handleLogout} className="flex items-center py-2 w-full text-left text-on-surface/40 hover:text-error transition-colors">
             <span className="material-symbols-outlined mr-3">logout</span>
-            <span className="font-label text-sm">Logout</span>
+            <span className="font-label text-sm">Đăng xuất</span>
           </button>
         </div>
       </aside>
@@ -97,7 +97,7 @@ export default function OwnerLayout() {
             <input
               type="text"
               className="bg-transparent border-none focus:ring-0 text-sm text-on-surface placeholder:text-on-surface-variant/50 w-48 md:w-64 outline-none"
-              placeholder="Search facilities..."
+              placeholder="Tìm kiếm cơ sở..."
             />
           </div>
         </div>
@@ -127,26 +127,26 @@ export default function OwnerLayout() {
       <nav className="md:hidden fixed bottom-0 left-0 right-0 glass-nav h-16 flex items-center justify-around px-4 z-50 border-t border-outline-variant/10">
         <Link to="/owner/dashboard" className="flex flex-col items-center gap-1 text-on-surface/40">
           <span className="material-symbols-outlined">dashboard</span>
-          <span className="text-[10px] font-label">Home</span>
+          <span className="text-[10px] font-label">Trang chủ</span>
         </Link>
         <Link to="/owner/fields" className="flex flex-col items-center gap-1 text-primary">
           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>stadium</span>
-          <span className="text-[10px] font-label">Fields</span>
+          <span className="text-[10px] font-label">Sân</span>
         </Link>
         <button className="bg-primary text-on-primary p-3 rounded-full -mt-10 shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
           <span className="material-symbols-outlined">add</span>
         </button>
         <Link to="/owner/wallet" className="flex flex-col items-center gap-1 text-on-surface/40">
           <span className="material-symbols-outlined">account_balance_wallet</span>
-          <span className="text-[10px] font-label">Wallet</span>
+          <span className="text-[10px] font-label">Ví</span>
         </Link>
         <Link to="/owner/bookings" className="flex flex-col items-center gap-1 text-on-surface/40">
           <span className="material-symbols-outlined">event_available</span>
-          <span className="text-[10px] font-label">Bookings</span>
+          <span className="text-[10px] font-label">Đặt sân</span>
         </Link>
         <Link to="/owner/profile" className="flex flex-col items-center gap-1 text-on-surface/40">
           <span className="material-symbols-outlined">person</span>
-          <span className="text-[10px] font-label">Profile</span>
+          <span className="text-[10px] font-label">Hồ sơ</span>
         </Link>
       </nav>
     </div>

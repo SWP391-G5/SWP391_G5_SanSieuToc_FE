@@ -20,7 +20,9 @@ function StatusBadge({ status }) {
       : s === 'Resolved'
         ? 'bg-[#8eff71]/15 text-[#8eff71]'
         : 'bg-red-500/15 text-red-300';
-  return <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>{s || '-'}</span>;
+  const label =
+    s === 'Pending' ? 'Chờ xử lý' : s === 'Resolved' ? 'Đã xử lý' : s === 'Rejected' ? 'Từ chối' : s || '-';
+  return <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>{label}</span>;
 }
 
 function formatUser(u) {
@@ -78,7 +80,7 @@ export default function ReportsPage() {
         return next;
       });
     } catch (e) {
-      notifyError(e?.response?.data?.message || 'Tải danh sách report thất bại.');
+      notifyError(e?.response?.data?.message || 'Tải danh sách báo cáo thất bại.');
     } finally {
       setLoading(false);
     }
@@ -129,17 +131,17 @@ export default function ReportsPage() {
     const note = String(noteById[id] || '').trim();
 
     if (status === 'Rejected' && !note) {
-      notifyError('Vui lòng nhập note khi reject.');
+      notifyError('Vui lòng nhập ghi chú khi từ chối.');
       return;
     }
 
     setSubmittingId(id);
     try {
       await adminService.updateReportStatus(id, { status, adminNote: note });
-      notifySuccess('Đã cập nhật report.');
+      notifySuccess('Đã cập nhật báo cáo.');
       await load();
     } catch (e) {
-      notifyError(e?.response?.data?.message || 'Cập nhật report thất bại.');
+      notifyError(e?.response?.data?.message || 'Cập nhật báo cáo thất bại.');
     } finally {
       setSubmittingId('');
     }
@@ -150,10 +152,10 @@ export default function ReportsPage() {
       <div className="min-w-0 space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#8eff71]/80">Trust & Safety</div>
-            <div className="mt-1 text-4xl font-black text-[#fdfdf6]">Report Management</div>
+            <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#8eff71]/80">An toàn & tin cậy</div>
+            <div className="mt-1 text-4xl font-black text-[#fdfdf6]">Quản lý báo cáo</div>
             <div className="mt-2 max-w-2xl text-sm text-[#fdfdf6]/60">
-              Review user reports and take action. When rejecting a report, an admin note is required.
+              Xem xét báo cáo của người dùng và xử lý. Khi từ chối báo cáo, bắt buộc phải có ghi chú của admin.
             </div>
           </div>
 
@@ -163,7 +165,7 @@ export default function ReportsPage() {
               onClick={load}
               className="rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm text-[#fdfdf6]/80 hover:text-[#8eff71]"
             >
-              Refresh
+              Làm mới
             </button>
           </div>
         </div>
@@ -171,8 +173,8 @@ export default function ReportsPage() {
         <div className="min-w-0 rounded-xl border border-white/10 bg-white/5">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
             <div>
-              <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#fdfdf6]/50">Reports</div>
-              <div className="mt-1 text-sm font-semibold text-[#fdfdf6]">All Reports</div>
+              <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#fdfdf6]/50">Báo cáo</div>
+              <div className="mt-1 text-sm font-semibold text-[#fdfdf6]">Tất cả báo cáo</div>
             </div>
 
             <div className="relative w-full max-w-md">
@@ -181,7 +183,7 @@ export default function ReportsPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full rounded-md border border-white/10 bg-[#0d0f0b] py-2 pl-10 pr-3 text-sm outline-none focus:border-[#8eff71]/40"
-                placeholder="Search reporter, target, type, evidence..."
+                placeholder="Tìm người báo cáo, đối tượng, loại, bằng chứng..."
               />
             </div>
           </div>
@@ -190,13 +192,13 @@ export default function ReportsPage() {
             <table className="w-full text-left text-sm">
               <thead className="text-[11px] font-black uppercase tracking-widest text-[#fdfdf6]/50">
                 <tr className="border-b border-white/10">
-                  <th className="px-5 py-3">Reporter</th>
-                  <th className="px-5 py-3">Target</th>
-                  <th className="px-5 py-3">Type</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Evidence</th>
-                  <th className="px-5 py-3">Admin Note</th>
-                  <th className="px-5 py-3 text-right">Actions</th>
+                  <th className="px-5 py-3">Người báo cáo</th>
+                  <th className="px-5 py-3">Đối tượng</th>
+                  <th className="px-5 py-3">Loại</th>
+                  <th className="px-5 py-3">Trạng thái</th>
+                  <th className="px-5 py-3">Bằng chứng</th>
+                  <th className="px-5 py-3">Ghi chú admin</th>
+                  <th className="px-5 py-3 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -242,11 +244,11 @@ export default function ReportsPage() {
                                   type="button"
                                   onClick={() => setZoomEvidenceUrl(ev)}
                                   className="overflow-hidden rounded-md border border-white/10 bg-white/5 hover:border-[#8eff71]/40"
-                                  title="Click to zoom"
+                                  title="Nhấn để phóng to"
                                 >
                                   <img
                                     src={ev}
-                                    alt="Evidence"
+                                    alt="Bằng chứng"
                                     className="h-12 w-16 object-cover"
                                     loading="lazy"
                                     referrerPolicy="no-referrer"
@@ -269,7 +271,7 @@ export default function ReportsPage() {
                           value={note}
                           onChange={(e) => setNoteById((p) => ({ ...p, [it.id]: e.target.value }))}
                           className="h-20 w-64 resize-none rounded-md border border-white/10 bg-[#0d0f0b] px-3 py-2 text-xs outline-none focus:border-[#8eff71]/40"
-                          placeholder="Note (required for reject)"
+                          placeholder="Ghi chú (bắt buộc khi từ chối)"
                         />
                       </td>
                       <td className="px-5 py-4 text-right">
@@ -284,7 +286,7 @@ export default function ReportsPage() {
                                 : 'rounded-md bg-white/10 px-3 py-2 text-xs text-[#8eff71] hover:bg-[#8eff71]/10'
                             }
                           >
-                            Resolve
+                            Xử lý
                           </button>
                           <button
                             type="button"
@@ -296,7 +298,7 @@ export default function ReportsPage() {
                                 : 'rounded-md bg-white/10 px-3 py-2 text-xs text-red-300 hover:bg-red-500/10'
                             }
                           >
-                            Reject
+                            Từ chối
                           </button>
                         </div>
                       </td>
@@ -307,7 +309,7 @@ export default function ReportsPage() {
                 {!loading && filteredItems.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-5 py-10 text-center text-sm text-[#fdfdf6]/60">
-                      Chưa có report.
+                      Chưa có báo cáo.
                     </td>
                   </tr>
                 ) : null}
@@ -318,8 +320,8 @@ export default function ReportsPage() {
           <div className="flex items-center justify-between px-5 py-4 text-xs text-[#fdfdf6]/50">
             <div>
               {loading
-                ? 'Loading...'
-                : `${filteredItems.length} of ${items.length} reports • ${stats.pending} pending`}
+                ? 'Đang tải...'
+                : `Hiển thị ${filteredItems.length} / ${items.length} báo cáo • ${stats.pending} chờ xử lý`}
             </div>
             <div />
           </div>
@@ -328,32 +330,32 @@ export default function ReportsPage() {
 
       <div className="space-y-4">
         <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-          <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#fdfdf6]/50">Total Reports</div>
+          <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#fdfdf6]/50">Tổng báo cáo</div>
           <div className="mt-2 text-4xl font-black text-[#fdfdf6]">{items.length}</div>
           <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
             <div className="rounded-lg bg-[#0d0f0b] p-3">
-              <div className="text-[#fdfdf6]/50">Pending</div>
+              <div className="text-[#fdfdf6]/50">Chờ xử lý</div>
               <div className="mt-1 text-lg font-black text-yellow-200">{stats.pending}</div>
             </div>
             <div className="rounded-lg bg-[#0d0f0b] p-3">
-              <div className="text-[#fdfdf6]/50">Resolved</div>
+              <div className="text-[#fdfdf6]/50">Đã xử lý</div>
               <div className="mt-1 text-lg font-black text-[#8eff71]">{stats.resolved}</div>
             </div>
             <div className="col-span-2 rounded-lg bg-[#0d0f0b] p-3">
-              <div className="text-[#fdfdf6]/50">Rejected</div>
+              <div className="text-[#fdfdf6]/50">Từ chối</div>
               <div className="mt-1 text-lg font-black text-red-300">{stats.rejected}</div>
             </div>
           </div>
         </div>
 
         <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-          <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#fdfdf6]/50">Rules</div>
+          <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#fdfdf6]/50">Quy tắc</div>
           <div className="mt-3 space-y-2 text-sm text-[#fdfdf6]/70">
             <div className="rounded-md bg-[#0d0f0b] px-3 py-2">
-              Reject requires an admin note.
+              Từ chối yêu cầu có ghi chú của admin.
             </div>
             <div className="rounded-md bg-[#0d0f0b] px-3 py-2">
-              Resolve closes the report.
+              Xử lý sẽ đóng báo cáo.
             </div>
           </div>
         </div>
@@ -374,12 +376,12 @@ export default function ReportsPage() {
               onClick={() => setZoomEvidenceUrl('')}
               className="absolute right-2 top-2 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs text-[#fdfdf6]/80 hover:text-[#8eff71]"
             >
-              Close
+              Đóng
             </button>
 
             <img
               src={zoomEvidenceUrl}
-              alt="Evidence zoom"
+              alt="Phóng to bằng chứng"
               className="block max-h-[90vh] max-w-[92vw] object-contain"
               referrerPolicy="no-referrer"
             />

@@ -15,6 +15,18 @@ import { formatDateTime, isLocalDraftPost, normalizeOwnerLabel } from './postFor
 // All server-side statuses (Draft is a local-only pseudo-status)
 const SERVER_STATUSES = ['Pending', 'Posted', 'Rejected', 'Deleted'];
 
+const STATUS_LABELS = {
+  Draft: 'Nháp',
+  Pending: 'Chờ duyệt',
+  Posted: 'Đã đăng',
+  Rejected: 'Từ chối',
+  Deleted: 'Đã xóa',
+};
+
+function toVietnameseStatus(status) {
+  return STATUS_LABELS[status] || status || '-';
+}
+
 const CREATED_SORT_OPTIONS = [
   { value: '', label: 'Tất cả' },
   { value: 'created_desc', label: 'Mới nhất' },
@@ -65,7 +77,7 @@ function StatusBadge({ status }) {
 
   return (
     <span className={`inline-flex rounded-full border px-2 py-1 text-xs font-medium ${classes}`}>
-      {status || '-'}
+      {toVietnameseStatus(status)}
     </span>
   );
 }
@@ -128,7 +140,7 @@ function ActionGroup({
 
   return (
     <div className="flex flex-col gap-1.5 items-end">
-      <button type="button" onClick={() => onPreview?.(post)} className={ghost} title="Preview">
+      <button type="button" onClick={() => onPreview?.(post)} className={ghost} title="Xem trước">
         Xem
       </button>
 
@@ -159,7 +171,7 @@ function ActionGroup({
               type="button"
               onClick={() => onApprove?.(post)}
               className={primary}
-              title="Approve"
+              title="Duyệt"
             >
               Duyệt
             </button>
@@ -292,7 +304,7 @@ export default function PostsTable({
 
         <thead>
           <tr className="text-left text-xs uppercase tracking-widest text-on-surface-variant border-b border-outline-variant">
-            <th className="py-3 pr-4">No</th>
+            <th className="py-3 pr-4">STT</th>
             <th className="py-3 pr-4">Tiêu đề</th>
 
             {/* Status */}
@@ -301,10 +313,10 @@ export default function PostsTable({
                 <span>Trạng thái</span>
                 <select className={filterClass} value={status} onChange={(e) => onChangeStatus?.(e.target.value)}>
                   <option value="">Tất cả</option>
-                  <option value="Draft">Nháp</option>
+                  <option value="Draft">{toVietnameseStatus('Draft')}</option>
                   {SERVER_STATUSES.map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {toVietnameseStatus(s)}
                     </option>
                   ))}
                 </select>
@@ -335,7 +347,7 @@ export default function PostsTable({
                     const v = e.target.value;
                     onChangeSort?.(v || '');
                   }}
-                  title="Sort by CreatedAt"
+                  title="Sắp xếp theo ngày tạo"
                 >
                   {CREATED_SORT_OPTIONS.map((opt) => (
                     <option key={opt.value || 'all'} value={opt.value}>
@@ -357,7 +369,7 @@ export default function PostsTable({
                     const v = e.target.value;
                     onChangeSort?.(v || '');
                   }}
-                  title="Sort by UpdatedAt"
+                  title="Sắp xếp theo ngày cập nhật"
                 >
                   {UPDATED_SORT_OPTIONS.map((opt) => (
                     <option key={opt.value || 'all'} value={opt.value}>
@@ -407,7 +419,7 @@ export default function PostsTable({
                     className="font-semibold text-on-surface-variant truncate"
                     title={post?.postName || post?.title || ''}
                   >
-                    {post?.postName || post?.title || '(no title)'}
+                    {post?.postName || post?.title || '(không có tiêu đề)'}
                   </div>
                   <div className="mt-0.5 text-xs text-on-surface-variant line-clamp-2 break-words">
                     {post?.postContent || post?.content || ''}

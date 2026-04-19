@@ -317,7 +317,7 @@ export default function FieldFormModal({
                     >
                       <img
                         src={src}
-                        alt="preview"
+                        alt="Ảnh xem trước"
                         className="w-full h-full object-cover opacity-80"
                       />
                       <button

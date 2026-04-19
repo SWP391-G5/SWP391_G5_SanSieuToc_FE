@@ -113,7 +113,7 @@ export default function ServiceFormModal({ isOpen, onClose, onSave, initialData,
                </label>
                {formData.image && (
                  <div className="mt-4 relative group rounded overflow-hidden">
-                   <img src={formData.image} alt="preview" className="h-32 w-full object-cover rounded-lg border border-outline-variant/20" />
+                   <img src={formData.image} alt="Ảnh xem trước" className="h-32 w-full object-cover rounded-lg border border-outline-variant/20" />
                    <button type="button" onClick={() => setFormData(p => ({...p, image: ''}))} className="absolute top-2 right-2 bg-error text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                      <span className="material-symbols-outlined text-xs block">delete</span>
                    </button>

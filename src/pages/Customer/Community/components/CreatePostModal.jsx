@@ -130,7 +130,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess }) {
                   </label>
                 ) : (
                   <div className="relative h-[200px] w-full overflow-hidden rounded-xl border border-[#474944]/30 bg-[#0d0f0b]">
-                    <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
+                    <img src={previewUrl} alt="Ảnh xem trước" className="h-full w-full object-cover" />
                     <button
                       type="button"
                       onClick={handleRemoveImage}

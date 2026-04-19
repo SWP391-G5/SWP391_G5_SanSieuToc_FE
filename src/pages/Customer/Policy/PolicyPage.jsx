@@ -139,14 +139,14 @@ export default function PolicyPage() {
   return (
     <div className="privacy-page">
       <div className="privacy-header">
-        <h1 className="privacy-title">System Policy</h1>
-        <p className="privacy-meta">{lastUpdated ? `Last updated: ${lastUpdated}` : 'Terms and rules for using the platform.'}</p>
+        <h1 className="privacy-title">Chính sách hệ thống</h1>
+        <p className="privacy-meta">{lastUpdated ? `Cập nhật lần cuối: ${lastUpdated}` : 'Điều khoản và quy định khi sử dụng nền tảng.'}</p>
       </div>
 
       {loading ? (
         <div className="privacy-container">
           <div className="privacy-content">
-            <p className="privacy-section-content">Loading policy data...</p>
+            <p className="privacy-section-content">Đang tải dữ liệu chính sách...</p>
           </div>
         </div>
       ) : null}
@@ -162,7 +162,7 @@ export default function PolicyPage() {
       {!loading && !error && items.length === 0 ? (
         <div className="privacy-container">
           <div className="privacy-content">
-            <p className="privacy-section-content">No policy data is available yet.</p>
+            <p className="privacy-section-content">Chưa có dữ liệu chính sách.</p>
           </div>
         </div>
       ) : null}
@@ -179,9 +179,9 @@ export default function PolicyPage() {
             </select>
           </div>
 
-          <aside className="privacy-sidebar" aria-label="Policy navigation">
+          <aside className="privacy-sidebar" aria-label="Điều hướng chính sách">
             <div className="privacy-sidebar-sticky">
-              <div className="privacy-sidebar-title">Table of Contents</div>
+              <div className="privacy-sidebar-title">Mục lục</div>
               <ul className="privacy-nav-list">
                 {items.map((item) => {
                   const activeClass = activeAnchor === item.anchor ? 'active' : '';

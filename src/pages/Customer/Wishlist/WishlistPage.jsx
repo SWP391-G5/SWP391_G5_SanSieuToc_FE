@@ -11,7 +11,7 @@ const INITIAL_POPUP_STATE = {
   mode: 'info',
   title: '',
   message: '',
-  confirmText: 'OK',
+  confirmText: 'Đồng ý',
   onConfirm: null,
 };
 
@@ -49,7 +49,7 @@ export default function WishlistPage() {
       mode: 'info',
       title,
       message,
-      confirmText: 'OK',
+      confirmText: 'Đồng ý',
       onConfirm: null,
     });
   };
@@ -60,7 +60,7 @@ export default function WishlistPage() {
       mode: 'confirm',
       title,
       message,
-      confirmText: confirmText || 'Confirm',
+      confirmText: confirmText || 'Xác nhận',
       onConfirm: typeof onConfirm === 'function' ? onConfirm : null,
     });
   };
@@ -116,8 +116,8 @@ export default function WishlistPage() {
 
     if (compareIds.length >= 3) {
       openInfoPopup({
-        title: 'Compare limit reached',
-        message: 'You can compare up to 3 fields at a time.',
+        title: 'Đã đạt giới hạn so sánh',
+        message: 'Bạn có thể so sánh tối đa 3 sân cùng lúc.',
       });
       return;
     }
@@ -134,9 +134,9 @@ export default function WishlistPage() {
   const onRemoveAll = () => {
     if (wishlist.length === 0) return;
     openConfirmPopup({
-      title: 'Remove all wishlist items?',
-      message: 'This action will remove every saved field from your wishlist.',
-      confirmText: 'Remove all',
+      title: 'Xóa tất cả mục yêu thích?',
+      message: 'Thao tác này sẽ xóa toàn bộ sân đã lưu trong danh sách yêu thích.',
+      confirmText: 'Xóa tất cả',
       onConfirm: () => {
         clearWishlist();
         setCompareIds([]);
@@ -148,8 +148,8 @@ export default function WishlistPage() {
     <section className="mx-auto w-full max-w-7xl px-6 py-8 md:px-8">
       <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="font-headline text-3xl font-black italic text-[#fdfdf6]">Wishlist</h1>
-          <p className="mt-2 text-sm text-[#abaca5]">Your saved fields — available for guests too.</p>
+          <h1 className="font-headline text-3xl font-black italic text-[#fdfdf6]">Danh sách yêu thích</h1>
+          <p className="mt-2 text-sm text-[#abaca5]">Sân đã lưu — khách cũng có thể xem.</p>
         </div>
 
         <div className="flex w-full flex-wrap items-center justify-start gap-3 sm:w-auto sm:justify-end">
@@ -159,7 +159,7 @@ export default function WishlistPage() {
             disabled={wishlist.length === 0}
             className="inline-flex items-center gap-2 rounded-lg border border-[#ff4d6d]/30 bg-[#2a151a] px-5 py-3 text-xs font-black uppercase tracking-widest text-[#ff8ea3] transition-colors hover:bg-[#ff4d6d]/20 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Remove all
+            Xóa tất cả
             <span className="material-symbols-outlined text-base">delete</span>
           </button>
 
@@ -168,7 +168,7 @@ export default function WishlistPage() {
             onClick={() => navigate('/fields')}
             className="inline-flex items-center gap-2 rounded-lg bg-[#242721] px-5 py-3 text-xs font-black uppercase tracking-widest text-[#fdfdf6] transition-colors hover:bg-[#8eff71] hover:text-[#0d6100]"
           >
-            Browse fields
+            Xem danh sách sân
             <span className="material-symbols-outlined text-base">arrow_forward</span>
           </button>
         </div>
@@ -183,7 +183,7 @@ export default function WishlistPage() {
                 type="text"
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
-                placeholder="Search by field name"
+                placeholder="Tìm theo tên sân"
                 className="w-full rounded-lg border border-[#474944]/30 bg-[#181a16] py-2.5 pl-10 pr-3 text-sm text-[#fdfdf6] outline-none transition-all focus:border-[#8eff71]"
               />
             </div>
@@ -194,7 +194,7 @@ export default function WishlistPage() {
                 onChange={(e) => setCityFilter(e.target.value)}
                 className="w-full appearance-none rounded-lg border border-[#474944]/30 bg-[#181a16] px-3 py-2.5 pr-9 text-sm text-[#fdfdf6] outline-none transition-all focus:border-[#8eff71]"
               >
-                <option value="All">All cities</option>
+                <option value="All">Tất cả thành phố</option>
                 {cityOptions.map((city) => (
                   <option key={city} value={city}>
                     {city}
@@ -210,7 +210,7 @@ export default function WishlistPage() {
                 onChange={(e) => setSizeFilter(e.target.value)}
                 className="w-full appearance-none rounded-lg border border-[#474944]/30 bg-[#181a16] px-3 py-2.5 pr-9 text-sm text-[#fdfdf6] outline-none transition-all focus:border-[#8eff71]"
               >
-                <option value="All">All sizes</option>
+                <option value="All">Tất cả kích thước</option>
                 {sizeOptions.map((size) => (
                   <option key={size} value={size}>
                     {size}
@@ -225,11 +225,11 @@ export default function WishlistPage() {
               onClick={resetFilters}
               className="rounded-lg bg-[#242721] px-4 py-2.5 text-xs font-black uppercase tracking-widest text-[#fdfdf6] transition-colors hover:bg-[#8eff71] hover:text-[#0d6100]"
             >
-              Reset filters
+              Đặt lại bộ lọc
             </button>
           </div>
 
-          <div className="text-xs text-[#abaca5]">Showing {filteredWishlist.length} field(s)</div>
+          <div className="text-xs text-[#abaca5]">Hiển thị {filteredWishlist.length} sân</div>
         </div>
       ) : null}
 
@@ -237,11 +237,11 @@ export default function WishlistPage() {
         <div className="mb-8 rounded-xl border border-[#8eff71]/25 bg-[#121410] p-4 md:p-5">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="font-headline text-xl font-black text-[#fdfdf6]">Compare fields</h2>
+              <h2 className="font-headline text-xl font-black text-[#fdfdf6]">So sánh sân</h2>
               <p className="mt-1 text-xs text-[#abaca5]">
                 {compareItems.length < 2
-                  ? 'Select at least 2 fields to compare.'
-                  : `Comparing ${compareItems.length} fields`}
+                  ? 'Chọn ít nhất 2 sân để so sánh.'
+                  : `Đang so sánh ${compareItems.length} sân`}
               </p>
             </div>
 
@@ -250,7 +250,7 @@ export default function WishlistPage() {
               onClick={() => setCompareIds([])}
               className="rounded-lg bg-[#242721] px-4 py-2 text-xs font-black uppercase tracking-widest text-[#fdfdf6] transition-colors hover:bg-[#8eff71] hover:text-[#0d6100]"
             >
-              Clear compare
+              Xóa so sánh
             </button>
           </div>
 
@@ -259,7 +259,7 @@ export default function WishlistPage() {
               <table className="w-full min-w-[48rem] border-collapse text-left">
                 <thead className="bg-[#181a16]">
                   <tr>
-                    <th className="px-4 py-3 text-xs uppercase tracking-widest text-[#abaca5]">Criteria</th>
+                    <th className="px-4 py-3 text-xs uppercase tracking-widest text-[#abaca5]">Tiêu chí</th>
                     {compareItems.map((f) => (
                       <th key={f.id} className="px-4 py-3 text-sm font-black text-[#fdfdf6]">
                         <div className="line-clamp-2">{f.name}</div>
@@ -269,7 +269,7 @@ export default function WishlistPage() {
                 </thead>
                 <tbody>
                   <tr className="border-t border-[#474944]/20">
-                    <td className="px-4 py-3 text-xs uppercase tracking-widest text-[#abaca5]">Price</td>
+                    <td className="px-4 py-3 text-xs uppercase tracking-widest text-[#abaca5]">Giá</td>
                     {compareItems.map((f) => (
                       <td key={`price-${f.id}`} className="px-4 py-3 font-headline text-lg font-black text-[#8eff71]">
                         {f.price}
@@ -277,42 +277,42 @@ export default function WishlistPage() {
                     ))}
                   </tr>
                   <tr className="border-t border-[#474944]/20">
-                    <td className="px-4 py-3 text-xs uppercase tracking-widest text-[#abaca5]">Rating</td>
+                    <td className="px-4 py-3 text-xs uppercase tracking-widest text-[#abaca5]">Đánh giá</td>
                     {compareItems.map((f) => (
                       <td key={`rating-${f.id}`} className="px-4 py-3 text-sm text-[#fdfdf6]">
-                        {f.rating || 'N/A'}
+                        {f.rating || 'Không có'}
                       </td>
                     ))}
                   </tr>
                   <tr className="border-t border-[#474944]/20">
-                    <td className="px-4 py-3 text-xs uppercase tracking-widest text-[#abaca5]">City</td>
+                    <td className="px-4 py-3 text-xs uppercase tracking-widest text-[#abaca5]">Thành phố</td>
                     {compareItems.map((f) => (
                       <td key={`city-${f.id}`} className="px-4 py-3 text-sm text-[#fdfdf6]">
-                        {f.city || 'N/A'}
+                        {f.city || 'Không có'}
                       </td>
                     ))}
                   </tr>
                   <tr className="border-t border-[#474944]/20">
-                    <td className="px-4 py-3 text-xs uppercase tracking-widest text-[#abaca5]">Size</td>
+                    <td className="px-4 py-3 text-xs uppercase tracking-widest text-[#abaca5]">Kích thước</td>
                     {compareItems.map((f) => (
                       <td key={`size-${f.id}`} className="px-4 py-3 text-sm text-[#fdfdf6]">
-                        {f.size || 'N/A'}
+                        {f.size || 'Không có'}
                       </td>
                     ))}
                   </tr>
                   <tr className="border-t border-[#474944]/20">
-                    <td className="px-4 py-3 text-xs uppercase tracking-widest text-[#abaca5]">Address</td>
+                    <td className="px-4 py-3 text-xs uppercase tracking-widest text-[#abaca5]">Địa chỉ</td>
                     {compareItems.map((f) => (
                       <td key={`address-${f.id}`} className="px-4 py-3 text-sm text-[#fdfdf6]">
-                        {f.address || 'N/A'}
+                        {f.address || 'Không có'}
                       </td>
                     ))}
                   </tr>
                   <tr className="border-t border-[#474944]/20">
-                    <td className="px-4 py-3 text-xs uppercase tracking-widest text-[#abaca5]">Utilities</td>
+                    <td className="px-4 py-3 text-xs uppercase tracking-widest text-[#abaca5]">Tiện ích</td>
                     {compareItems.map((f) => (
                       <td key={`utils-${f.id}`} className="px-4 py-3 text-sm text-[#fdfdf6]">
-                        {Array.isArray(f.utilities) && f.utilities.length ? f.utilities.join(', ') : 'N/A'}
+                        {Array.isArray(f.utilities) && f.utilities.length ? f.utilities.join(', ') : 'Không có'}
                       </td>
                     ))}
                   </tr>
@@ -325,13 +325,13 @@ export default function WishlistPage() {
 
       {wishlist.length === 0 ? (
         <div className="rounded-xl border border-[#474944]/30 bg-[#121410] p-10 text-center">
-          <div className="font-headline text-xl font-black">Your wishlist is empty</div>
-          <div className="mt-2 text-sm text-[#abaca5]">Tap the heart icon on a field to save it here.</div>
+          <div className="font-headline text-xl font-black">Danh sách yêu thích đang trống</div>
+          <div className="mt-2 text-sm text-[#abaca5]">Nhấn biểu tượng trái tim ở sân để lưu vào đây.</div>
         </div>
       ) : filteredWishlist.length === 0 ? (
         <div className="rounded-xl border border-[#474944]/30 bg-[#121410] p-10 text-center">
-          <div className="font-headline text-xl font-black">No fields match your filters</div>
-          <div className="mt-2 text-sm text-[#abaca5]">Try changing keyword, city, or size filter.</div>
+          <div className="font-headline text-xl font-black">Không có sân phù hợp với bộ lọc</div>
+          <div className="mt-2 text-sm text-[#abaca5]">Thử đổi từ khóa, thành phố hoặc kích thước.</div>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -373,7 +373,7 @@ export default function WishlistPage() {
                 onClick={closeSystemPopup}
                 className="rounded-lg border border-[#474944]/40 bg-[#242721] px-4 py-2 text-xs font-black uppercase tracking-widest text-[#d4d6cf] transition-colors hover:border-[#abaca5]/50 hover:text-[#fdfdf6]"
               >
-                Cancel
+                Hủy
               </button>
             ) : null}
 
@@ -386,7 +386,7 @@ export default function WishlistPage() {
                   : 'bg-[#8eff71] text-[#0d6100] hover:bg-[#a4ff8f]'
               }`}
             >
-              {systemPopup.mode === 'confirm' ? systemPopup.confirmText : 'OK'}
+              {systemPopup.mode === 'confirm' ? systemPopup.confirmText : 'Đồng ý'}
             </button>
           </div>
         </div>
