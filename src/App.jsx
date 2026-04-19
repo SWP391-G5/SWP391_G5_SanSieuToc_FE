@@ -1,48 +1,53 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 
-import AuthPage from './pages/auth/AuthPage';
-import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
-import MainLayout from './layouts/MainLayout';
-import FieldListPage from './pages/Customer/Fields/FieldListPage';
-import HomePage from './pages/Customer/Home/HomePage';
-import WishlistPage from './pages/Customer/Wishlist/WishlistPage';
-import CommunityPage from './pages/Customer/Community/CommunityPage';
-import CommunityPostDetailPage from './pages/Customer/Community/CommunityPostDetailPage';
-import NotFoundPage from './pages/NotFoundPage';
-import UserProfilePage from './pages/UserProfilePage';
-import TopUpPage from './pages/Payment/TopUpPage';
-import CheckoutPage from './pages/Payment/CheckoutPage';
-import FieldDetailPage from './pages/Customer/Fields/FieldDetailPage';
-import BookingConfirmPage from './pages/Payment/BookingConfirmPage';
-import ServicePage from './pages/Services/ServicePage';
-import AdminLayout from './layouts/AdminLayout';
-import ManagerAccountsPage from './pages/admin/ManagerAccountsPage';
-import OwnerAccountsPage from './pages/admin/OwnerAccountsPage';
-import CustomerAccountsPage from './pages/admin/CustomerAccountsPage';
-import ReportsPage from './pages/admin/ReportsPage';
+import AuthPage from "./pages/auth/AuthPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
+import MainLayout from "./layouts/MainLayout";
+import FieldListPage from "./pages/Customer/Fields/FieldListPage";
+import HomePage from "./pages/Customer/Home/HomePage";
+import WishlistPage from "./pages/Customer/Wishlist/WishlistPage";
+import CommunityPage from "./pages/Customer/Community/CommunityPage";
+import CommunityPostDetailPage from "./pages/Customer/Community/CommunityPostDetailPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import UserProfilePage from "./pages/UserProfilePage";
+import TopUpPage from "./pages/Payment/TopUpPage";
+import CheckoutPage from "./pages/Payment/CheckoutPage";
+import FieldDetailPage from "./pages/Customer/Fields/FieldDetailPage";
+import BookingConfirmPage from "./pages/Payment/BookingConfirmPage";
+import ServicePage from "./pages/Services/ServicePage";
+import AdminLayout from "./layouts/AdminLayout";
+import ManagerAccountsPage from "./pages/admin/ManagerAccountsPage";
+import OwnerAccountsPage from "./pages/admin/OwnerAccountsPage";
+import CustomerAccountsPage from "./pages/admin/CustomerAccountsPage";
+import ReportsPage from "./pages/admin/ReportsPage";
 
-import ManagerLayout from './layouts/manager/ManagerLayout';
-import RequireManager from './components/manager/RequireManager';
+import ManagerLayout from "./layouts/manager/ManagerLayout";
+import RequireManager from "./components/manager/RequireManager";
 import {
   ManagerFeedbackPage,
   ManagerPostsPage,
   ManagerPrivacyPage,
   ManagerStatisticsPage,
   ManagerWalletPage,
-} from './pages/Manager';
+} from "./pages/Manager";
 
-import ManagerMarketingImagesPage from './pages/Manager/ManagerMarketingImagesPage';
+import ManagerMarketingImagesPage from "./pages/Manager/ManagerMarketingImagesPage";
 
-import RequireOwner from './components/owner/RequireOwner';
-import OwnerLayout from './layouts/owner/OwnerLayout';
-import OwnerDashboardPage from './pages/owner/OwnerDashboardPage';
-import OwnerFieldsPage from './pages/owner/OwnerFieldsPage';
-import OwnerBookingsPage from './pages/owner/OwnerBookingsPage';
-import OwnerRefundsPage from './pages/owner/OwnerRefundsPage';
-import OwnerWalletPage from './pages/owner/OwnerWalletPage';
-import OwnerWithdrawPage from './pages/owner/OwnerWithdrawPage';
+import RequireOwner from "./components/owner/RequireOwner";
+import OwnerLayout from "./layouts/owner/OwnerLayout";
+import OwnerDashboardPage from "./pages/owner/OwnerDashboardPage";
+import OwnerFieldsPage from "./pages/owner/OwnerFieldsPage";
+import OwnerBookingsPage from "./pages/owner/OwnerBookingsPage";
+import OwnerRefundsPage from "./pages/owner/OwnerRefundsPage";
+import OwnerWalletPage from "./pages/owner/OwnerWalletPage";
+import OwnerWithdrawPage from "./pages/owner/OwnerWithdrawPage";
 
-import { useAuth } from './context/AuthContext';
+import { useAuth } from "./context/AuthContext";
 
 function RequireAuth({ children }) {
   const auth = useAuth();
@@ -53,7 +58,8 @@ function RequireAuth({ children }) {
 function RequireAdmin({ children }) {
   const auth = useAuth();
   if (!auth.isAuthenticated) return <Navigate to="/auth" replace />;
-  if (String(auth.user?.role || '').trim() !== 'Admin') return <Navigate to="/" replace />;
+  if (String(auth.user?.role || "").trim() !== "Admin")
+    return <Navigate to="/" replace />;
   return children;
 }
 
@@ -153,7 +159,10 @@ function App() {
             </RequireManager>
           }
         >
-          <Route index element={<Navigate to="/manager/statistics" replace />} />
+          <Route
+            index
+            element={<Navigate to="/manager/statistics" replace />}
+          />
           <Route path="statistics" element={<ManagerStatisticsPage />} />
           <Route path="posts" element={<ManagerPostsPage />} />
           <Route path="banners-ads" element={<ManagerMarketingImagesPage />} />
