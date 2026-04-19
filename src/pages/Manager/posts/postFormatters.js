@@ -33,8 +33,34 @@ export function getPostContent(post) {
  * @returns {string[]} image urls
  */
 export function getPostImages(post) {
-  const imgs = post?.postImage || post?.images || [];
-  return Array.isArray(imgs) ? imgs.filter(Boolean) : [];
+  const raw = post?.postImage ?? post?.images ?? [];
+
+  // Sometimes multipart/form-data or serialization may turn arrays into JSON strings.
+  // Normalize those cases so UI can still render images.
+  if (typeof raw === 'string') {
+    const s = raw.trim();
+    if (!s) return [];
+
+    // Try parse JSON array string
+    if ((s.startsWith('[') && s.endsWith(']')) || (s.startsWith('"[') && s.endsWith(']"'))) {
+      try {
+        const parsed = JSON.parse(s);
+        return Array.isArray(parsed) ? parsed.filter(Boolean).map(String) : [];
+      } catch {
+        // fallthrough
+      }
+    }
+
+    // Try comma-separated
+    if (s.includes(',')) return s.split(',').map((x) => x.trim()).filter(Boolean);
+
+    // Single URL string
+    return [s];
+  }
+
+  if (Array.isArray(raw)) return raw.filter(Boolean).map(String);
+
+  return [];
 }
 
 /**
@@ -54,12 +80,35 @@ export function formatDateTime(iso) {
 /**
  * normalizeOwnerLabel
  * Gets a readable owner label for table display.
+ * Reads from the BE Post schema fields: postOwnerID (may be populated or raw ObjectId)
+ * and postOwnerModel (e.g. 'UserAccount' | 'AdminAccount').
  *
- * @param {object} post - post-like object
- * @returns {string} label
+ * @param {object} post - post-like object (API Post or local draft)
+ * @returns {string} human-readable owner label
  */
 export function normalizeOwnerLabel(post) {
-  return post?.ownerName || post?.ownerId?.name || post?.ownerId || '-';
+  if (!post) return '-';
+
+  // Local draft: no server owner
+  if (post.__localDraft) return 'Draft (Local)';
+
+  const ownerRef = post.postOwnerID;
+  const ownerModel = post.postOwnerModel || '';
+
+  // If postOwnerID was populated by Mongoose (an object with name/email fields)
+  if (ownerRef && typeof ownerRef === 'object') {
+    const name = ownerRef.name || ownerRef.fullName || ownerRef.email || ownerRef._id || '';
+    if (name) return String(name);
+  }
+
+  // If postOwnerID is a raw ObjectId string, show it with the model label for context
+  if (ownerRef && typeof ownerRef === 'string') {
+    // Shorten the ObjectId to last 6 chars so it's readable in a narrow column
+    const shortId = ownerRef.length > 6 ? `…${ownerRef.slice(-6)}` : ownerRef;
+    return ownerModel ? `${ownerModel} (${shortId})` : shortId;
+  }
+
+  return '-';
 }
 
 /**

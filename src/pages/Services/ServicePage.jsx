@@ -191,7 +191,7 @@ export default function ServicePage() {
           onClick={() => navigate('/auth')}
           className="mt-4 font-headline text-[#8eff71] underline"
         >
-          Sign In
+          Log In
         </button>
       </div>
     );
