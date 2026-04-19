@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../../../services/axios';
+import { usePreviewMode } from '../../../context/PreviewModeContext';
 
 const UTILITY_LABELS = {
   parking: 'Parking',
@@ -144,6 +145,8 @@ import { getRandomAdsFromPool, getRandomAd } from '../../../utils/adUtils';
 export default function FieldDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isPreviewMode } = usePreviewMode();
   const [field, setField] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -253,6 +256,11 @@ export default function FieldDetailPage() {
   };
 
   const handleBook = () => {
+    if (isPreviewMode) {
+      alert('Bạn đang ở chế độ xem trước (preview mode) nên không thể đặt sân.');
+      return;
+    }
+
     if (!selectedDate || selectedSlots.length === 0) {
       alert('Please select date and at least one time slot');
       return;

@@ -20,7 +20,14 @@ import { normalizeBannerItem } from './bannerDto';
 
 function openPreview(previewPath) {
   if (!previewPath) return;
-  window.open(previewPath, '_blank', 'noopener,noreferrer');
+  try {
+    const url = new URL(previewPath, window.location.origin);
+    url.searchParams.set('preview', '1');
+    window.open(url.toString(), '_blank', 'noopener,noreferrer');
+  } catch {
+    const join = String(previewPath).includes('?') ? '&' : '?';
+    window.open(`${previewPath}${join}preview=1`, '_blank', 'noopener,noreferrer');
+  }
 }
 
 export default function BannersAdsPage() {

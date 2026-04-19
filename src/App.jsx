@@ -38,6 +38,7 @@ import OwnerLayout from './layouts/owner/OwnerLayout';
 import OwnerFieldsPage from './pages/owner/OwnerFieldsPage';
 
 import { useAuth } from './context/AuthContext';
+import { PreviewModeProvider } from './context/PreviewModeContext';
 
 function RequireAuth({ children }) {
   const auth = useAuth();
@@ -55,105 +56,107 @@ function RequireAdmin({ children }) {
 function App() {
   return (
     <Router basename={import.meta.env.BASE_URL}>
-      <Routes>
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<HomePage />} />
-          <Route path="fields" element={<FieldListPage />} />
-          <Route path="fields/:id" element={<FieldDetailPage />} />
-          <Route path="booking-confirm" element={<BookingConfirmPage />} />
-          <Route path="wishlist" element={<WishlistPage />} />
-          <Route path="community" element={<CommunityPage />} />
-          <Route path="community/:id" element={<CommunityPostDetailPage />} />
-          <Route path="auth" element={<AuthPage />} />
-          <Route path="forgot-password" element={<ForgotPasswordPage />} />
-          <Route
-            path="profile"
-            element={
-              <RequireAuth>
-                <UserProfilePage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="top-up"
-            element={
-              <RequireAuth>
-                <TopUpPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="checkout"
-            element={
-              <RequireAuth>
-                <CheckoutPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="services"
-            element={
-              <RequireAuth>
-                <ServicePage />
-              </RequireAuth>
-            }
-          />
+      <PreviewModeProvider>
+        <Routes>
+          <Route path="/" element={<MainLayout />}>
+            <Route index element={<HomePage />} />
+            <Route path="fields" element={<FieldListPage />} />
+            <Route path="fields/:id" element={<FieldDetailPage />} />
+            <Route path="booking-confirm" element={<BookingConfirmPage />} />
+            <Route path="wishlist" element={<WishlistPage />} />
+            <Route path="community" element={<CommunityPage />} />
+            <Route path="community/:id" element={<CommunityPostDetailPage />} />
+            <Route path="auth" element={<AuthPage />} />
+            <Route path="forgot-password" element={<ForgotPasswordPage />} />
+            <Route
+              path="profile"
+              element={
+                <RequireAuth>
+                  <UserProfilePage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="top-up"
+              element={
+                <RequireAuth>
+                  <TopUpPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="checkout"
+              element={
+                <RequireAuth>
+                  <CheckoutPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="services"
+              element={
+                <RequireAuth>
+                  <ServicePage />
+                </RequireAuth>
+              }
+            />
 
-          <Route
-            path="admin"
-            element={
-              <RequireAdmin>
-                <AdminLayout />
-              </RequireAdmin>
-            }
-          >
-            <Route index element={<Navigate to="/admin/managers" replace />} />
-            <Route path="managers" element={<ManagerAccountsPage />} />
-            <Route path="owners" element={<OwnerAccountsPage />} />
-            <Route path="customers" element={<CustomerAccountsPage />} />
-            <Route path="reports" element={<ReportsPage />} />
-            <Route path="profile" element={<UserProfilePage />} />
+            <Route
+              path="admin"
+              element={
+                <RequireAdmin>
+                  <AdminLayout />
+                </RequireAdmin>
+              }
+            >
+              <Route index element={<Navigate to="/admin/managers" replace />} />
+              <Route path="managers" element={<ManagerAccountsPage />} />
+              <Route path="owners" element={<OwnerAccountsPage />} />
+              <Route path="customers" element={<CustomerAccountsPage />} />
+              <Route path="reports" element={<ReportsPage />} />
+              <Route path="profile" element={<UserProfilePage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Route>
+
+            {/* 404 Not Found for Main Layout */}
             <Route path="*" element={<NotFoundPage />} />
           </Route>
 
-          {/* 404 Not Found for Main Layout */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
+          {/* Owner Area */}
+          <Route
+            path="/owner"
+            element={
+              <RequireOwner>
+                <OwnerLayout />
+              </RequireOwner>
+            }
+          >
+            <Route index element={<Navigate to="/owner/fields" replace />} />
+            <Route path="fields" element={<OwnerFieldsPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
 
-        {/* Owner Area */}
-        <Route
-          path="/owner"
-          element={
-            <RequireOwner>
-              <OwnerLayout />
-            </RequireOwner>
-          }
-        >
-          <Route index element={<Navigate to="/owner/fields" replace />} />
-          <Route path="fields" element={<OwnerFieldsPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
-
-        {/* Manager Area */}
-        <Route
-          path="/manager"
-          element={
-            <RequireManager>
-              <ManagerLayout />
-            </RequireManager>
-          }
-        >
-          <Route index element={<Navigate to="/manager/statistics" replace />} />
-          <Route path="statistics" element={<ManagerStatisticsPage />} />
-          <Route path="posts" element={<ManagerPostsPage />} />
-          <Route path="banners-ads" element={<ManagerMarketingImagesPage />} />
-          <Route path="wallet" element={<ManagerWalletPage />} />
-          <Route path="privacy" element={<ManagerPrivacyPage />} />
-          <Route path="feedback" element={<ManagerFeedbackPage />} />
-          <Route path="profile" element={<UserProfilePage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Route>
-      </Routes>
+          {/* Manager Area */}
+          <Route
+            path="/manager"
+            element={
+              <RequireManager>
+                <ManagerLayout />
+              </RequireManager>
+            }
+          >
+            <Route index element={<Navigate to="/manager/statistics" replace />} />
+            <Route path="statistics" element={<ManagerStatisticsPage />} />
+            <Route path="posts" element={<ManagerPostsPage />} />
+            <Route path="banners-ads" element={<ManagerMarketingImagesPage />} />
+            <Route path="wallet" element={<ManagerWalletPage />} />
+            <Route path="privacy" element={<ManagerPrivacyPage />} />
+            <Route path="feedback" element={<ManagerFeedbackPage />} />
+            <Route path="profile" element={<UserProfilePage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+        </Routes>
+      </PreviewModeProvider>
     </Router>
   );
 }

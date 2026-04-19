@@ -4,11 +4,13 @@ import { useAuth } from '../../context/AuthContext';
 import profileService from '../../services/profileService';
 import bookingService from '../../services/bookingService';
 import { setAuthToken } from '../../services/axios';
+import { usePreviewMode } from '../../context/PreviewModeContext';
 
 export default function BookingConfirmPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const auth = useAuth();
+  const { isPreviewMode } = usePreviewMode();
 
   const bookingData = location.state;
 
@@ -71,6 +73,11 @@ export default function BookingConfirmPage() {
   const walletSufficient = walletBalance >= grandTotal;
 
   const handleConfirmBooking = async () => {
+    if (isPreviewMode) {
+      alert('Bạn đang ở chế độ xem trước (preview mode) nên không thể đặt sân.');
+      return;
+    }
+
     if (!walletSufficient) {
       alert('Insufficient wallet balance. Please top up or choose another payment method.');
       return;
@@ -114,6 +121,13 @@ export default function BookingConfirmPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-8">
+      {isPreviewMode ? (
+        <div className="mb-5 rounded-xl border border-yellow-400/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-100">
+          <div className="font-black">Preview mode</div>
+          <div className="mt-1 text-yellow-100/80">Chỉ xem nội dung. Tính năng đặt booking đã bị vô hiệu hoá.</div>
+        </div>
+      ) : null}
+
       <button
         onClick={() => navigate(-1)}
         className="mb-6 flex items-center gap-2 text-[#abaca5] transition-colors hover:text-[#8eff71]"
@@ -264,7 +278,7 @@ export default function BookingConfirmPage() {
                 <button
                   type="button"
                   onClick={handleConfirmBooking}
-                  disabled={loading || !walletSufficient}
+                  disabled={loading || !walletSufficient || isPreviewMode}
                   className="w-full rounded-lg bg-gradient-to-r from-[#8eff71] to-[#2ff801] py-4 font-headline text-base font-black text-[#0d6100] transition-all hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(142,255,113,0.3)] disabled:scale-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loading ? 'Processing...' : 'Confirm Booking'}
