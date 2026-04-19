@@ -137,6 +137,9 @@ function App() {
           >
             <Route index element={<Navigate to="/owner/fields" replace />} />
             <Route path="fields" element={<OwnerFieldsPage />} />
+            <Route path="refunds" element={<OwnerRefundsPage />} />
+            <Route path="wallet" element={<OwnerWalletPage />} />
+            <Route path="withdraw" element={<OwnerWithdrawPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
 
@@ -154,6 +157,7 @@ function App() {
             <Route path="posts" element={<ManagerPostsPage />} />
             <Route path="banners-ads" element={<ManagerMarketingImagesPage />} />
             <Route path="wallet" element={<ManagerWalletPage />} />
+            <Route path="withdraw" element={<ManagerWithdrawPage />} />
             <Route path="privacy" element={<ManagerPrivacyPage />} />
             <Route path="feedback" element={<ManagerFeedbackPage />} />
             <Route path="profile" element={<UserProfilePage />} />
@@ -161,44 +165,7 @@ function App() {
           </Route>
         </Routes>
       </PreviewModeProvider>
-      {/* Owner Area */}
-      <Route
-        path="/owner"
-        element={
-          <RequireOwner>
-            <OwnerLayout />
-          </RequireOwner>
-        }
-      >
-        <Route index element={<Navigate to="/owner/fields" replace />} />
-        <Route path="fields" element={<OwnerFieldsPage />} />
-        <Route path="refunds" element={<OwnerRefundsPage />} />
-        <Route path="wallet" element={<OwnerWalletPage />} />
-        <Route path="withdraw" element={<OwnerWithdrawPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Route>
-
-      {/* Manager Area */}
-      <Route
-        path="/manager"
-        element={
-          <RequireManager>
-            <ManagerLayout />
-          </RequireManager>
-        }
-      >
-        <Route index element={<Navigate to="/manager/statistics" replace />} />
-        <Route path="statistics" element={<ManagerStatisticsPage />} />
-        <Route path="posts" element={<ManagerPostsPage />} />
-        <Route path="banners-ads" element={<ManagerMarketingImagesPage />} />
-        <Route path="wallet" element={<ManagerWalletPage />} />
-        <Route path="withdraw" element={<ManagerWithdrawPage />} />
-        <Route path="privacy" element={<ManagerPrivacyPage />} />
-        <Route path="feedback" element={<ManagerFeedbackPage />} />
-        <Route path="profile" element={<UserProfilePage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Route>
-    </Router >
+    </Router>
   );
 }
 
