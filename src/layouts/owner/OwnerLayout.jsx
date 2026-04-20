@@ -27,14 +27,14 @@ export default function OwnerLayout() {
   };
 
   const navItems = [
-    { name: 'Bảng điều khiển', path: '/owner/dashboard', icon: 'dashboard' },
-    { name: 'Sân', path: '/owner/fields', icon: 'stadium', endIconAttr: { style: { fontVariationSettings: "'FILL' 1" } } },
-    { name: 'Đặt sân', path: '/owner/bookings', icon: 'event_available' },
-    { name: 'Yêu cầu hoàn tiền', path: '/owner/refunds', icon: 'replay', badge: true },
-    { name: 'Ví', path: '/owner/wallet', icon: 'account_balance_wallet' },
-    { name: 'Tiếp thị', path: '/owner/marketing', icon: 'rss_feed' },
-    { name: 'Phiếu giảm giá', path: '/owner/vouchers', icon: 'confirmation_number' },
-    { name: 'Doanh thu', path: '/owner/revenue', icon: 'insights' },
+    { name: 'Dashboard', path: '/owner/dashboard', icon: 'dashboard' },
+    { name: 'Fields Management', path: '/owner/fields', icon: 'stadium', endIconAttr: { style: { fontVariationSettings: "'FILL' 1" } } },
+    { name: 'Bookings Management', path: '/owner/bookings', icon: 'event_available' },
+    { name: 'Refunds', path: '/owner/refunds', icon: 'replay', badge: true },
+    { name: 'Wallet', path: '/owner/wallet', icon: 'account_balance_wallet' },
+    { name: 'Marketing', path: '/owner/marketing', icon: 'rss_feed' },
+    { name: 'Vouchers ', path: '/owner/vouchers', icon: 'confirmation_number' },
+    { name: 'Revenue', path: '/owner/revenue', icon: 'insights' },
   ];
 
   return (
