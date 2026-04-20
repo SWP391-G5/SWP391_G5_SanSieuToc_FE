@@ -108,6 +108,8 @@ function BookingCard({ booking, onCancel, onFeedback }) {
   const [expanded, setExpanded] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [isEnded, setIsEnded] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedSlots, setSelectedSlots] = useState([]);
 
   useEffect(() => {
     const checkStatus = () => {
@@ -119,23 +121,65 @@ function BookingCard({ booking, onCancel, onFeedback }) {
     return () => clearInterval(interval);
   }, [booking]);
 
-  const canCancel = booking.status === 'Confirmed' && booking.statusPayment === 'Paid' && !isEnded;
+  const hasEndedSlot = (booking.allDates || []).some(d => (d.slots || []).some(s => s.status === 'End'));
+  const hasAvailableSlots = (booking.allDetails || []).some(d => d.status !== 'Cancel');
+  const canCancel = (booking.status === 'Confirmed' || booking.status === 'Booked') && booking.statusPayment === 'Paid' && hasAvailableSlots && !isEnded;
   const canFeedback =
     typeof booking.canFeedback === 'boolean'
       ? booking.canFeedback
-      : isEnded && booking.status === 'Confirmed' && booking.statusPayment === 'Paid' && !booking.hasFeedback;
+      : (isEnded || hasEndedSlot) && booking.statusPayment === 'Paid' && !booking.hasFeedback;
 
-  const handleCancel = async () => {
+  const multipleSlots = (booking.timeSlots?.length || 0) > 1;
+
+  const handleCancelClick = () => {
+    if (multipleSlots) {
+      const availableSlots = booking.allDetails?.filter(d => d.status !== 'Cancel').map(d => d.id) || [];
+      setSelectedSlots(availableSlots);
+      setShowCancelModal(true);
+    } else {
+      handleCancelAll();
+    }
+  };
+
+  const handleCancelAll = async () => {
     if (!window.confirm('Bạn có chắc muốn hủy đơn đặt sân này?\nTiền sẽ được hoàn lại sau khi Chủ sân xác nhận.')) {
       return;
     }
-    
     setCancelling(true);
     try {
       await onCancel(booking.id);
+      setShowCancelModal(false);
     } finally {
       setCancelling(false);
     }
+  };
+
+  const handleCancelSelected = async () => {
+    if (selectedSlots.length === 0) {
+      alert('Vui lòng chọn ít nhất 1 slot để hủy');
+      return;
+    }
+    if (!window.confirm(`Hủy ${selectedSlots.length} slot này? Tiền sẽ được hoàn lại sau khi Chủ sân xác nhận.`)) {
+      return;
+    }
+    setCancelling(true);
+    try {
+      await bookingService.cancelSlot(booking.id, selectedSlots, 'Customer requested cancellation');
+      setShowCancelModal(false);
+      window.location.reload();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Hủy thất bại');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const toggleSlot = (id) => {
+    setSelectedSlots(prev => 
+      prev.includes(id) 
+        ? prev.filter(s => s !== id)
+        : [...prev, id]
+    );
   };
 
   return (
@@ -153,8 +197,8 @@ function BookingCard({ booking, onCancel, onFeedback }) {
             <p className="booking-card-address">📍 {booking.fieldAddress || ''}</p>
           </div>
           <div className="booking-card-status">
-            <span className={`booking-status-badge status-${isEnded ? 'ended' : (booking.status || '').toLowerCase().replace(/\s+/g, '-')}`}>
-              {isEnded ? 'Ended' : booking.status}
+            <span className={`booking-status-badge status-${(isEnded || hasEndedSlot) ? 'ended' : (booking.status || '').toLowerCase().replace(/\s+/g, '-')}`}>
+              {(isEnded || hasEndedSlot) ? 'Ended' : booking.status}
             </span>
             <span className={`booking-payment-badge ${(booking.statusPayment || '').toLowerCase().replace(/\s+/g, '-')}`}>
               {booking.statusPayment}
@@ -178,7 +222,7 @@ function BookingCard({ booking, onCancel, onFeedback }) {
             {canCancel && (
               <button
                 className="booking-cancel-btn"
-                onClick={handleCancel}
+                onClick={handleCancelClick}
                 disabled={cancelling}
               >
                 {cancelling ? 'Đang hủy...' : 'Hủy đơn'}
@@ -210,24 +254,28 @@ function BookingCard({ booking, onCancel, onFeedback }) {
                     <div style={{ fontWeight: 'bold', marginBottom: '4px', color: '#8eff71' }}>
                       {new Date(d.date).toLocaleDateString('vi-VN')}
                     </div>
-                    {d.slots.map((slot, sIdx) => (
-                      <div key={sIdx} style={{ 
-                        background: 'rgba(142, 255, 113, 0.1)', 
-                        padding: '8px 12px', 
-                        borderRadius: '8px',
-                        marginBottom: '4px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}>
-                        <span style={{ color: '#fdfdf6', fontWeight: '500' }}>
-                          {slot.start} - {slot.end}
-                        </span>
-                        <span style={{ color: '#8eff71', fontSize: '12px' }}>
-                          Đã đặt
-                        </span>
-                      </div>
-                    ))}
+                    {d.slots?.map((slot, sIdx) => {
+                      const slotStatus = slot.status || 'Active';
+                      const isCancelled = slotStatus === 'Cancel' || slotStatus === 'Cancel Request';
+                      return (
+                        <div key={sIdx} style={{ 
+                          background: isCancelled ? 'rgba(255, 77, 109, 0.15)' : 'rgba(142, 255, 113, 0.1)', 
+                          padding: '8px 12px', 
+                          borderRadius: '8px',
+                          marginBottom: '4px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}>
+                          <span style={{ color: '#fdfdf6', fontWeight: '500' }}>
+                            {slot.start} - {slot.end}
+                          </span>
+                          <span style={{ color: isCancelled ? '#ff4d6d' : '#8eff71', fontSize: '12px' }}>
+                            {isCancelled ? (slotStatus === 'Cancel Request' ? 'Đã hủy' : 'Đã hủy') : 'Đã đặt'}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 ))
               ) : (
@@ -301,6 +349,131 @@ function BookingCard({ booking, onCancel, onFeedback }) {
           </div>
         )}
       </div>
+
+      {showCancelModal && (
+        <>
+          <div 
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.8)',
+              zIndex: 50
+            }}
+            onClick={() => setShowCancelModal(false)}
+          />
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: '#242721',
+            borderRadius: '16px',
+            padding: '24px',
+            width: '90%',
+            maxWidth: '400px',
+            zIndex: 51,
+            maxHeight: '80vh',
+            overflowY: 'auto'
+          }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: '#fdfdf6' }}>
+              Chọn slot để hủy
+            </h3>
+            <p style={{ fontSize: '14px', color: '#abaca5', marginBottom: '16px' }}>
+              {booking.fieldName}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+              {booking.allDetails?.filter(d => d.status !== 'Cancel').map((detail, idx) => {
+                const isSelected = selectedSlots.includes(detail.id);
+                const slotDate = detail.date || new Date(detail.startTime).toLocaleDateString('vi-VN');
+                const slotTime = `${detail.startTime ? new Date(detail.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''} - ${detail.endTime ? new Date(detail.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''}`;
+                const slotPrice = detail.priceSnapShot || 0;
+                return (
+                  <label
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px',
+                      background: isSelected ? 'rgba(142, 255, 113, 0.15)' : 'rgba(255,255,255,0.05)',
+                      border: isSelected ? '1px solid #8eff71' : '1px solid transparent',
+                      borderRadius: '8px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSlot(detail.id)}
+                      style={{ width: '18px', height: '18px', accentColor: '#8eff71' }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ color: '#fdfdf6', fontWeight: '500' }}>{slotDate}</div>
+                      <div style={{ color: '#8eff71', fontSize: '13px' }}>{slotTime}</div>
+                      {detail.services?.length > 0 && (
+                        <div style={{ marginTop: '4px' }}>
+                          {detail.services.map((srv, sIdx) => (
+                            <div key={sIdx} style={{ fontSize: '11px', color: '#ffc864' }}>
+                              + {srv.quantity}x {srv.serviceName}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <div style={{ color: '#ffc864', fontSize: '13px', fontWeight: 'bold' }}>
+                        {formatVnd(slotPrice)}đ
+                      </div>
+                      {(detail.servicesTotal || 0) > 0 && (
+                        <div style={{ fontSize: '11px', color: '#ffc864' }}>
+                          +{formatVnd(detail.servicesTotal)}đ
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                );
+              })}
+              {(booking.allDetails?.filter(d => d.status === 'Cancel').length || 0) > 0 && (
+                <div style={{ fontSize: '12px', color: '#ff4d6d', textAlign: 'center', marginTop: '8px' }}>
+                  {booking.allDetails.filter(d => d.status === 'Cancel').length} slot đã hủy
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => setShowCancelModal(false)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: 'rgba(255,255,255,0.1)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#fdfdf6',
+                  cursor: 'pointer'
+                }}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={handleCancelSelected}
+                disabled={cancelling || selectedSlots.length === 0}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: selectedSlots.length === 0 ? 'rgba(142, 255, 113, 0.3)' : '#8eff71',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: selectedSlots.length === 0 ? 'rgba(255,255,255,0.5)' : '#0d6100',
+                  fontWeight: 'bold',
+                  cursor: selectedSlots.length === 0 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {cancelling ? 'Đang hủy...' : `Hủy ${selectedSlots.length} slot`}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { ownerBookingService } from "../../services/owner/ownerBookingService";
 import { useNotification } from "../../context/NotificationContext";
 
@@ -113,6 +114,13 @@ export default function OwnerBookingsPage() {
             khách hàng.
           </p>
         </div>
+        <Link
+          to="/owner/service-bookings"
+          className="flex items-center gap-2 px-4 py-2 bg-surface-container text-on-surface font-semibold rounded-lg hover:bg-surface-container-high transition-colors"
+        >
+          <span className="material-symbols-outlined">inventory_2</span>
+          Service Bookings
+        </Link>
         {cancelRequestCount > 0 && (
           <div className="flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 rounded-xl px-5 py-3">
             <span className="material-symbols-outlined text-amber-400">

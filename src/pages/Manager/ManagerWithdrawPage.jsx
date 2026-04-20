@@ -190,7 +190,7 @@ export default function ManagerWithdrawPage() {
           <input
             type="text"
             value={accountNumber}
-            onChange={(e) => setAccountNumber(e.target.value)}
+            onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ''))}
             placeholder="Nhập số tài khoản"
             className="w-full bg-[#1a1c18] p-4 rounded-lg text-[#fdfdf6] border border-[#474944]/50 focus:border-[#8eff71] outline-none"
           />
@@ -201,7 +201,7 @@ export default function ManagerWithdrawPage() {
           <input
             type="text"
             value={accountName}
-            onChange={(e) => setAccountName(e.target.value)}
+            onChange={(e) => setAccountName(e.target.value.toUpperCase())}
             placeholder="Nhập tên chủ tài khoản"
             className="w-full bg-[#1a1c18] p-4 rounded-lg text-[#fdfdf6] border border-[#474944]/50 focus:border-[#8eff71] outline-none"
           />
