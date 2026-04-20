@@ -173,7 +173,7 @@ export default function OwnerWithdrawPage() {
           <input
             type="text"
             value={accountNumber}
-            onChange={(e) => setAccountNumber(e.target.value)}
+            onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ''))}
             placeholder="Nhập số tài khoản"
             className="w-full bg-surface p-4 rounded-lg text-on-surface border border-outline focus:border-primary outline-none"
           />
@@ -184,7 +184,7 @@ export default function OwnerWithdrawPage() {
           <input
             type="text"
             value={accountName}
-            onChange={(e) => setAccountName(e.target.value)}
+            onChange={(e) => setAccountName(e.target.value.toUpperCase())}
             placeholder="Nhập tên chủ tài khoản"
             className="w-full bg-surface p-4 rounded-lg text-on-surface border border-outline focus:border-primary outline-none"
           />

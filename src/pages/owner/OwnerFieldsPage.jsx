@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { ownerFieldService } from "../../services/owner/ownerFieldService";
 import { useNotification } from "../../context/NotificationContext";
 import FieldFormModal from "../../components/owner/FieldFormModal";
@@ -118,9 +119,10 @@ export default function OwnerFieldsPage() {
           </div>
         ) : (
           fields.map((field) => (
-            <div
+            <Link
+              to={`/fields/${field._id}`}
               key={field._id}
-              className="group bg-surface-container hover:bg-surface-container-high transition-all duration-300 rounded-xl overflow-hidden relative border border-transparent hover:border-primary/10"
+              className="block group bg-surface-container hover:bg-surface-container-high transition-all duration-300 rounded-xl overflow-hidden relative border border-transparent hover:border-primary/10"
             >
               <div className="flex flex-col md:flex-row">
                 {/* Image */}
@@ -202,7 +204,7 @@ export default function OwnerFieldsPage() {
                       </span>
                     </div>
                   </div>
-                  <div className="mt-6 pt-6 border-t border-outline-variant/10 flex justify-end gap-3">
+                  <div className="mt-6 pt-6 border-t border-outline-variant/10 flex justify-end gap-3" onClick={(e) => e.preventDefault()}>
                     <button
                       onClick={() => setServiceTargetField(field)}
                       className="px-4 py-2 text-xs font-bold font-label uppercase text-tertiary/70 hover:text-tertiary hover:bg-tertiary/10 border border-transparent rounded transition-colors flex items-center gap-2"
@@ -233,7 +235,7 @@ export default function OwnerFieldsPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
           ))
         )}
       </div>
