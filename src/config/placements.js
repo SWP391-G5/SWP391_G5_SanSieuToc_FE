@@ -40,7 +40,7 @@ export const PLACEMENTS = [
     page: 'FieldDetailPage',
     position: 'Promotional banner inside the booking sidebar/details',
     previewPath: '/fields',
-    maxItems: 2,
+    maxItems: 1,
   },
   {
     key: 'field_detail_horizontal',

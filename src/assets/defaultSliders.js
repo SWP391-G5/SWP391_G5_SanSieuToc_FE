@@ -37,7 +37,11 @@ export const DEFAULT_FIELDS_LIST_ADS_SLIDES = DEFAULT_HOME_HERO_SLIDES;
 // Fallbacks for newly defined placements in config/placements.js
 export const DEFAULT_COMMUNITY_HORIZONTAL = [football7, football8, football9];
 export const DEFAULT_COMMUNITY_VERTICAL = [football10, football11];
-export const DEFAULT_FIELD_DETAIL_BANNER = [football4, football5];
+
+// Field detail placements:
+// - Side banner: single slot (not a slider)
+// - Horizontal top: 3-slot slider
+export const DEFAULT_FIELD_DETAIL_BANNER = [football4];
 export const DEFAULT_FIELD_DETAIL_HORIZONTAL = [football5, football9, football10];
 
 // Map a placement key to its fallback array
@@ -53,6 +57,8 @@ export function getFallbackImagesForPlacement(key) {
       return DEFAULT_COMMUNITY_VERTICAL;
     case 'field_detail_banner':
       return DEFAULT_FIELD_DETAIL_BANNER;
+    case 'field_detail_horizontal':
+      return DEFAULT_FIELD_DETAIL_HORIZONTAL;
     default:
       return [football1];
   }

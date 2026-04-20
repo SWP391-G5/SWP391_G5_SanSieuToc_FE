@@ -14,12 +14,12 @@ import { useEffect, useRef, useState } from 'react';
  * Sidebar navigation definition for manager area.
  */
 const NAV_ITEMS = [
-  { key: 'statistics', label: 'Thống kê', to: '/manager/statistics', icon: 'bar_chart' },
-  { key: 'posts', label: 'Bài viết', to: '/manager/posts', icon: 'edit_note' },
-  { key: 'marketing', label: 'Banner & Quảng cáo', to: '/manager/banners-ads', icon: 'branding_watermark' },
-  { key: 'wallet', label: 'Ví', to: '/manager/wallet', icon: 'account_balance_wallet' },
-  { key: 'privacy', label: 'Quyền riêng tư', to: '/manager/privacy', icon: 'shield' },
-  { key: 'feedback', label: 'Phản hồi', to: '/manager/feedback', icon: 'rate_review' },
+  { key: 'statistics', label: 'Statistics', to: '/manager/statistics', icon: 'bar_chart' },
+  { key: 'posts', label: 'Posts', to: '/manager/posts', icon: 'edit_note' },
+  { key: 'marketing', label: 'Banner & Slider', to: '/manager/banners-ads', icon: 'branding_watermark' },
+  { key: 'wallet', label: 'Wallet', to: '/manager/wallet', icon: 'account_balance_wallet' },
+  { key: 'privacy', label: 'Privacy', to: '/manager/privacy', icon: 'shield' },
+  { key: 'feedback', label: 'Feedback', to: '/manager/feedback', icon: 'rate_review' },
 ];
 
 /**
