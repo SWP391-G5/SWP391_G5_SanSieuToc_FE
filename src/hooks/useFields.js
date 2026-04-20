@@ -26,6 +26,7 @@ export default function useFields(params = {}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [items, setItems] = useState([]);
+  const [meta, setMeta] = useState({});
 
   useEffect(() => {
     let alive = true;
@@ -38,10 +39,12 @@ export default function useFields(params = {}) {
         const list = data?.items || [];
         if (!alive) return;
         setItems(Array.isArray(list) ? list : []);
+        setMeta(data && typeof data === 'object' ? (data.meta || {}) : {});
       } catch (e) {
         if (!alive) return;
         setError(e?.response?.data?.message || e?.message || 'Failed to load fields');
         setItems([]);
+        setMeta({});
       } finally {
         if (alive) {
           setLoading(false);
@@ -54,5 +57,5 @@ export default function useFields(params = {}) {
     };
   }, [stableParams]);
 
-  return { loading, error, items };
+  return { loading, error, items, meta };
 }
