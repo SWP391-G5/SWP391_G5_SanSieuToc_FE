@@ -1,22 +1,99 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Modal from 'react-modal';
 import communityService from '../../../../services/communityService';
 import uploadService from '../../../../services/uploadService';
+import publicApi from '../../../../services/public/publicApi';
 import { useNotification } from '../../../../context/NotificationContext';
 
 Modal.setAppElement('#root');
 
+const FALLBACK_POST_TAG_OPTIONS = [
+  { value: 'ThongBao', label: 'Thông báo' },
+  { value: 'TimKeo', label: 'Tìm kèo' },
+  { value: 'Tips', label: 'Tips / Kinh nghiệm' },
+  { value: 'Review', label: 'Review' },
+  { value: 'HoiDap', label: 'Hỏi đáp' },
+  { value: 'GiaoLuu', label: 'Giao lưu' },
+  { value: 'SuKien', label: 'Sự kiện / Giải đấu' },
+];
+
+const MAX_TITLE_LEN = 200;
+const MAX_CONTENT_LEN = 10000;
+const MAX_TAGS = 3;
+
 export default function CreatePostModal({ isOpen, onClose, onSuccess }) {
-  const { notifySuccess, notifyError } = useNotification();
+  const { notifySuccess, notifyError, notifyWarning } = useNotification();
   const [loading, setLoading] = useState(false);
+
+  const [tagOptions, setTagOptions] = useState(FALLBACK_POST_TAG_OPTIONS);
+
   const [payload, setPayload] = useState({
     title: '',
     content: '',
-    tag: 'General',
+    tags: [],
     image: '',
   });
+
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let alive = true;
+    (async () => {
+      try {
+        const res = await publicApi.getPostTags();
+        if (!alive) return;
+
+        const items = Array.isArray(res?.items) ? res.items : Array.isArray(res) ? res : [];
+        const next = items
+          .map((x) => {
+            if (!x) return null;
+            if (typeof x === 'string') return { value: x, label: x };
+            const v = String(x.value || x.key || x.tag || x.name || '').trim();
+            const l = String(x.label || x.name || x.value || x.key || '').trim();
+            if (!v) return null;
+            return { value: v, label: l || v };
+          })
+          .filter(Boolean);
+
+        if (next.length > 0) setTagOptions(next);
+      } catch {
+        // keep fallback
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [isOpen]);
+
+  const tagLookup = useMemo(() => {
+    const m = new Map();
+    (tagOptions || []).forEach((t) => m.set(String(t.value), t));
+    return m;
+  }, [tagOptions]);
+
+  const toggleTag = (tagValue) => {
+    const v = String(tagValue || '').trim();
+    if (!v) return;
+
+    setPayload((prev) => {
+      const current = Array.isArray(prev.tags) ? prev.tags : [];
+      const exists = current.includes(v);
+      if (exists) {
+        return { ...prev, tags: current.filter((x) => x !== v) };
+      }
+
+      if (current.length >= MAX_TAGS) {
+        notifyWarning?.(`Chỉ được chọn tối đa ${MAX_TAGS} tag.`);
+        return prev;
+      }
+
+      return { ...prev, tags: [...current, v] };
+    });
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
@@ -33,12 +110,44 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess }) {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
   };
 
+  const validateBeforeSubmit = () => {
+    const title = String(payload.title || '').trim();
+    const content = String(payload.content || '').trim();
+    const tags = Array.isArray(payload.tags) ? payload.tags.filter(Boolean) : [];
+
+    if (!title) {
+      notifyError('Vui lòng nhập tiêu đề.');
+      return false;
+    }
+    if (title.length > MAX_TITLE_LEN) {
+      notifyError(`Tiêu đề không được vượt quá ${MAX_TITLE_LEN} ký tự.`);
+      return false;
+    }
+
+    if (!content) {
+      notifyError('Vui lòng nhập nội dung.');
+      return false;
+    }
+    if (content.length > MAX_CONTENT_LEN) {
+      notifyError(`Nội dung không được vượt quá ${MAX_CONTENT_LEN} ký tự.`);
+      return false;
+    }
+
+    if (tags.length < 1) {
+      notifyError('Vui lòng chọn ít nhất 1 tag.');
+      return false;
+    }
+    if (tags.length > MAX_TAGS) {
+      notifyError(`Chỉ được chọn tối đa ${MAX_TAGS} tag.`);
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!payload.title.trim() || !payload.content.trim()) {
-      notifyError('Vui lòng nhập đầy đủ tiêu đề và nội dung.');
-      return;
-    }
+    if (!validateBeforeSubmit()) return;
 
     setLoading(true);
     try {
@@ -48,8 +157,14 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess }) {
         finalImageUrl = urls[0] || '';
       }
 
+      const tags = Array.isArray(payload.tags) ? payload.tags.filter(Boolean) : [];
+
       await communityService.createPost({
-        ...payload,
+        title: String(payload.title || '').trim(),
+        content: String(payload.content || '').trim(),
+        // Backend owner/user services accept postTags/tags/tag; send postTags array to match manager.
+        postTags: tags,
+        tag: tags[0] || 'General',
         image: finalImageUrl,
       });
 
@@ -64,7 +179,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess }) {
   };
 
   const handleClose = () => {
-    setPayload({ title: '', content: '', tag: 'General', image: '' });
+    setPayload({ title: '', content: '', tags: [], image: '' });
     setImageFile(null);
     setPreviewUrl('');
     onClose();
@@ -102,21 +217,45 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess }) {
               placeholder="Tiêu đề bài viết của bạn..."
               className="w-full rounded-xl border border-[#474944]/30 bg-[#0d0f0b] p-3 text-sm text-[#fdfdf6] outline-none transition-all focus:border-[#8eff71] focus:ring-1 focus:ring-[#8eff71]/40"
             />
+            <div className="text-[10px] uppercase tracking-widest text-[#abaca5]">
+              {String(payload.title || '').length}/{MAX_TITLE_LEN}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-widest text-[#abaca5]">Chủ đề</label>
-              <select
-                value={payload.tag}
-                onChange={(e) => setPayload({ ...payload, tag: e.target.value })}
-                className="w-full rounded-xl border border-[#474944]/30 bg-[#0d0f0b] p-3 text-sm text-[#fdfdf6] outline-none transition-all focus:border-[#8eff71]"
-              >
-                <option value="General">Chung</option>
-                <option value="Match">Kèo đá</option>
-                <option value="Review">Đánh giá</option>
-                <option value="Question">Hỏi đáp</option>
-              </select>
+
+              <div className="flex flex-wrap gap-2 rounded-xl border border-[#474944]/30 bg-[#0d0f0b] p-3">
+                {(tagOptions || []).map((t) => {
+                  const value = String(t.value);
+                  const active = Array.isArray(payload.tags) && payload.tags.includes(value);
+
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => toggleTag(value)}
+                      className={
+                        active
+                          ? 'rounded-full bg-[#8eff71] px-3 py-1 text-xs font-black text-[#0d6100]'
+                          : 'rounded-full border border-[#474944]/50 px-3 py-1 text-xs font-black text-[#abaca5] hover:border-[#8eff71]/60 hover:text-[#fdfdf6]'
+                      }
+                    >
+                      {t.label}
+                      {active ? ' ✓' : ''}
+                    </button>
+                  );
+                })}
+
+                {Array.isArray(payload.tags) && payload.tags.length === 0 ? (
+                  <div className="text-xs font-semibold text-[#abaca5]">Chọn 1–3 tag</div>
+                ) : null}
+              </div>
+
+              <div className="text-[10px] uppercase tracking-widest text-[#abaca5]">
+                Đã chọn {Array.isArray(payload.tags) ? payload.tags.length : 0}/{MAX_TAGS}
+              </div>
             </div>
 
             <div className="space-y-1.5">
@@ -154,6 +293,9 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess }) {
               placeholder="Nội dung bài viết..."
               className="w-full rounded-xl border border-[#474944]/30 bg-[#0d0f0b] p-3 text-sm text-[#fdfdf6] outline-none transition-all focus:border-[#8eff71] focus:ring-1 focus:ring-[#8eff71]/40 placeholder:opacity-50"
             />
+            <div className="text-[10px] uppercase tracking-widest text-[#abaca5]">
+              {String(payload.content || '').length}/{MAX_CONTENT_LEN}
+            </div>
           </div>
 
           <div className="pt-4">
