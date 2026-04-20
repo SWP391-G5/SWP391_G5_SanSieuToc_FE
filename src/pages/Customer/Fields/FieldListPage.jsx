@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import SimpleImageSlider from '../../../components/ads/SimpleImageSlider';
 import Pagination from '../../../components/common/Pagination';
@@ -36,6 +36,7 @@ function inferStreetFromField(field) {
 }
 
 export default function FieldListPage() {
+  const DEFAULT_PRICE_MAX_K = 350;
   const location = useLocation();
   const navigate = useNavigate();
   const initialSearchText = typeof location.state?.searchText === 'string' ? location.state.searchText : '';
@@ -71,13 +72,16 @@ export default function FieldListPage() {
   const [selectedDistrict, setSelectedDistrict] = useState('All');
   const [selectedStreet, setSelectedStreet] = useState('All');
   const [selectedSize, setSelectedSize] = useState(null);
-  const [priceMaxK, setPriceMaxK] = useState(350);
+  const [priceMaxK, setPriceMaxK] = useState(null);
   const [utilities, setUtilities] = useState({
     parking: false,
     lighting: false,
     wifi: false,
     shower: false,
   });
+
+  const [dynamicMaxPriceK, setDynamicMaxPriceK] = useState(DEFAULT_PRICE_MAX_K);
+  const hasPriceMaxFilter = Number.isFinite(priceMaxK) && priceMaxK < dynamicMaxPriceK;
 
   const fieldsParams = useMemo(() => {
     const selectedUtilities = Object.entries(utilities)
@@ -91,14 +95,32 @@ export default function FieldListPage() {
       street: selectedCity === 'All' || selectedDistrict === 'All' || selectedStreet === 'All' ? undefined : selectedStreet,
       sizeKey: selectedSize || undefined,
       priceMin: 0,
-      priceMax: priceMaxK * 1000,
+      priceMax: hasPriceMaxFilter ? priceMaxK * 1000 : undefined,
       utilities: selectedUtilities.length ? selectedUtilities.join(',') : undefined,
       sortBy,
       // Date is not currently used to filter fields in the list, but we keep it in state for consistency
     };
-  }, [priceMaxK, searchText, selectedCity, selectedDistrict, selectedSize, selectedStreet, sortBy, utilities]);
+  }, [hasPriceMaxFilter, priceMaxK, searchText, selectedCity, selectedDistrict, selectedSize, selectedStreet, sortBy, utilities]);
 
-  const { loading: fieldsLoading, error: fieldsError, items: fields } = useFields(fieldsParams);
+  const { loading: fieldsLoading, error: fieldsError, items: fields, meta: fieldsMeta } = useFields(fieldsParams);
+
+  useEffect(() => {
+    const maxPrice = Number(fieldsMeta?.priceRange?.max);
+    if (!Number.isFinite(maxPrice) || maxPrice <= 0) return;
+
+    const maxInK = Math.ceil(maxPrice / 1000);
+    const roundedMaxInK = Math.ceil(maxInK / 10) * 10;
+    setDynamicMaxPriceK(roundedMaxInK);
+  }, [fieldsMeta]);
+
+  useEffect(() => {
+    setPriceMaxK((prev) => {
+      if (prev === null) return null;
+      return prev > dynamicMaxPriceK ? dynamicMaxPriceK : prev;
+    });
+  }, [dynamicMaxPriceK]);
+
+  const effectivePriceMaxK = priceMaxK === null ? dynamicMaxPriceK : priceMaxK;
 
   const areaParams = useMemo(
     () => ({
@@ -141,7 +163,7 @@ export default function FieldListPage() {
     setSelectedDistrict('All');
     setSelectedStreet('All');
     setSelectedSize(null);
-    setPriceMaxK(350);
+    setPriceMaxK(null);
     setUtilities({ parking: false, lighting: false, wifi: false, shower: false });
     setSearchText('');
     setSearchDate('');
@@ -288,16 +310,16 @@ export default function FieldListPage() {
 
               <div className="flex items-center justify-between text-[10px] text-[#88f6ff]">
                 <span>0k</span>
-                <span>{priceMaxK}k</span>
+                <span>{effectivePriceMaxK}k</span>
               </div>
 
               <input
                 className="w-full accent-[#8eff71]"
                 type="range"
                 min="0"
-                max="350"
+                max={dynamicMaxPriceK}
                 step="10"
-                value={priceMaxK}
+                value={effectivePriceMaxK}
                 onChange={(e) => {
                   setPriceMaxK(Number(e.target.value));
                   setPage(1);
