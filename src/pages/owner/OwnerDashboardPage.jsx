@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   LineChart,
   Line,
@@ -12,7 +12,7 @@ import { ownerBookingService } from "../../services/owner/ownerBookingService";
 import { ownerFieldService } from "../../services/owner/ownerFieldService";
 import {
   getOwnerRevenue,
-  getOwnerTransactions,
+  getOwnerRevenueSeries,
 } from "../../services/owner/ownerWalletService";
 
 const STATUS_LABELS = {
@@ -28,21 +28,6 @@ export default function OwnerDashboardPage() {
   const [pendingCount, setPendingCount] = useState(0);
   const [activeFieldCount, setActiveFieldCount] = useState(0);
   const [loading, setLoading] = useState(true);
-
-  const weekLabels = useMemo(() => {
-    const formatter = new Intl.DateTimeFormat("en-US", { weekday: "short" });
-    const today = new Date();
-    const days = [];
-    for (let i = 6; i >= 0; i -= 1) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      days.push({
-        key: d.toDateString(),
-        name: formatter.format(d),
-      });
-    }
-    return days;
-  }, []);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("vi-VN").format(value) + " đ";
@@ -88,10 +73,10 @@ export default function OwnerDashboardPage() {
       try {
         setLoading(true);
 
-        const [revenueRes, transactionsRes, fieldsRes, bookingsRes] =
+        const [revenueRes, seriesRes, fieldsRes, bookingsRes] =
           await Promise.all([
             getOwnerRevenue(null, null, "field"),
-            getOwnerTransactions(200, "field"),
+            getOwnerRevenueSeries(null, null, "day", "field"),
             ownerFieldService.getMyFields("Active"),
             ownerBookingService.getBookings("All"),
           ]);
@@ -120,18 +105,10 @@ export default function OwnerDashboardPage() {
         });
         setRecentBookings(mappedBookings);
 
-        const transactions = transactionsRes?.transactions || [];
-        const incomeByDate = new Map();
-        for (const tx of transactions) {
-          const amount = Number(tx.amount) || 0;
-          if (amount <= 0) continue;
-          const key = new Date(tx.createdAt).toDateString();
-          incomeByDate.set(key, (incomeByDate.get(key) || 0) + amount);
-        }
-
-        const weekly = weekLabels.map((d) => ({
-          name: d.name,
-          revenue: incomeByDate.get(d.key) || 0,
+        const series = seriesRes?.series || [];
+        const weekly = series.map((s) => ({
+          name: s.label || s.key,
+          revenue: s.total || 0,
         }));
         setRevenueData(weekly);
       } catch (error) {
@@ -142,7 +119,7 @@ export default function OwnerDashboardPage() {
     };
 
     loadDashboard();
-  }, [weekLabels]);
+  }, []);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
