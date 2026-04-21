@@ -14,8 +14,8 @@ const adminService = {
     const res = await axios.patch(`/api/admin/accounts/managers/${id}/deactivate`);
     return res.data;
   },
-  deleteManager: async (id) => {
-    const res = await axios.patch(`/api/admin/accounts/managers/${id}/delete`);
+  deleteManager: async (id, payload) => {
+    const res = await axios.patch(`/api/admin/accounts/managers/${id}/delete`, payload || {});
     return res.data;
   },
   restoreManager: async (id) => {
