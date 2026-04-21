@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import SimpleImageSlider from '../../../components/ads/SimpleImageSlider';
 import Pagination from '../../../components/common/Pagination';
@@ -80,8 +80,7 @@ export default function FieldListPage() {
     shower: false,
   });
 
-  const [dynamicMaxPriceK, setDynamicMaxPriceK] = useState(DEFAULT_PRICE_MAX_K);
-  const hasPriceMaxFilter = Number.isFinite(priceMaxK) && priceMaxK < dynamicMaxPriceK;
+  const normalizedPriceMaxK = Number.isFinite(priceMaxK) ? Math.max(0, priceMaxK) : null;
 
   const fieldsParams = useMemo(() => {
     const selectedUtilities = Object.entries(utilities)
@@ -95,32 +94,27 @@ export default function FieldListPage() {
       street: selectedCity === 'All' || selectedDistrict === 'All' || selectedStreet === 'All' ? undefined : selectedStreet,
       sizeKey: selectedSize || undefined,
       priceMin: 0,
-      priceMax: hasPriceMaxFilter ? priceMaxK * 1000 : undefined,
+      priceMax: normalizedPriceMaxK === null ? undefined : normalizedPriceMaxK * 1000,
       utilities: selectedUtilities.length ? selectedUtilities.join(',') : undefined,
       sortBy,
       // Date is not currently used to filter fields in the list, but we keep it in state for consistency
     };
-  }, [hasPriceMaxFilter, priceMaxK, searchText, selectedCity, selectedDistrict, selectedSize, selectedStreet, sortBy, utilities]);
+  }, [normalizedPriceMaxK, searchText, selectedCity, selectedDistrict, selectedSize, selectedStreet, sortBy, utilities]);
 
   const { loading: fieldsLoading, error: fieldsError, items: fields, meta: fieldsMeta } = useFields(fieldsParams);
 
-  useEffect(() => {
+  const dynamicMaxPriceK = useMemo(() => {
     const maxPrice = Number(fieldsMeta?.priceRange?.max);
-    if (!Number.isFinite(maxPrice) || maxPrice <= 0) return;
+    if (!Number.isFinite(maxPrice) || maxPrice <= 0) return DEFAULT_PRICE_MAX_K;
 
     const maxInK = Math.ceil(maxPrice / 1000);
-    const roundedMaxInK = Math.ceil(maxInK / 10) * 10;
-    setDynamicMaxPriceK(roundedMaxInK);
-  }, [fieldsMeta]);
+    return Math.ceil(maxInK / 10) * 10;
+  }, [DEFAULT_PRICE_MAX_K, fieldsMeta]);
 
-  useEffect(() => {
-    setPriceMaxK((prev) => {
-      if (prev === null) return null;
-      return prev > dynamicMaxPriceK ? dynamicMaxPriceK : prev;
-    });
-  }, [dynamicMaxPriceK]);
-
-  const effectivePriceMaxK = priceMaxK === null ? dynamicMaxPriceK : priceMaxK;
+  const effectivePriceMaxK = useMemo(() => {
+    if (normalizedPriceMaxK === null) return dynamicMaxPriceK;
+    return Math.min(normalizedPriceMaxK, dynamicMaxPriceK);
+  }, [dynamicMaxPriceK, normalizedPriceMaxK]);
 
   const areaParams = useMemo(
     () => ({
