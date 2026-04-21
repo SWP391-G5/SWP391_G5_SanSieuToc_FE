@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   LineChart,
   Line,
@@ -22,6 +23,7 @@ const STATUS_LABELS = {
 };
 
 export default function OwnerDashboardPage() {
+  const navigate = useNavigate();
   const [revenueData, setRevenueData] = useState([]);
   const [recentBookings, setRecentBookings] = useState([]);
   const [totalRevenue, setTotalRevenue] = useState(0);
@@ -295,7 +297,11 @@ export default function OwnerDashboardPage() {
               <span className="w-1.5 h-6 bg-[#ff4d6d] rounded-full"></span>
               Recent Bookings
             </h3>
-            <button className="text-[#88f6ff] text-sm hover:underline font-medium">
+            <button
+              className="text-[#88f6ff] text-sm hover:underline font-medium"
+              type="button"
+              onClick={() => navigate("/owner/bookings")}
+            >
               View all
             </button>
           </div>
