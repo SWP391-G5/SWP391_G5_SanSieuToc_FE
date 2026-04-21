@@ -31,6 +31,7 @@ const STATUS_LABELS = {
   InActive: 'Không hoạt động',
   Banned: 'Bị khóa',
   Deleted: 'Đã xóa',
+  PendingDelete: 'Chờ xóa',
 };
 
 function toVietnameseStatus(status) {
@@ -43,6 +44,8 @@ function StatusBadge({ status }) {
   const cls =
     s === 'Active'
       ? 'bg-[#8eff71]/15 text-[#8eff71]'
+      : s === 'PendingDelete'
+        ? 'bg-yellow-500/15 text-yellow-200'
       : s === 'Deleted'
         ? 'bg-white/10 text-[#fdfdf6]/60'
       : s === 'Banned'
@@ -100,6 +103,8 @@ export default function ManagerAccountsPage() {
   const [form, setForm] = useState({ username: '', email: '', name: '', phone: '', address: '' });
   const [submitting, setSubmitting] = useState(false);
 
+  const [deleteDraft, setDeleteDraft] = useState({ id: '', reassignToManagerID: '' });
+
   const canSubmit = useMemo(() => {
     const username = normalizeUsername(form.username);
     const email = normalizeEmail(form.email);
@@ -108,12 +113,16 @@ export default function ManagerAccountsPage() {
   }, [form]);
 
   const availableStatuses = useMemo(() => {
-    const set = new Set(['Active', 'InActive', 'Deleted']);
+    const set = new Set(['Active', 'InActive', 'PendingDelete', 'Deleted']);
     for (const it of items || []) {
-      const s = String(it.status || '').trim();
+      const s = it?.deletion?.scheduledAt && String(it.status || '').trim() !== 'Deleted' ? 'PendingDelete' : String(it.status || '').trim();
       if (s) set.add(s);
     }
     return Array.from(set);
+  }, [items]);
+
+  const activeManagers = useMemo(() => {
+    return (items || []).filter((x) => x.status === 'Active');
   }, [items]);
 
   const filteredItems = useMemo(() => {
@@ -121,7 +130,8 @@ export default function ManagerAccountsPage() {
     const status = String(statusFilter || 'All').trim();
 
     return (items || []).filter((it) => {
-      if (status !== 'All' && String(it.status || '').trim() !== status) return false;
+      const viewStatus = it?.deletion?.scheduledAt && String(it.status || '').trim() !== 'Deleted' ? 'PendingDelete' : String(it.status || '').trim();
+      if (status !== 'All' && viewStatus !== status) return false;
       if (!q) return true;
       const hay = `${it.username} ${it.email} ${it.name}`.toLowerCase();
       return hay.includes(q);
@@ -176,11 +186,14 @@ export default function ManagerAccountsPage() {
     }
   };
 
-  const onDelete = async (id) => {
+  const onDelete = async (row) => {
+    const id = row?.id;
     if (!id) return;
     try {
-      await adminService.deleteManager(id);
-      notifySuccess('Đã xóa tài khoản (xóa mềm).');
+      const payload = row?.ownersCount > 0 ? { reassignToManagerID: deleteDraft.reassignToManagerID } : undefined;
+      const data = await adminService.deleteManager(id, payload);
+      notifySuccess(data?.message || 'Đã gửi email. Tài khoản sẽ được xóa sau 3 ngày.');
+      setDeleteDraft({ id: '', reassignToManagerID: '' });
       await load();
     } catch (e) {
       notifyError(e?.response?.data?.message || 'Thao tác thất bại.');
@@ -190,8 +203,9 @@ export default function ManagerAccountsPage() {
   const onRestore = async (id) => {
     if (!id) return;
     try {
-      await adminService.restoreManager(id);
-      notifySuccess('Đã khôi phục tài khoản.');
+      const data = await adminService.restoreManager(id);
+      notifySuccess(data?.message || 'Đã khôi phục tài khoản.');
+      setDeleteDraft({ id: '', reassignToManagerID: '' });
       await load();
     } catch (e) {
       notifyError(e?.response?.data?.message || 'Thao tác thất bại.');
@@ -390,9 +404,11 @@ export default function ManagerAccountsPage() {
                         <RolePill>Quản lý</RolePill>
                       </td>
                       <td className="px-5 py-4">
-                        <StatusBadge status={it.status} />
+                        <StatusBadge
+                          status={it.deletion?.scheduledAt && String(it.status || '').trim() !== 'Deleted' ? 'PendingDelete' : it.status}
+                        />
                       </td>
-                      <td className="px-5 py-4 text-[#fdfdf6]/70">{formatDate(it.createdAt)}</td>
+                      <td className="px-5 py-4 text-[#fdfdf6]/70">{formatDate(it.deletion?.requestedAt || it.createdAt)}</td>
                       <td className="px-5 py-4 text-right">
                         {it.status === 'Deleted' ? (
                           <button
@@ -402,14 +418,75 @@ export default function ManagerAccountsPage() {
                           >
                               Khôi phục
                           </button>
-                        ) : (
+                        ) : it.deletion?.scheduledAt ? (
                           <button
                             type="button"
-                            onClick={() => onDelete(it.id)}
+                            onClick={() => onRestore(it.id)}
                             className="rounded-md bg-white/10 px-3 py-2 text-xs text-[#fdfdf6]/80 hover:text-[#8eff71]"
+                            title={`Đã lên lịch: ${formatDate(it.deletion?.scheduledAt)}`}
                           >
-                            Xóa
+                            Hủy xóa
                           </button>
+                        ) : (
+                          deleteDraft.id === it.id && it.ownersCount > 0 ? (
+                            <div className="flex flex-col items-end gap-2">
+                              <select
+                                value={deleteDraft.reassignToManagerID}
+                                onChange={(e) => setDeleteDraft((p) => ({ ...p, reassignToManagerID: e.target.value }))}
+                                className="w-64 rounded-md border border-white/10 bg-[#0d0f0b] px-3 py-2 text-xs outline-none focus:border-[#8eff71]/40"
+                              >
+                                <option value="">Chọn quản lý nhận bàn giao Owner</option>
+                                {activeManagers
+                                  .filter((m) => m.id !== it.id)
+                                  .map((m) => (
+                                    <option key={m.id} value={m.id}>
+                                      {m.name || m.username} ({m.email})
+                                    </option>
+                                  ))}
+                              </select>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => onDelete(it)}
+                                  disabled={!deleteDraft.reassignToManagerID}
+                                  className={
+                                    deleteDraft.reassignToManagerID
+                                      ? 'rounded-md bg-[#8eff71] px-3 py-2 text-xs font-semibold text-[#0d0f0b] hover:brightness-95'
+                                      : 'rounded-md bg-white/10 px-3 py-2 text-xs text-[#fdfdf6]/40'
+                                  }
+                                >
+                                  Xác nhận
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setDeleteDraft({ id: '', reassignToManagerID: '' })}
+                                  className="rounded-md bg-white/10 px-3 py-2 text-xs text-[#fdfdf6]/80 hover:text-[#8eff71]"
+                                >
+                                  Hủy
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (it.status !== 'Active') return;
+                                if (it.ownersCount > 0) {
+                                  setDeleteDraft({ id: it.id, reassignToManagerID: '' });
+                                  return;
+                                }
+                                onDelete(it);
+                              }}
+                              disabled={it.status !== 'Active'}
+                              className={
+                                it.status !== 'Active'
+                                  ? 'rounded-md bg-white/10 px-3 py-2 text-xs text-[#fdfdf6]/40'
+                                  : 'rounded-md bg-white/10 px-3 py-2 text-xs text-[#fdfdf6]/80 hover:text-[#8eff71]'
+                              }
+                            >
+                              Xóa
+                            </button>
+                          )
                         )}
                       </td>
                     </tr>
