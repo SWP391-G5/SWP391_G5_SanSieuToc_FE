@@ -23,6 +23,7 @@ export default function OwnerRefundsPage() {
   };
 
   const handleRefund = async (bookingId, approve) => {
+    if (!window.confirm(approve ? "Duyệt hoàn tiền (80% field + 100% service)?" : "Từ chối hoàn tiền?")) return;
     try {
       if (approve) {
         await axiosInstance.put(`/api/bookings/refund/${bookingId}/approve`);
@@ -51,7 +52,7 @@ export default function OwnerRefundsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-on-surface">Refund Requests</h1>
-        <p className="text-on-surface-variant">Manage customer refund requests</p>
+        <p className="text-on-surface-variant">Quản lý yêu cầu hoàn tiền (sân + dịch vụ)</p>
       </div>
 
       {refunds.length === 0 ? (
@@ -61,51 +62,75 @@ export default function OwnerRefundsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {refunds.map((booking) => (
-            <div key={booking._id} className="bg-surface-container rounded-xl p-4">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <p className="font-semibold text-on-surface">Booking #{booking._id?.slice(-6)}</p>
-                  <p className="text-sm text-on-surface-variant">
-                    {new Date(booking.createdAt).toLocaleString('vi-VN')}
-                  </p>
+          {refunds.map((booking) => {
+            const fieldRefund = booking.fieldRefundAmount || Math.floor(booking.totalPrice * 0.8);
+            const serviceRefund = booking.serviceTotalPrice || 0;
+            const totalRefund = fieldRefund + serviceRefund;
+            const isPartial = booking.isPartialCancel;
+
+            return (
+              <div key={booking._id} className="bg-surface-container rounded-xl p-4">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <p className="font-semibold text-on-surface">Booking #{booking._id?.slice(-6)}</p>
+                    <p className="text-sm text-on-surface-variant">
+                      {new Date(booking.createdAt).toLocaleString('vi-VN')}
+                    </p>
+                    {isPartial && (
+                      <p className="text-xs text-amber-400 mt-1">
+                        Hủy {booking.cancelledSlotCount} slot
+                      </p>
+                    )}
+                  </div>
+                  <span className="px-3 py-1 bg-error/20 text-error rounded-full text-sm">
+                    Pending Refund
+                  </span>
                 </div>
-                <span className="px-3 py-1 bg-error/20 text-error rounded-full text-sm">
-                  Pending Refund
-                </span>
+                <div className="mb-4 grid grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-on-surface-variant">Tiền sân: </p>
+                    <p className="font-bold text-lg text-on-surface">{formatVnd(booking.totalPrice)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-on-surface-variant">Hoàn sân (80%): </p>
+                    <p className="font-bold text-lg text-success">{formatVnd(fieldRefund)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-on-surface-variant">Hoàn dịch vụ (100%): </p>
+                    <p className="font-bold text-xl text-success">{formatVnd(serviceRefund)}</p>
+                  </div>
+                </div>
+                {serviceRefund > 0 && (
+                  <div className="mb-4 bg-primary/10 rounded-lg p-3">
+                    <p className="text-sm text-primary font-semibold">Có dịch vụ đi kèm: {formatVnd(serviceRefund)} (100% refund)</p>
+                  </div>
+                )}
+                <div className="mb-4 bg-success/10 border border-success/30 rounded-lg p-3">
+                  <p className="text-success font-bold text-lg">Tổng hoàn: {formatVnd(totalRefund)}</p>
+                </div>
+                {booking.refundReason && (
+                  <div className="mb-4">
+                    <p className="text-sm text-on-surface-variant">Lý do: </p>
+                    <p className="text-on-surface">{booking.refundReason}</p>
+                  </div>
+                )}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleRefund(booking._id, true)}
+                    className="flex-1 bg-success text-on-primary py-2 rounded-lg font-medium hover:opacity-90"
+                  >
+                    Duyệt hoàn tiền
+                  </button>
+                  <button
+                    onClick={() => handleRefund(booking._id, false)}
+                    className="flex-1 bg-error text-on-primary py-2 rounded-lg font-medium hover:opacity-90"
+                  >
+                    Từ chối
+                  </button>
+                </div>
               </div>
-              <div className="mb-4 flex gap-6">
-                <div>
-                  <p className="text-sm text-on-surface-variant">Original: </p>
-                  <p className="font-bold text-lg text-on-surface">{formatVnd(booking.totalPrice)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-on-surface-variant">Refund (80%): </p>
-                  <p className="font-bold text-xl text-success">{formatVnd(Math.floor(booking.totalPrice * 0.8))}</p>
-                </div>
-              </div>
-              {booking.refundReason && (
-                <div className="mb-4">
-                  <p className="text-sm text-on-surface-variant">Reason: </p>
-                  <p className="text-on-surface">{booking.refundReason}</p>
-                </div>
-              )}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleRefund(booking._id, true)}
-                  className="flex-1 bg-success text-on-primary py-2 rounded-lg font-medium hover:opacity-90"
-                >
-                  Approve Refund
-                </button>
-                <button
-                  onClick={() => handleRefund(booking._id, false)}
-                  className="flex-1 bg-error text-on-primary py-2 rounded-lg font-medium hover:opacity-90"
-                >
-                  Reject
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

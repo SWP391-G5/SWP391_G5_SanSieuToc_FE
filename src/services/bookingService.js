@@ -34,6 +34,14 @@ const bookingService = {
     return data;
   },
 
+  async cancelSlot(bookingId, bookingDetailIds, reason) {
+    const { data } = await axiosInstance.put(`${ENDPOINTS.BOOKING.CANCEL}/${bookingId}/slot`, {
+      bookingDetailIds,
+      reason
+    });
+    return data;
+  },
+
   async getFeedbackEligibility(bookingId) {
     const { data } = await axiosInstance.get(ENDPOINTS.BOOKING.FEEDBACK_ELIGIBILITY(bookingId));
     return data;
