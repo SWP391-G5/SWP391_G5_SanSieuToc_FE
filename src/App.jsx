@@ -52,6 +52,7 @@ import OwnerRefundsPage from "./pages/owner/OwnerRefundsPage";
 import OwnerWalletPage from "./pages/owner/OwnerWalletPage";
 import OwnerWithdrawPage from "./pages/owner/OwnerWithdrawPage";
 import OwnerPostsPage from "./pages/owner/OwnerPostsPage";
+import OwnerRevenuePage from "./pages/owner/OwnerRevenuePage";
 
 import { useAuth } from "./context/AuthContext";
 import { PreviewModeProvider } from "./context/PreviewModeContext";
@@ -172,6 +173,7 @@ function App() {
             <Route path="wallet" element={<OwnerWalletPage />} />
             <Route path="withdraw" element={<OwnerWithdrawPage />} />
             <Route path="posts" element={<OwnerPostsPage />} />
+            <Route path="revenue" element={<OwnerRevenuePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
 
