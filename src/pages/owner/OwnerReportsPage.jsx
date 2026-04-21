@@ -264,7 +264,7 @@ export default function OwnerReportsPage() {
                 className="mt-2 w-full rounded-md bg-surface border border-outline-variant/15 px-3 py-2 text-on-surface disabled:opacity-60"
               >
                 <option value="">
-                  {customersLoading ? 'Đang tải danh sách customer...' : customers.length ? 'Chọn customer đã từng booking sân của bạn' : 'Chưa có customer hợp lệ'}
+                  {customersLoading ? 'Đang tải danh sách customer...' : customers.length ? 'Chọn đối tượng bị report' : 'Chưa có đối tượng hợp lệ'}
                 </option>
                 {customers.map((c) => (
                   <option key={c.id} value={c.id}>
