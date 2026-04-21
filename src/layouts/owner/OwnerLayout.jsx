@@ -90,14 +90,6 @@ export default function OwnerLayout() {
           })}
         </nav>
         <div className="px-6 mt-auto space-y-1">
-          <div className="mb-6">
-            <button className="w-full impact-gradient text-on-primary font-bold py-3 px-4 rounded-md flex items-center justify-center gap-2 text-sm uppercase tracking-tight shadow-lg shadow-primary/10 hover:opacity-90">
-              <span className="material-symbols-outlined text-sm">
-                add_circle
-              </span>
-              Đặt sân mới
-            </button>
-          </div>
           <Link
             to="/owner/support"
             className="flex items-center py-2 text-on-surface/40 hover:text-primary transition-colors"
