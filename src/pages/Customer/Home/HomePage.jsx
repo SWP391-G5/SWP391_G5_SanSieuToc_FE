@@ -158,14 +158,17 @@ export default function HomePage() {
   );
 
   const { items: featuredFields } = useFields(featuredFieldsParams);
+  const getFieldId = (field) => String(field?.id || field?._id || '').trim();
+
   const topRatedFields = useMemo(() => {
-    return Array.isArray(featuredFields) ? featuredFields.slice(0, 3) : [];
+    return Array.isArray(featuredFields) ? featuredFields.slice(0, 4) : [];
   }, [featuredFields]);
 
-  const [largeField, smallField1, smallField2] = topRatedFields;
+  const [largeField, smallField1, smallField2, mediumField] = topRatedFields;
 
   const featured = {
     large: {
+      id: getFieldId(largeField),
       tag: largeField?.size || 'Đánh giá cao',
       title: largeField?.name || '—',
       address: largeField?.address || '',
@@ -175,6 +178,7 @@ export default function HomePage() {
       alt: largeField?.imageAlt || 'Hình ảnh sân',
     },
     small1: {
+      id: getFieldId(smallField1),
       title: smallField1?.name || '—',
       address: smallField1?.address || '',
       price: smallField1?.price || '',
@@ -182,6 +186,7 @@ export default function HomePage() {
       alt: smallField1?.imageAlt || 'Hình ảnh sân',
     },
     small2: {
+      id: getFieldId(smallField2),
       title: smallField2?.name || '—',
       address: smallField2?.address || '',
       price: smallField2?.price || '',
@@ -189,13 +194,20 @@ export default function HomePage() {
       alt: smallField2?.imageAlt || 'Hình ảnh sân',
     },
     medium: {
-      badge: 'Mới ra mắt',
-      title: 'Sân Đại học Y Hà Nội',
-      desc: 'Mặt cỏ mới nâng cấp đạt chuẩn FIFA Quality Pro. Hệ thống đèn chống chói giúp trận ban đêm nổi bật.',
-      cta: 'Xem chi tiết',
-      image: volleyballImg,
-      alt: 'Cả đội tụ họp dưới ánh đèn',
+      id: getFieldId(mediumField) || getFieldId(largeField),
+      badge: mediumField?.size || 'Mới ra mắt',
+      title: mediumField?.name || 'Sân Đại học Y Hà Nội',
+      desc: mediumField?.address || 'Mặt cỏ mới nâng cấp đạt chuẩn FIFA Quality Pro. Hệ thống đèn chống chói giúp trận ban đêm nổi bật.',
+      cta: 'Book now',
+      image: mediumField?.image || volleyballImg,
+      alt: mediumField?.imageAlt || 'Cả đội tụ họp dưới ánh đèn',
     },
+  };
+
+  const handleFeaturedBookNow = (fieldId) => {
+    const id = String(fieldId || '').trim();
+    if (!id) return;
+    navigate(`/fields/${id}`);
   };
 
   return (
@@ -239,7 +251,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      <FeaturedFieldsSection featured={featured} onViewAll={() => navigate('/fields')} />
+      <FeaturedFieldsSection
+        featured={featured}
+        onViewAll={() => navigate('/fields')}
+        onBookNow={handleFeaturedBookNow}
+      />
 
       {/* For Players & Owners */}
       <section className="mx-auto max-w-7xl px-6 py-24 md:px-8">

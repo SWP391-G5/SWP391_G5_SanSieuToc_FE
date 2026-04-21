@@ -10,30 +10,9 @@ import { useWishlist } from '../../../hooks/useWishlist';
 import useFields from '../../../hooks/useFields';
 
 import FieldCard from './components/FieldCard';
+import publicApi from '../../../services/public/publicApi';
+import { useEffect } from 'react';
 
-function cleanAddressPart(s) {
-  return String(s || '')
-    .replace(/\s+/g, ' ')
-    .replace(/^[,\s.-]+|[,\s.-]+$/g, '')
-    .trim();
-}
-
-function inferStreetFromField(field) {
-  const direct = cleanAddressPart(field?.street);
-  if (direct) return direct;
-
-  const rawAddress = String(field?.address || '').trim();
-  if (!rawAddress) return '';
-
-  const firstPart = cleanAddressPart(rawAddress.split(',')[0] || '');
-  if (!firstPart) return '';
-
-  const alreadyStreetLike = /^(?:duong|đường|street|thon|thôn|xom|xóm|ap|ấp|to|tổ|ngo|ngõ|hem|hẻm)\b/iu.test(firstPart);
-  if (alreadyStreetLike) return firstPart;
-
-  const withoutHouseNumber = cleanAddressPart(firstPart.replace(/^(?:so\s*)?\d+[\p{L}\p{N}/.-]*\s+/iu, ''));
-  return withoutHouseNumber || firstPart;
-}
 
 export default function FieldListPage() {
   const DEFAULT_PRICE_MAX_K = 350;
@@ -102,7 +81,21 @@ export default function FieldListPage() {
   }, [normalizedPriceMaxK, searchText, selectedCity, selectedDistrict, selectedSize, selectedStreet, sortBy, utilities]);
 
   const { loading: fieldsLoading, error: fieldsError, items: fields, meta: fieldsMeta } = useFields(fieldsParams);
-  const { items: allLocationFields } = useFields();
+  const [locationData, setLocationData] = useState([]);
+
+  useEffect(() => {
+    let alive = true;
+    const loadFilters = async () => {
+      try {
+        const res = await publicApi.getLocationFilters();
+        if (alive) setLocationData(res.data || []);
+      } catch (err) {
+        console.error('Failed to load location filters:', err);
+      }
+    };
+    loadFilters();
+    return () => { alive = false; };
+  }, []);
 
   const dynamicMaxPriceK = useMemo(() => {
     const maxPrice = Number(fieldsMeta?.priceRange?.max);
@@ -118,44 +111,32 @@ export default function FieldListPage() {
   }, [dynamicMaxPriceK, normalizedPriceMaxK]);
 
   const cityOptions = useMemo(() => {
-    const source = Array.isArray(allLocationFields) ? allLocationFields : [];
-    const set = new Set(
-      source
-        .map((f) => String(f?.city || '').trim())
-        .filter(Boolean)
-    );
-
+    const set = new Set(locationData.map((f) => String(f?.city || '').trim()).filter(Boolean));
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
-  }, [allLocationFields]);
+  }, [locationData]);
 
   const districtOptions = useMemo(() => {
     if (selectedCity === 'All') return [];
-
-    const source = Array.isArray(allLocationFields) ? allLocationFields : [];
     const set = new Set(
-      source
+      locationData
         .filter((f) => String(f?.city || '').trim() === selectedCity)
         .map((f) => String(f?.district || '').trim())
         .filter(Boolean)
     );
-
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
-  }, [allLocationFields, selectedCity]);
+  }, [locationData, selectedCity]);
 
   const streetOptions = useMemo(() => {
     if (selectedCity === 'All' || selectedDistrict === 'All') return [];
-
-    const source = Array.isArray(allLocationFields) ? allLocationFields : [];
     const set = new Set(
-      source
+      locationData
         .filter((f) => String(f?.city || '').trim() === selectedCity)
         .filter((f) => String(f?.district || '').trim() === selectedDistrict)
-        .map((f) => inferStreetFromField(f))
+        .map((f) => String(f?.street || '').trim())
         .filter(Boolean)
     );
-
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
-  }, [allLocationFields, selectedCity, selectedDistrict]);
+  }, [locationData, selectedCity, selectedDistrict]);
 
   const clearFilters = () => {
     setSelectedCity('All');
