@@ -5,7 +5,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { MAX_IMAGES_PER_POST, buildPickedImagePreviews, revokePreviewUrl } from './postUploadHelpers';
-import uploadService from '../../../services/uploadService';
 import publicApi from '../../../services/public/publicApi';
 
 const FALLBACK_POST_TAG_OPTIONS = [

@@ -15,27 +15,43 @@ const FALLBACK_POST_TAG_OPTIONS = [
   { value: 'HoiDap', label: 'Hỏi đáp' },
   { value: 'GiaoLuu', label: 'Giao lưu' },
   { value: 'SuKien', label: 'Sự kiện / Giải đấu' },
+  { value: 'KhuyenMai', label: 'Khuyến mãi' },
+  { value: 'BaoLoi', label: 'Báo lỗi / Góp ý' },
+  { value: 'Khac', label: 'Khác' },
 ];
 
-const MAX_TITLE_LEN = 200;
-const MAX_CONTENT_LEN = 10000;
-const MAX_TAGS = 3;
+const MAX_IMAGES_PER_POST = 6;
+const MIN_TAGS_PER_POST = 1;
+const MAX_TAGS_PER_POST = 3;
+const MAX_TITLE_CHARS = 200;
+const MAX_CONTENT_CHARS = 10000;
 
-export default function CreatePostModal({ isOpen, onClose, onSuccess }) {
-  const { notifySuccess, notifyError, notifyWarning } = useNotification();
+const INITIAL_FORM = {
+  title: '',
+  content: '',
+  tags: [],
+  images: [],
+};
+
+function revokePreviewUrl(url) {
+  if (!url) return;
+  try {
+    URL.revokeObjectURL(url);
+  } catch {
+    // ignore invalid object url
+  }
+}
+
+function buildPickedImagePreviews(files) {
+  return Array.from(files || []).map((file) => ({ file, previewUrl: URL.createObjectURL(file) }));
+}
+
+export default function CreatePostModal({ isOpen, onClose, onSuccess, editingPost = null }) {
+  const { notifySuccess, notifyError, notifyInfo, notifyWarning } = useNotification();
   const [loading, setLoading] = useState(false);
-
   const [tagOptions, setTagOptions] = useState(FALLBACK_POST_TAG_OPTIONS);
-
-  const [payload, setPayload] = useState({
-    title: '',
-    content: '',
-    tags: [],
-    image: '',
-  });
-
-  const [imageFile, setImageFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState('');
+  const [form, setForm] = useState(INITIAL_FORM);
+  const isEditing = Boolean(editingPost?.id);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -44,23 +60,20 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess }) {
     (async () => {
       try {
         const res = await publicApi.getPostTags();
+        const items = res?.items;
         if (!alive) return;
 
-        const items = Array.isArray(res?.items) ? res.items : Array.isArray(res) ? res : [];
-        const next = items
-          .map((x) => {
-            if (!x) return null;
-            if (typeof x === 'string') return { value: x, label: x };
-            const v = String(x.value || x.key || x.tag || x.name || '').trim();
-            const l = String(x.label || x.name || x.value || x.key || '').trim();
-            if (!v) return null;
-            return { value: v, label: l || v };
-          })
-          .filter(Boolean);
+        if (Array.isArray(items) && items.length > 0) {
+          const cleaned = items
+            .map((x) => ({ value: String(x?.value || '').trim(), label: String(x?.label || '').trim() }))
+            .filter((x) => x.value && x.label);
 
-        if (next.length > 0) setTagOptions(next);
+          if (cleaned.length > 0) {
+            setTagOptions(cleaned);
+          }
+        }
       } catch {
-        // keep fallback
+        // keep fallback options
       }
     })();
 
@@ -69,253 +82,349 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess }) {
     };
   }, [isOpen]);
 
-  const tagLookup = useMemo(() => {
-    const m = new Map();
-    (tagOptions || []).forEach((t) => m.set(String(t.value), t));
-    return m;
-  }, [tagOptions]);
+  const selectedTags = useMemo(() => (Array.isArray(form?.tags) ? form.tags : []), [form?.tags]);
 
-  const toggleTag = (tagValue) => {
-    const v = String(tagValue || '').trim();
-    if (!v) return;
+  const knownTagValues = useMemo(() => new Set((tagOptions || []).map((t) => String(t.value))), [tagOptions]);
 
-    setPayload((prev) => {
-      const current = Array.isArray(prev.tags) ? prev.tags : [];
-      const exists = current.includes(v);
-      if (exists) {
-        return { ...prev, tags: current.filter((x) => x !== v) };
-      }
+  const mergedTagOptions = useMemo(() => {
+    const extras = selectedTags
+      .filter((v) => v && !knownTagValues.has(String(v)))
+      .map((v) => ({ value: String(v), label: String(v) }));
+    return [...(tagOptions || []), ...extras];
+  }, [tagOptions, selectedTags, knownTagValues]);
 
-      if (current.length >= MAX_TAGS) {
-        notifyWarning?.(`Chỉ được chọn tối đa ${MAX_TAGS} tag.`);
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (!isEditing) {
+      setForm(INITIAL_FORM);
+      return;
+    }
+
+    const incomingTags = Array.isArray(editingPost?.tags)
+      ? editingPost.tags.map((x) => String(x || '').trim()).filter(Boolean)
+      : [];
+
+    const fallbackTag = String(editingPost?.tag || '').trim();
+    const tags = (incomingTags.length > 0 ? incomingTags : fallbackTag ? [fallbackTag] : []).slice(0, MAX_TAGS_PER_POST);
+
+    const incomingImages = Array.isArray(editingPost?.images)
+      ? editingPost.images.map((x) => String(x || '').trim()).filter(Boolean)
+      : [];
+
+    const fallbackImage = String(editingPost?.image || '').trim();
+    const images = (incomingImages.length > 0 ? incomingImages : fallbackImage ? [fallbackImage] : []).slice(0, MAX_IMAGES_PER_POST);
+
+    setForm({
+      title: String(editingPost?.title || '').trim(),
+      content: String(editingPost?.content || ''),
+      tags,
+      images,
+    });
+  }, [isOpen, isEditing, editingPost]);
+
+  const clearForm = () => {
+    (form?.images || []).forEach((img) => revokePreviewUrl(img?.previewUrl));
+    setForm(INITIAL_FORM);
+  };
+
+  const handleClose = () => {
+    clearForm();
+    setLoading(false);
+    onClose?.();
+  };
+
+  const toggleTag = (value) => {
+    setForm((prev) => {
+      const next = new Set(Array.isArray(prev?.tags) ? prev.tags : []);
+      if (next.has(value)) next.delete(value);
+      else next.add(value);
+
+      const nextArr = Array.from(next);
+      if (nextArr.length > MAX_TAGS_PER_POST) {
+        notifyWarning(`Bạn chỉ được chọn tối đa ${MAX_TAGS_PER_POST} tag cho 1 bài.`);
         return prev;
       }
 
-      return { ...prev, tags: [...current, v] };
+      return { ...prev, tags: nextArr };
     });
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
+  const onPickFiles = (files) => {
+    try {
+      const list = Array.from(files || []).filter((x) => x instanceof File);
+      if (!list.length) return;
+
+      const currentTotalCount = Array.isArray(form?.images) ? form.images.length : 0;
+      const remaining = Math.max(0, MAX_IMAGES_PER_POST - currentTotalCount);
+
+      if (remaining <= 0) {
+        notifyWarning(`Bạn chỉ được upload tối đa ${MAX_IMAGES_PER_POST} ảnh mỗi bài viết.`);
+        return;
+      }
+
+      const accepted = list.slice(0, remaining);
+      const rejectedCount = list.length - accepted.length;
+      const previews = buildPickedImagePreviews(accepted);
+
+      setForm((prev) => ({ ...prev, images: [...(prev?.images || []), ...previews] }));
+
+      if (rejectedCount > 0) {
+        notifyInfo(`Đã bỏ qua ${rejectedCount} ảnh vì vượt quá giới hạn ${MAX_IMAGES_PER_POST} ảnh.`);
+      }
+    } catch (err) {
+      notifyError(err?.message || 'Không thể đọc ảnh đã chọn.');
     }
   };
 
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setPreviewUrl('');
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
+  const removeImageAt = (idx) => {
+    setForm((prev) => {
+      const target = prev?.images?.[idx];
+      revokePreviewUrl(target?.previewUrl);
+      return { ...prev, images: (prev?.images || []).filter((_, i) => i !== idx) };
+    });
   };
 
-  const validateBeforeSubmit = () => {
-    const title = String(payload.title || '').trim();
-    const content = String(payload.content || '').trim();
-    const tags = Array.isArray(payload.tags) ? payload.tags.filter(Boolean) : [];
+  const validatePublish = () => {
+    const title = String(form?.title || '').trim();
+    const content = String(form?.content || '').trim();
+    const tags = Array.isArray(form?.tags) ? form.tags.filter(Boolean) : [];
 
-    if (!title) {
-      notifyError('Vui lòng nhập tiêu đề.');
-      return false;
-    }
-    if (title.length > MAX_TITLE_LEN) {
-      notifyError(`Tiêu đề không được vượt quá ${MAX_TITLE_LEN} ký tự.`);
-      return false;
-    }
+    if (!title) return 'Tiêu đề là bắt buộc.';
+    if (title.length > MAX_TITLE_CHARS) return `Tiêu đề tối đa ${MAX_TITLE_CHARS} ký tự.`;
 
-    if (!content) {
-      notifyError('Vui lòng nhập nội dung.');
-      return false;
-    }
-    if (content.length > MAX_CONTENT_LEN) {
-      notifyError(`Nội dung không được vượt quá ${MAX_CONTENT_LEN} ký tự.`);
-      return false;
-    }
+    if (!content) return 'Nội dung là bắt buộc.';
+    if (content.length > MAX_CONTENT_CHARS) return `Nội dung tối đa ${MAX_CONTENT_CHARS} ký tự.`;
 
-    if (tags.length < 1) {
-      notifyError('Vui lòng chọn ít nhất 1 tag.');
-      return false;
-    }
-    if (tags.length > MAX_TAGS) {
-      notifyError(`Chỉ được chọn tối đa ${MAX_TAGS} tag.`);
-      return false;
-    }
+    if (tags.length < MIN_TAGS_PER_POST) return `Vui lòng chọn tối thiểu ${MIN_TAGS_PER_POST} tag.`;
 
-    return true;
+    return '';
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateBeforeSubmit()) return;
+    const err = validatePublish();
+    if (err) {
+      notifyWarning(err);
+      return;
+    }
 
     setLoading(true);
     try {
-      let finalImageUrl = '';
-      if (imageFile) {
-        const urls = await uploadService.uploadImages([imageFile]);
-        finalImageUrl = urls[0] || '';
-      }
+      const files = (form?.images || []).filter((x) => x && x.file instanceof File).map((x) => x.file);
+      const newUploadedUrls = files.length > 0 ? await uploadService.uploadImages(files) : [];
+      const existingUrls = (form?.images || [])
+        .filter((x) => typeof x === 'string')
+        .map((x) => String(x || '').trim())
+        .filter(Boolean);
 
-      const tags = Array.isArray(payload.tags) ? payload.tags.filter(Boolean) : [];
+      const finalImageUrls = [...existingUrls, ...newUploadedUrls].slice(0, MAX_IMAGES_PER_POST);
+      const tags = selectedTags.map((x) => String(x).trim()).filter(Boolean).slice(0, MAX_TAGS_PER_POST);
+      const primaryTag = tags[0] || 'General';
 
-      await communityService.createPost({
-        title: String(payload.title || '').trim(),
-        content: String(payload.content || '').trim(),
-        // Backend owner/user services accept postTags/tags/tag; send postTags array to match manager.
-        postTags: tags,
-        tag: tags[0] || 'General',
-        image: finalImageUrl,
-      });
+      const payload = {
+        title: String(form?.title || '').trim(),
+        content: String(form?.content || '').trim(),
+        tag: primaryTag,
+        tags,
+        image: finalImageUrls[0] || '',
+        images: finalImageUrls,
+      };
 
-      notifySuccess('Bài viết đã được gửi! Vui lòng chờ Admin duyệt.');
-      onSuccess?.();
+      const result = isEditing
+        ? await communityService.updateMyPost(editingPost.id, payload)
+        : await communityService.createPost(payload);
+
+      notifySuccess(
+        isEditing
+          ? 'Đã cập nhật bài viết. Bài viết sẽ được duyệt lại.'
+          : 'Bài viết đã được gửi! Vui lòng chờ Admin duyệt.'
+      );
+      onSuccess?.(result?.item || null);
       handleClose();
-    } catch (err) {
-      notifyError(err?.response?.data?.message || err?.message || 'Không thể tạo bài viết.');
+    } catch (submitErr) {
+      notifyError(submitErr?.response?.data?.message || submitErr?.message || 'Không thể xử lý bài viết.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleClose = () => {
-    setPayload({ title: '', content: '', tags: [], image: '' });
-    setImageFile(null);
-    setPreviewUrl('');
-    onClose();
-  };
+  useEffect(() => {
+    if (isOpen) return;
+    clearForm();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   return (
     <Modal
       isOpen={isOpen}
       onRequestClose={handleClose}
       contentLabel="Create Post Modal"
-      className="mx-auto mt-20 max-w-2xl outline-none"
+      className="mx-auto mt-20 w-full max-w-4xl outline-none"
       overlayClassName="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-start justify-center p-4 overflow-y-auto"
     >
-      <div className="w-full animate-in fade-in zoom-in duration-300 rounded-3xl border border-[#474944]/30 bg-[#121410] p-8 shadow-2xl">
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="font-headline text-2xl font-black text-[#fdfdf6]">
-            Tạo bài viết <span className="italic text-[#8eff71]">mới</span>
-          </h2>
+      <div className="w-full rounded-2xl bg-surface-container-high border border-outline-variant shadow-2xl my-10">
+        <div className="flex items-start justify-between gap-4 border-b border-outline-variant px-5 py-4 sm:px-6">
+          <div>
+            <h2 className="text-xl font-headline font-bold">{isEditing ? 'Chỉnh sửa bài viết' : 'Tạo bài viết mới'}</h2>
+            <p className="text-sm text-on-surface-variant mt-1">
+              {isEditing
+                ? 'Sau khi sửa, bài viết sẽ chuyển về trạng thái Pending và cần duyệt lại.'
+                : 'Bài viết của bạn sẽ chuyển về Pending và cần duyệt trước khi công khai.'}
+            </p>
+          </div>
           <button
+            type="button"
             onClick={handleClose}
-            className="rounded-full p-2 text-[#abaca5] hover:bg-[#242721] hover:text-[#fdfdf6] transition-colors"
+            className="h-10 rounded-lg px-4 text-sm font-bold border border-outline-variant hover:bg-surface"
+            disabled={loading}
           >
-            <span className="material-symbols-outlined">close</span>
+            Close
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-widest text-[#abaca5]">Tiêu đề</label>
-            <input
-              type="text"
-              required
-              value={payload.title}
-              onChange={(e) => setPayload({ ...payload, title: e.target.value })}
-              placeholder="Tiêu đề bài viết của bạn..."
-              className="w-full rounded-xl border border-[#474944]/30 bg-[#0d0f0b] p-3 text-sm text-[#fdfdf6] outline-none transition-all focus:border-[#8eff71] focus:ring-1 focus:ring-[#8eff71]/40"
-            />
-            <div className="text-[10px] uppercase tracking-widest text-[#abaca5]">
-              {String(payload.title || '').length}/{MAX_TITLE_LEN}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-widest text-[#abaca5]">Chủ đề</label>
-
-              <div className="flex flex-wrap gap-2 rounded-xl border border-[#474944]/30 bg-[#0d0f0b] p-3">
-                {(tagOptions || []).map((t) => {
-                  const value = String(t.value);
-                  const active = Array.isArray(payload.tags) && payload.tags.includes(value);
-
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => toggleTag(value)}
-                      className={
-                        active
-                          ? 'rounded-full bg-[#8eff71] px-3 py-1 text-xs font-black text-[#0d6100]'
-                          : 'rounded-full border border-[#474944]/50 px-3 py-1 text-xs font-black text-[#abaca5] hover:border-[#8eff71]/60 hover:text-[#fdfdf6]'
-                      }
-                    >
-                      {t.label}
-                      {active ? ' ✓' : ''}
-                    </button>
-                  );
-                })}
-
-                {Array.isArray(payload.tags) && payload.tags.length === 0 ? (
-                  <div className="text-xs font-semibold text-[#abaca5]">Chọn 1–3 tag</div>
-                ) : null}
-              </div>
-
-              <div className="text-[10px] uppercase tracking-widest text-[#abaca5]">
-                Đã chọn {Array.isArray(payload.tags) ? payload.tags.length : 0}/{MAX_TAGS}
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-widest text-[#abaca5]">Hình ảnh (Tùy chọn)</label>
-              <div className="relative">
-                {!previewUrl ? (
-                  <label className="flex h-[46px] cursor-pointer items-center justify-center rounded-xl border border-dashed border-[#474944]/50 bg-[#0d0f0b] text-[#abaca5] transition-all hover:border-[#8eff71] hover:bg-[#121410] hover:text-[#8eff71]">
-                    <span className="material-symbols-outlined mr-2 text-xl">image</span>
-                    <span className="text-xs font-bold uppercase tracking-wider">Tải ảnh lên</span>
-                    <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                  </label>
-                ) : (
-                  <div className="relative h-[200px] w-full overflow-hidden rounded-xl border border-[#474944]/30 bg-[#0d0f0b]">
-                    <img src={previewUrl} alt="Ảnh xem trước" className="h-full w-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="absolute right-2 top-2 rounded-full bg-black/60 p-1.5 text-white backdrop-blur-md hover:bg-red-500 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-sm">close</span>
-                    </button>
+        <form onSubmit={handleSubmit}>
+          <div className="px-5 py-5 sm:px-6 sm:py-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <label className="space-y-1 block">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Title</div>
+                    <div className="text-xs text-on-surface-variant">Tối đa {MAX_TITLE_CHARS} ký tự</div>
                   </div>
-                )}
+                  <input
+                    className="h-11 w-full rounded-lg bg-white px-4 text-sm border border-outline-variant text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    value={form?.title || ''}
+                    onChange={(e) => setForm((p) => ({ ...p, title: e.target.value.slice(0, MAX_TITLE_CHARS) }))}
+                    placeholder="Post title"
+                    disabled={loading}
+                  />
+                </label>
+
+                <label className="space-y-1 block">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Content</div>
+                    <div className="text-xs text-on-surface-variant">Tối đa {MAX_CONTENT_CHARS} ký tự</div>
+                  </div>
+                  <textarea
+                    className="min-h-44 w-full rounded-lg bg-white px-4 py-3 text-sm border border-outline-variant text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    value={form?.content || ''}
+                    onChange={(e) => setForm((p) => ({ ...p, content: e.target.value.slice(0, MAX_CONTENT_CHARS) }))}
+                    placeholder="Write content..."
+                    disabled={loading}
+                  />
+                </label>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Tags</div>
+                    <div className="text-xs text-on-surface-variant">
+                      Chọn {MIN_TAGS_PER_POST}-{MAX_TAGS_PER_POST} tag
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {mergedTagOptions.map((opt) => {
+                      const active = selectedTags.includes(opt.value);
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => toggleTag(opt.value)}
+                          disabled={loading}
+                          className={
+                            active
+                              ? 'h-9 rounded-full px-3 text-xs font-bold border border-primary bg-primary/15 text-primary'
+                              : 'h-9 rounded-full px-3 text-xs font-bold border border-outline-variant text-on-surface-variant hover:bg-surface'
+                          }
+                          title={opt.value}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {selectedTags.length < MIN_TAGS_PER_POST ? (
+                    <div className="text-xs text-error">Vui lòng chọn tối thiểu {MIN_TAGS_PER_POST} tag.</div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Images</div>
+                    <div className="text-xs text-on-surface-variant mt-1">
+                      Add multiple images (Max {MAX_IMAGES_PER_POST} images). You can remove any preview.
+                    </div>
+                  </div>
+
+                  <label className="h-10 rounded-lg px-4 text-sm font-bold border border-outline-variant hover:bg-surface inline-flex items-center cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => onPickFiles(e.target.files)}
+                      disabled={loading}
+                    />
+                    Add images
+                  </label>
+                </div>
+
+                <div className="rounded-xl border border-outline-variant bg-surface p-4">
+                  {(form?.images || []).length ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                      {(form?.images || []).map((img, idx) => {
+                        const src = typeof img === 'string' ? img : img?.previewUrl;
+                        return (
+                          <div key={idx} className="relative rounded-lg overflow-hidden border border-outline-variant bg-surface">
+                            {src ? <img src={src} alt="Ảnh xem trước" className="h-28 w-full object-cover" /> : null}
+                            <button
+                              type="button"
+                              onClick={() => removeImageAt(idx)}
+                              className="absolute top-2 right-2 rounded bg-black/70 px-2 py-1 text-xs text-white"
+                              disabled={loading}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500">No images selected.</div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-widest text-[#abaca5]">Nội dung</label>
-            <textarea
-              required
-              rows={6}
-              value={payload.content}
-              onChange={(e) => setPayload({ ...payload, content: e.target.value })}
-              placeholder="Nội dung bài viết..."
-              className="w-full rounded-xl border border-[#474944]/30 bg-[#0d0f0b] p-3 text-sm text-[#fdfdf6] outline-none transition-all focus:border-[#8eff71] focus:ring-1 focus:ring-[#8eff71]/40 placeholder:opacity-50"
-            />
-            <div className="text-[10px] uppercase tracking-widest text-[#abaca5]">
-              {String(payload.content || '').length}/{MAX_CONTENT_LEN}
+            <div className="mt-6 flex items-center justify-end gap-2 border-t border-outline-variant pt-4">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="h-11 rounded-lg px-5 text-sm font-bold border border-outline-variant hover:bg-surface"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                className="h-11 rounded-lg bg-primary px-5 text-sm font-bold text-white hover:brightness-95 disabled:opacity-50"
+                disabled={loading || selectedTags.length < MIN_TAGS_PER_POST}
+                title={selectedTags.length < MIN_TAGS_PER_POST ? `Vui lòng chọn tối thiểu ${MIN_TAGS_PER_POST} tag.` : undefined}
+              >
+                {loading ? 'Đang xử lý...' : isEditing ? 'Lưu cập nhật' : 'Publish'}
+              </button>
             </div>
-          </div>
 
-          <div className="pt-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="relative w-full overflow-hidden rounded-xl bg-[#8eff71] py-4 text-sm font-black uppercase tracking-[0.2em] text-[#0d6100] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0d6100] border-t-transparent" />
-                  <span>Đang xử lý</span>
-                </div>
-              ) : (
-                'Đăng bài viết'
-              )}
-            </button>
-            <p className="mt-4 text-center text-[10px] uppercase tracking-widest text-[#abaca5]">
-              * Bài viết sẽ được Admin duyệt trước khi công khai.
-            </p>
+            <div className="mt-4">
+              <p className="text-center text-[10px] uppercase tracking-widest text-on-surface-variant">
+                * Bài viết sẽ được Admin duyệt trước khi công khai.
+              </p>
+            </div>
           </div>
         </form>
       </div>

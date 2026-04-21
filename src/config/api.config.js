@@ -61,7 +61,10 @@ export const API_CONFIG = {
       CREATE: '/api/bookings',
       CANCEL: '/api/bookings/cancel',
       FEEDBACK_ELIGIBILITY: (bookingId) => `/api/bookings/${bookingId}/feedback-eligibility`,
+      FEEDBACK_FIELD_ELIGIBILITY: (fieldId) => `/api/bookings/feedback-eligibility/field/${fieldId}`,
       FEEDBACK_CREATE: '/api/bookings/feedback',
+      FEEDBACK_UPDATE: (feedbackId) => `/api/bookings/feedback/${feedbackId}`,
+      FEEDBACK_DELETE: (feedbackId) => `/api/bookings/feedback/${feedbackId}`,
     },
     WALLET: {
       TOP_UP: '/api/wallets/topup',

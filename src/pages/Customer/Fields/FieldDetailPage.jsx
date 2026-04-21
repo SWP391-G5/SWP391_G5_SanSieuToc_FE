@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../../services/axios";
 import DEFAULT_FIELD_IMAGE_URL from "../../../utils/defaultFieldImage";
 import { usePreviewMode } from "../../../context/PreviewModeContext";
 import { useAuth } from "../../../context/AuthContext";
 import useCustomerBanners from "../../../hooks/useCustomerBanners";
+import { useNotification } from "../../../context/NotificationContext";
+import bookingService from "../../../services/bookingService";
 import AdBannerVertical from "../Community/components/AdBannerVertical";
 import AdBannerHorizontal from "../Community/components/AdBannerHorizontal";
 import { FIELD_DETAIL_VERTICAL_POOL } from "../../../data/ads/fieldDetailAdsCopy";
@@ -221,10 +223,51 @@ function getInitials(name) {
   if (words.length === 1) return words[0].slice(0, 1).toUpperCase();
   return `${words[0].slice(0, 1)}${words[words.length - 1].slice(0, 1)}`.toUpperCase();
 }
+
+const RATING_LABELS = {
+  1: "Rất tệ",
+  2: "Tệ",
+  3: "Bình thường",
+  4: "Tốt",
+  5: "Tuyệt vời",
+};
+
+function formatFeedbackDateTime(value) {
+  if (!value) return "N/A";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "N/A";
+  return d.toLocaleString("vi-VN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatFeedbackSlotRange(startTime, endTime) {
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "N/A";
+
+  const startText = start.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const endText = end.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${startText} - ${endText}`;
+}
+
 export default function FieldDetailPage() {
   const { id } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { isPreviewMode } = usePreviewMode();
+  const { user: authUser } = useAuth();
+  const { notifyError, notifySuccess } = useNotification();
   const { isAuthenticated } = useAuth();
   const [field, setField] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -249,6 +292,32 @@ export default function FieldDetailPage() {
   const [bookedSlots, setBookedSlots] = useState([]);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
+  const bookingIdFromQuery = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("bookingId") || "";
+  }, [location.search]);
+
+  const [activeFeedbackBookingId, setActiveFeedbackBookingId] = useState("");
+
+  useEffect(() => {
+    const initialId = String(
+      location.state?.feedbackBookingId || bookingIdFromQuery || "",
+    ).trim();
+    if (initialId) setActiveFeedbackBookingId(initialId);
+  }, [location.state, bookingIdFromQuery]);
+
+  const feedbackBookingId = activeFeedbackBookingId;
+  const [feedbackEligibility, setFeedbackEligibility] = useState(null);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackError, setFeedbackError] = useState("");
+  const [selectedFeedbackSlotId, setSelectedFeedbackSlotId] = useState("");
+  const [feedbackRate, setFeedbackRate] = useState(5);
+  const [feedbackContent, setFeedbackContent] = useState("");
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+  const [isFeedbackFormOpen, setIsFeedbackFormOpen] = useState(false);
+  const feedbackSectionRef = useRef(null);
+  const feedbackFormRef = useRef(null);
+
   const now = new Date();
   const todayStr = now.toISOString().split("T")[0];
 
@@ -261,41 +330,268 @@ export default function FieldDetailPage() {
     return currentMinutes >= startMinutes;
   };
 
-  useEffect(() => {
-    const fetchField = async () => {
-      try {
-        const response = await axiosInstance.get(`/api/fields/${id}/full`);
-        if (response.data.success) {
-          setField(response.data.data);
-        } else {
-          setError("Field not found");
-        }
-      } catch (err) {
-        console.error("Error fetching field:", err);
-        setError("Failed to load field data");
-      } finally {
-        setLoading(false);
+  const fetchField = useCallback(async () => {
+    try {
+      const response = await axiosInstance.get(`/api/fields/${id}/full`);
+      if (response.data.success) {
+        setField(response.data.data);
+      } else {
+        setError("Field not found");
       }
-    };
-    fetchField();
+    } catch (err) {
+      console.error("Error fetching field:", err);
+      setError("Failed to load field data");
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
 
   useEffect(() => {
-    const fetchBookedSlots = async () => {
-      if (!selectedDate || !id) return;
-      try {
-        const response = await axiosInstance.get(
-          `/api/bookings/field/${id}/slots?date=${selectedDate}`,
-        );
-        if (response.data.success) {
-          setBookedSlots(response.data.bookedSlots || []);
-        }
-      } catch (err) {
-        console.error("Error fetching booked slots:", err);
+    fetchField();
+  }, [fetchField]);
+
+  const fetchBookedSlots = useCallback(async () => {
+    if (!selectedDate || !id) return;
+    try {
+      const response = await axiosInstance.get(
+        `/api/bookings/field/${id}/slots?date=${selectedDate}`,
+      );
+      if (response.data.success) {
+        setBookedSlots(response.data.bookedSlots || []);
       }
-    };
-    fetchBookedSlots();
+    } catch (err) {
+      console.error("Error fetching booked slots:", err);
+    }
   }, [selectedDate, id]);
+
+  useEffect(() => {
+    fetchBookedSlots();
+  }, [fetchBookedSlots]);
+
+  const fetchEligibility = useCallback(async () => {
+    if (!id || !authUser) {
+      setFeedbackEligibility(null);
+      setFeedbackError("");
+      setSelectedFeedbackSlotId("");
+      return;
+    }
+
+    setFeedbackLoading(true);
+    setFeedbackError("");
+
+    try {
+      let data;
+      if (feedbackBookingId) {
+        data = await bookingService.getFeedbackEligibility(feedbackBookingId);
+      } else {
+        data = await bookingService.getFeedbackEligibilityByField(id);
+      }
+
+      const item = data?.item || null;
+
+      if (!item) {
+        setFeedbackEligibility(null);
+        if (feedbackBookingId) {
+          setFeedbackError("Không tải được thông tin đánh giá.");
+        }
+        return;
+      }
+
+      const itemFieldId = String(item.fieldId || "").trim();
+      if (itemFieldId && itemFieldId !== String(id)) {
+        setFeedbackEligibility(null);
+        if (feedbackBookingId) {
+          setFeedbackError("Booking này không thuộc sân đang xem.");
+        }
+        return;
+      }
+
+      const slots = item.reviewableSlots || [
+        ...(item.eligibleSlots || []).map(s => ({ ...s, hasFeedback: false })),
+        ...(item.submittedSlots || []).map(s => ({ ...s, hasFeedback: true }))
+      ];
+
+      const firstSlotId = slots[0]?.id || "";
+
+      setFeedbackEligibility({
+        ...item,
+        reviewableSlots: slots
+      });
+      setSelectedFeedbackSlotId(String(firstSlotId || ""));
+    } catch (err) {
+      setFeedbackEligibility(null);
+      if (feedbackBookingId) {
+        setFeedbackError(
+          err?.response?.data?.message || "Không tải được thông tin đánh giá.",
+        );
+      }
+    } finally {
+      setFeedbackLoading(false);
+    }
+  }, [feedbackBookingId, id, authUser]);
+
+  useEffect(() => {
+    fetchEligibility();
+  }, [fetchEligibility]);
+
+  useEffect(() => {
+    if (feedbackBookingId && feedbackSectionRef.current) {
+      feedbackSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [feedbackBookingId, feedbackSectionRef]);
+
+  const reviewableSlots = useMemo(() => {
+    if (!feedbackEligibility) return [];
+    return feedbackEligibility.reviewableSlots || [];
+  }, [feedbackEligibility]);
+
+  const canShowAddFeedback = useMemo(() => {
+    return reviewableSlots.some(slot => !slot.hasFeedback);
+  }, [reviewableSlots]);
+
+  const selectedFeedbackSlot = useMemo(() => {
+    return reviewableSlots.find(
+      (slot) => String(slot.id) === String(selectedFeedbackSlotId),
+    );
+  }, [reviewableSlots, selectedFeedbackSlotId]);
+
+  useEffect(() => {
+    if (!selectedFeedbackSlot) {
+      setFeedbackRate(5);
+      setFeedbackContent("");
+      return;
+    }
+
+    const existingFeedback = selectedFeedbackSlot.feedback;
+    if (existingFeedback) {
+      setFeedbackRate(Number(existingFeedback.rate) || 5);
+      setFeedbackContent(String(existingFeedback.content || ""));
+      return;
+    }
+
+    setFeedbackRate(5);
+    setFeedbackContent("");
+  }, [selectedFeedbackSlot]);
+
+  const resetFeedbackForm = () => {
+    if (selectedFeedbackSlot?.feedback) {
+      setFeedbackRate(Number(selectedFeedbackSlot.feedback.rate) || 5);
+      setFeedbackContent(String(selectedFeedbackSlot.feedback.content || ""));
+      return;
+    }
+    setFeedbackRate(5);
+    setFeedbackContent("");
+  };
+
+  const handleSubmitFeedback = async (event) => {
+    event.preventDefault();
+
+    if (!selectedFeedbackSlotId) {
+      notifyError("Vui lòng chọn ca sân để đánh giá.");
+      return;
+    }
+
+    const trimmedContent = String(feedbackContent || "").trim();
+    if (!trimmedContent) {
+      notifyError("Vui lòng nhập nội dung đánh giá.");
+      return;
+    }
+
+    const normalizedRate = Number(feedbackRate);
+    if (!Number.isFinite(normalizedRate) || normalizedRate < 1 || normalizedRate > 5) {
+      notifyError("Số sao không hợp lệ.");
+      return;
+    }
+
+    setFeedbackSubmitting(true);
+    try {
+      const existingFeedbackId = String(selectedFeedbackSlot?.feedback?.id || "");
+      const payload = {
+        rate: normalizedRate,
+        content: trimmedContent,
+      };
+
+      if (existingFeedbackId) {
+        await bookingService.updateFeedback(existingFeedbackId, payload);
+        notifySuccess("Đã cập nhật đánh giá.");
+      } else {
+        await bookingService.createFeedback({
+          bookingDetailId: selectedFeedbackSlotId,
+          ...payload,
+        });
+        notifySuccess("Đã gửi đánh giá.");
+      }
+
+      await fetchEligibility();
+      await fetchField();
+
+      setIsFeedbackFormOpen(false);
+    } catch (err) {
+      notifyError(err?.response?.data?.message || "Không thể gửi đánh giá.");
+    } finally {
+      setFeedbackSubmitting(false);
+    }
+  };
+
+  const handleDeleteFeedback = async (feedbackId) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa đánh giá này?")) return;
+
+    try {
+      await bookingService.deleteFeedback(feedbackId);
+      notifySuccess("Đã xóa đánh giá.");
+
+      await fetchEligibility();
+      await fetchField();
+    } catch (err) {
+      notifyError(err?.response?.data?.message || "Không thể xóa đánh giá.");
+    }
+  };
+
+  const handleEditFromList = (fb) => {
+    // We need to find if this feedback belongs to the current booking we have eligibility for,
+    // OR we need to fetch eligibility for THAT feedback's booking.
+    // For simplicity, if we don't have feedbackBookingId or it's different, we might need more logic.
+    // However, the user said "navigate sang field detail thôi", so they might arrive without bookingId.
+
+    // If we have eligibility and the slot is in reviewableSlots, great.
+    const slotId = fb.bookingDetailID;
+    const bId = fb.bookingID;
+
+    if (bId && bId !== feedbackBookingId) {
+      setActiveFeedbackBookingId(bId);
+      // The useEffect for eligibility will trigger automatically
+    }
+
+    const existsInSlots = (slots) => slots.find(s => String(s.id) === String(slotId));
+
+    if (existsInSlots(reviewableSlots)) {
+      setSelectedFeedbackSlotId(String(slotId));
+      setIsFeedbackFormOpen(true);
+      setTimeout(() => {
+        feedbackFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    } else {
+      // If it doesn't exist yet, it's because eligibility is still loading for the new bId.
+      // We'll set a "pending open" state.
+      setPendingFeedbackSlotId(String(slotId));
+    }
+  };
+
+  const [pendingFeedbackSlotId, setPendingFeedbackSlotId] = useState(null);
+
+  useEffect(() => {
+    if (pendingFeedbackSlotId && !feedbackLoading && reviewableSlots.length > 0) {
+      const found = reviewableSlots.find(s => String(s.id) === String(pendingFeedbackSlotId));
+      if (found) {
+        setSelectedFeedbackSlotId(pendingFeedbackSlotId);
+        setIsFeedbackFormOpen(true);
+        setPendingFeedbackSlotId(null);
+        setTimeout(() => {
+          feedbackFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+    }
+  }, [pendingFeedbackSlotId, feedbackLoading, reviewableSlots]);
 
   const toggleSlot = (slot) => {
     if (bookedSlots.includes(slot)) return;
@@ -340,8 +636,8 @@ export default function FieldDetailPage() {
   const avgRateNumber = Number.isFinite(fromSummary) && fromSummary > 0
     ? normalizeRate(fromSummary)
     : Number.isFinite(fromField) && fromField > 0
-    ? normalizeRate(fromField)
-    : 5;
+      ? normalizeRate(fromField)
+      : 5;
 
   const avgRateText = avgRateNumber.toFixed(1);
   const totalFeedback = Number(feedbackSummary?.total) || feedbacks.length;
@@ -528,6 +824,155 @@ export default function FieldDetailPage() {
               </div>
             )}
 
+            {authUser && (
+              <div ref={feedbackSectionRef} className="border-t border-[#474944]/30 pt-4 mt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-headline text-sm font-bold text-[#8eff71]">
+                    Đánh giá booking của bạn
+                  </h3>
+                  {canShowAddFeedback && !isFeedbackFormOpen && (
+                    <button
+                      onClick={() => setIsFeedbackFormOpen(true)}
+                      className="flex items-center gap-1.5 rounded-lg bg-[#8eff71] px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#0d6100] transition-transform hover:scale-105"
+                    >
+                      <span className="material-symbols-outlined text-xs">add</span>
+                      <span>Viết đánh giá</span>
+                    </button>
+                  )}
+                </div>
+
+                {feedbackLoading ? (
+                  <div className="rounded-lg border border-[#474944]/30 bg-[#121410] p-4 text-sm text-[#abaca5]">
+                    Đang tải thông tin đánh giá...
+                  </div>
+                ) : feedbackError ? (
+                  <div className="rounded-lg border border-[#7a2f2f]/40 bg-[#2a1414] p-4 text-sm text-[#ffb3b3]">
+                    {feedbackError}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {!feedbackEligibility?.isPaid ? (
+                      <div className="rounded-lg border border-[#7a5f26]/40 bg-[#2a2414] p-4 text-sm text-[#ffd88a]">
+                        Booking chưa thanh toán, chưa thể đánh giá.
+                      </div>
+                    ) : reviewableSlots.length === 0 ? (
+                      <div className="rounded-lg border border-[#474944]/30 bg-[#121410] p-4 text-sm text-[#abaca5]">
+                        Chưa có ca sân nào đủ điều kiện để đánh giá.
+                      </div>
+                    ) : isFeedbackFormOpen && (
+                      <form
+                        ref={feedbackFormRef}
+                        onSubmit={handleSubmitFeedback}
+                        className="rounded-xl border border-[#474944]/30 bg-[#121410] p-4 space-y-4"
+                      >
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-headline text-xs font-bold text-[#fdfdf6]">
+                            {selectedFeedbackSlot?.feedback ? "Cập nhật đánh giá" : "Tạo đánh giá mới"}
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() => setIsFeedbackFormOpen(false)}
+                            className="text-[#abaca5] hover:text-[#fdfdf6]"
+                          >
+                            <span className="material-symbols-outlined text-sm">close</span>
+                          </button>
+                        </div>
+
+                        <div>
+                          <label
+                            htmlFor="feedback-slot"
+                            className="block font-headline text-xs font-bold text-[#abaca5] mb-2"
+                          >
+                            Chọn ca sân
+                          </label>
+                          <select
+                            id="feedback-slot"
+                            value={selectedFeedbackSlotId}
+                            onChange={(e) => setSelectedFeedbackSlotId(e.target.value)}
+                            className="w-full rounded-lg border border-[#474944]/40 bg-[#1f221b] px-3 py-2 text-sm text-[#fdfdf6] focus:border-[#8eff71] focus:outline-none"
+                          >
+                            <option value="">-- Chọn ca sân --</option>
+                            {reviewableSlots.map((slot) => (
+                              <option key={slot.id} value={slot.id}>
+                                {`${formatFeedbackSlotRange(slot.startTime, slot.endTime)} | ${formatFeedbackDateTime(slot.startTime)} ${slot.hasFeedback ? "| Đã đánh giá" : "| Chưa đánh giá"}`}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <p className="font-headline text-xs font-bold text-[#abaca5] mb-2">Số sao</p>
+                          <div className="flex items-center gap-2">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={() => setFeedbackRate(star)}
+                                className="rounded p-1 transition-transform hover:scale-110"
+                                aria-label={`Đánh giá ${star} sao`}
+                              >
+                                <span
+                                  className={`material-symbols-outlined text-2xl ${feedbackRate >= star ? "text-[#ffc864]" : "text-[#575a53]"}`}
+                                >
+                                  star
+                                </span>
+                              </button>
+                            ))}
+                            <span className="ml-2 text-sm font-bold text-[#fdfdf6]">
+                              {RATING_LABELS[feedbackRate] || ""}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label
+                            htmlFor="feedback-content"
+                            className="block font-headline text-xs font-bold text-[#abaca5] mb-2"
+                          >
+                            Nội dung đánh giá
+                          </label>
+                          <textarea
+                            id="feedback-content"
+                            value={feedbackContent}
+                            onChange={(e) => setFeedbackContent(e.target.value)}
+                            rows={4}
+                            maxLength={800}
+                            placeholder="Chia sẻ trải nghiệm thực tế của bạn..."
+                            className="w-full resize-y rounded-lg border border-[#474944]/40 bg-[#1f221b] px-3 py-2 text-sm text-[#fdfdf6] focus:border-[#8eff71] focus:outline-none"
+                          />
+                          <div className="mt-1 text-right text-[11px] text-[#abaca5]">
+                            {String(feedbackContent || "").length}/800
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={resetFeedbackForm}
+                            disabled={feedbackSubmitting}
+                            className="rounded-lg border border-[#474944]/50 px-3 py-2 text-xs font-bold text-[#abaca5] transition-colors hover:bg-[#242721] disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            Reset
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={feedbackSubmitting || !selectedFeedbackSlotId}
+                            className="rounded-lg bg-[#8eff71] px-4 py-2 text-xs font-black text-[#0d6100] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {feedbackSubmitting
+                              ? "Đang gửi..."
+                              : selectedFeedbackSlot?.feedback
+                                ? "Lưu cập nhật"
+                                : "Gửi đánh giá"}
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="border-t border-[#474944]/30 pt-4 mt-4">
               <h3 className="font-headline text-sm font-bold text-[#8eff71] mb-3">Feedback từ người chơi</h3>
 
@@ -571,9 +1016,31 @@ export default function FieldDetailPage() {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-1 shrink-0">
-                            <span className="material-symbols-outlined text-sm text-[#ffc864]">star</span>
-                            <span className="font-headline text-sm font-black text-[#ffc864]">{rateText}</span>
+                          <div className="flex items-center gap-3 shrink-0">
+                            {/* Action Buttons for User's own feedback */}
+                            {String(authUser?.id || '') === String(fb.user?.id || '') && (
+                              <div className="flex items-center gap-1.5 mr-2">
+                                <button
+                                  onClick={() => handleEditFromList(fb)}
+                                  className="text-[#abaca5] hover:text-[#8eff71] transition-colors"
+                                  title="Sửa đánh giá"
+                                >
+                                  <span className="material-symbols-outlined text-base">edit</span>
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteFeedback(fb.id)}
+                                  className="text-[#abaca5] hover:text-[#ff4d6d] transition-colors"
+                                  title="Xóa đánh giá"
+                                >
+                                  <span className="material-symbols-outlined text-base">delete</span>
+                                </button>
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-1">
+                              <span className="material-symbols-outlined text-sm text-[#ffc864]">star</span>
+                              <span className="font-headline text-sm font-black text-[#ffc864]">{rateText}</span>
+                            </div>
                           </div>
                         </div>
 
@@ -662,12 +1129,12 @@ export default function FieldDetailPage() {
                               !selectedDate
                                 ? "font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed"
                                 : isPast
-                                ? "font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through"
-                                : isBooked
                                   ? "font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through"
-                                  : isSelected
-                                    ? "font-headline rounded-lg bg-[#8eff71] px-1 py-2 text-[10px] font-bold text-[#0d6100]"
-                                    : "font-headline rounded-lg bg-[#242721] px-1 py-2 text-[10px] font-bold text-[#abaca5] transition-colors hover:bg-[#474944]/50 hover:text-[#fdfdf6]"
+                                  : isBooked
+                                    ? "font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through"
+                                    : isSelected
+                                      ? "font-headline rounded-lg bg-[#8eff71] px-1 py-2 text-[10px] font-bold text-[#0d6100]"
+                                      : "font-headline rounded-lg bg-[#242721] px-1 py-2 text-[10px] font-bold text-[#abaca5] transition-colors hover:bg-[#474944]/50 hover:text-[#fdfdf6]"
                             }
                           >
                             {slot}
