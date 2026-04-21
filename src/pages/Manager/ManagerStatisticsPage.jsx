@@ -1,11 +1,67 @@
 /**
- * ManagerStatisticsPage.jsx
- * Manager dashboard statistics page.
+ * ============================================================
+ * FILE: src/pages/Manager/ManagerStatisticsPage.jsx
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   Manager Statistics main screen (ORCHESTRATOR).
+ *   Aggregates summary + trends + top fields for the manager scope.
+ *
+ * RESPONSIBILITIES:
+ *   - Build query params from URL + local filters (preset/groupBy/ownerId)
+ *   - Fetch data via React Query (summary, trends, hot-fields, field detail)
+ *   - Provide UI state for owner scope modal + field detail modal
+ *
+ * DATA FLOW (high-level):
+ *   UI filters/URL → query objects → managerApi.* → React Query → local state → charts/tables
+ *
+ * CALLS INTO:
+ *   - src/services/manager/managerApi.js
+ *
+ * NOTES:
+ *   - This page intentionally mirrors some query results into local state
+ *     (summary/bookingsTrend/revenueTrend/hotFields) to minimize JSX churn.
+ * ============================================================
  */
 
+/**
+ * ============================================================
+ * STATE MAP (ManagerStatisticsPage)
+ * ============================================================
+ * searchParams        URLSearchParams  From react-router, contains ownerId
+ * ownerId             {string}         Selected owner scope (optional)
+ *
+ * preset              {string}         Range preset: last7days|thisMonth|thisYear
+ * groupBy             {string}         Trend grouping: day|week|month (auto-adjusted)
+ * trendViewMode       {string}         'chart' | 'table'
+ *
+ * loading             {boolean}        Derived from ReactQuery isLoading flags
+ * error               {string}         First query failure message
+ *
+ * summary             {object|null}    Statistics summary payload
+ * bookingsTrend       {Array}          Trend series for bookings
+ * revenueTrend        {Array}          Trend series for revenue
+ * hotFields           {Array}          Ranking of top fields
+ *
+ * scopeOpen           {boolean}        Owner scope modal visibility
+ * scopeLoading        {boolean}        Owner scope modal: in-flight fetch
+ * scopeError          {string}         Owner scope modal: error message
+ * managedOwners       {Array}          Owners assigned to this manager
+ *
+ * fieldViewOpen       {boolean}        Field detail modal visibility
+ * fieldViewing        {object|null}    Field card selected from UI
+ * ============================================================
+ */
+
+// ── React core ─────────────────────────────────────────────
 import { useEffect, useMemo, useState } from 'react';
+
+// ── Routing ────────────────────────────────────────────────
 import { useSearchParams } from 'react-router-dom';
-import managerApi from '../../services/manager/managerApi';
+
+// ── Internal services ──────────────────────────────────────
+import managerApi from '../../services/manager/managerApi'; // Manager statistics + scope + field detail APIs
+
+// ── Vendor: charting ───────────────────────────────────────
 import {
   Bar,
   BarChart,
@@ -19,9 +75,12 @@ import {
   YAxis,
 } from 'recharts';
 
-// ✅ React Query
+// ── Vendor: React Query ────────────────────────────────────
 import { useQuery } from '@tanstack/react-query';
 
+// ─────────────────────────────────────────────────────────────
+// SECTION 1: URL SCOPE + FILTERS
+// ─────────────────────────────────────────────────────────────
 function formatCompactNumber(n) {
   const v = Number(n) || 0;
   return v.toLocaleString();
@@ -64,6 +123,9 @@ const PRESETS = [
  * @returns {JSX.Element} statistics page
  */
 export default function ManagerStatisticsPage() {
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 1: URL SCOPE + FILTERS
+  // ─────────────────────────────────────────────────────────────
   const [searchParams, setSearchParams] = useSearchParams();
   const ownerId = String(searchParams.get('ownerId') || '').trim();
 
@@ -72,6 +134,9 @@ export default function ManagerStatisticsPage() {
   const [groupBy, setGroupBy] = useState('day');
   const [trendViewMode, setTrendViewMode] = useState('chart');
 
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 2: PAGE STATE (loading/error + normalized data)
+  // ─────────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -80,6 +145,9 @@ export default function ManagerStatisticsPage() {
   const [revenueTrend, setRevenueTrend] = useState([]);
   const [hotFields, setHotFields] = useState([]);
 
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 3: MODALS (scope + field detail)
+  // ─────────────────────────────────────────────────────────────
   const [scopeOpen, setScopeOpen] = useState(false);
   const [scopeLoading, setScopeLoading] = useState(false);
   const [scopeError, setScopeError] = useState('');
@@ -146,6 +214,17 @@ export default function ManagerStatisticsPage() {
   const anyLoading = summaryQ.isLoading || bookingsTrendQ.isLoading || revenueTrendQ.isLoading || hotFieldsQ.isLoading;
   const firstError = summaryQ.error || bookingsTrendQ.error || revenueTrendQ.error || hotFieldsQ.error;
 
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 4: EFFECTS (status sync + result sync)
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * EFFECT: Derive loading + error banner from ReactQuery state
+   * ----------------------------------------------------------
+   * WHEN IT RUNS: When any query enters/leaves loading or any query errors.
+   * WHAT IT DOES: Updates (loading, error) UI state.
+   * CLEANUP: None
+   */
   useEffect(() => {
     setLoading(anyLoading);
     if (!firstError) {
@@ -155,23 +234,43 @@ export default function ManagerStatisticsPage() {
     setError(firstError?.response?.data?.message || firstError?.message || 'Tải thống kê thất bại');
   }, [anyLoading, firstError]);
 
-  // Sync query results into local state (minimizes JSX edits)
+  /**
+   * EFFECT: Mirror summary query result into local state
+   * ----------------------------------------------------------
+   * Purpose: keep JSX stable by reading from local `summary`.
+   */
   useEffect(() => {
     if (summaryQ.data !== undefined) setSummary(summaryQ.data || null);
   }, [summaryQ.data]);
 
+  /**
+   * EFFECT: Mirror bookingsTrend query result into local state
+   */
   useEffect(() => {
     if (bookingsTrendQ.data !== undefined) setBookingsTrend(bookingsTrendQ.data?.series || []);
   }, [bookingsTrendQ.data]);
 
+  /**
+   * EFFECT: Mirror revenueTrend query result into local state
+   */
   useEffect(() => {
     if (revenueTrendQ.data !== undefined) setRevenueTrend(revenueTrendQ.data?.series || []);
   }, [revenueTrendQ.data]);
 
+  /**
+   * EFFECT: Mirror hotFields query result into local state
+   */
   useEffect(() => {
     if (hotFieldsQ.data !== undefined) setHotFields(hotFieldsQ.data?.items || []);
   }, [hotFieldsQ.data]);
 
+  /**
+   * EFFECT: Ensure managed owner scope list is loaded when ownerId is present
+   * ----------------------------------------------------------
+   * WHY: If user lands on /manager/statistics?ownerId=... directly,
+   *      we need to load managedOwners to display owner info.
+   * CLEANUP: cancellation flag to avoid state update after unmount.
+   */
   useEffect(() => {
     let cancelled = false;
 
@@ -378,6 +477,13 @@ export default function ManagerStatisticsPage() {
                         <div className="mt-2 text-[11px] text-[#fdfdf6]/60 line-clamp-2">{f.address || 'Chưa có địa chỉ'}</div>
                       </button>
                     ))}
+
+                    {/* CHANGE: auto-focus first field card if any */}
+                    {focusedOwnerFields.length === 1 ? (
+                      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+                        <div className="h-full w-full rounded-xl border-2 border-dashed border-[#8eff71] opacity-50" />
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
               </div>
@@ -606,6 +712,13 @@ export default function ManagerStatisticsPage() {
                     </div>
                   </button>
                 ))}
+
+                {/* CHANGE: auto-focus first owner card if any */}
+                {managedOwners.length === 1 ? (
+                  <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+                    <div className="h-full w-full rounded-xl border-2 border-dashed border-[#8eff71] opacity-50" />
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
