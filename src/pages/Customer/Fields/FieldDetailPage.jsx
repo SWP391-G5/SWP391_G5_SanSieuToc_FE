@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../../../services/axios";
 import DEFAULT_FIELD_IMAGE_URL from "../../../utils/defaultFieldImage";
 import { usePreviewMode } from "../../../context/PreviewModeContext";
+import { useAuth } from "../../../context/AuthContext";
 import useCustomerBanners from "../../../hooks/useCustomerBanners";
 import AdBannerVertical from "../Community/components/AdBannerVertical";
 import AdBannerHorizontal from "../Community/components/AdBannerHorizontal";
@@ -224,6 +225,7 @@ export default function FieldDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isPreviewMode } = usePreviewMode();
+  const { isAuthenticated } = useAuth();
   const [field, setField] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -368,6 +370,11 @@ export default function FieldDetailPage() {
   };
 
   const handleBook = () => {
+    if (!isAuthenticated) {
+      navigate('/auth', { state: { from: '/fields/' + id, message: 'Vui lòng đăng nhập để đặt sân' } });
+      return;
+    }
+
     if (isPreviewMode) {
       alert(
         "Bạn đang ở chế độ xem trước (preview mode) nên không thể đặt sân.",
@@ -650,9 +657,11 @@ export default function FieldDetailPage() {
                             key={slot}
                             type="button"
                             onClick={() => toggleSlot(slot)}
-                            disabled={isBooked || isPast}
+                            disabled={!selectedDate || isBooked || isPast}
                             className={
-                              isPast
+                              !selectedDate
+                                ? "font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed"
+                                : isPast
                                 ? "font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through"
                                 : isBooked
                                   ? "font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through"

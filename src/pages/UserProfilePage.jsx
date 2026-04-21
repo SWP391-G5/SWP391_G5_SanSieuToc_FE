@@ -123,7 +123,7 @@ function BookingCard({ booking, onCancel, onFeedback }) {
 
   const hasEndedSlot = (booking.allDates || []).some(d => (d.slots || []).some(s => s.status === 'End'));
   const hasAvailableSlots = (booking.allDetails || []).some(d => d.status !== 'Cancel');
-  const canCancel = (booking.status === 'Confirmed' || booking.status === 'Booked') && booking.statusPayment === 'Paid' && hasAvailableSlots && !isEnded;
+  const canCancel = (booking.status === 'Active' || booking.status === 'Confirmed') && booking.statusPayment === 'Paid' && hasAvailableSlots && !isEnded;
   const canFeedback =
     typeof booking.canFeedback === 'boolean'
       ? booking.canFeedback

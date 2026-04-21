@@ -16,9 +16,10 @@ import {
 } from "../../services/owner/ownerWalletService";
 
 const STATUS_LABELS = {
-  Booked: "Approved",
+  Active: "Approved",
   "Cancel Request": "Pending",
-  Cancel: "Rejected",
+  Cancelled: "Rejected",
+  Ended: "Completed",
 };
 
 export default function OwnerDashboardPage() {

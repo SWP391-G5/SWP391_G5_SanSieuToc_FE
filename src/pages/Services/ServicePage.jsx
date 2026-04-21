@@ -328,10 +328,11 @@ export default function ServicePage() {
                         <p className="text-xs text-gray-500">{booking.allDates?.map(d => formatDate(d.date)).join(', ')}</p>
                       </div>
                       <span className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${
-                        booking.status === 'Confirmed' ? 'bg-green-500/20 text-green-400' :
-                        booking.status === 'Booked' ? 'bg-blue-500/20 text-blue-400' :
+                        booking.status === 'Active' ? 'bg-blue-500/20 text-blue-400' :
+                        booking.status === 'Cancel Request' ? 'bg-amber-500/20 text-amber-400' :
+                        booking.status === 'Cancelled' ? 'bg-red-500/20 text-red-400' :
                         'bg-gray-500/20 text-gray-400'
-                      }`}>{booking.status === 'Booked' ? 'Đã đặt' : booking.status}</span>
+                      }`}>{booking.status === 'Active' ? 'Đã đặt' : booking.status}</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {booking.allDates?.flatMap(dateObj =>
