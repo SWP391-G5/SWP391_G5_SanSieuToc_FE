@@ -109,7 +109,7 @@ export default function BookingConfirmPage() {
       await bookingService.createBooking(bookingPayload);
       setBookingSuccess(true);
       setTimeout(() => {
-        navigate('/profile', { state: { activeTab: 'bookings', refreshWallet: true } });
+        navigate('/services');
       }, 2000);
     } catch (error) {
       console.error('Booking failed:', error);

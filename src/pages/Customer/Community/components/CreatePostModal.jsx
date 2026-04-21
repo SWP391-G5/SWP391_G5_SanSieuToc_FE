@@ -242,8 +242,8 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editingPos
       );
       onSuccess?.(result?.item || null);
       handleClose();
-    } catch (err) {
-      notifyError(err?.response?.data?.message || err?.message || 'Không thể xử lý bài viết.');
+    } catch (submitErr) {
+      notifyError(submitErr?.response?.data?.message || submitErr?.message || 'Không thể xử lý bài viết.');
     } finally {
       setLoading(false);
     }

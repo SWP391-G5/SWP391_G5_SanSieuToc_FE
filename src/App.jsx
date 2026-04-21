@@ -46,7 +46,9 @@ import RequireOwner from "./components/owner/RequireOwner";
 import OwnerLayout from "./layouts/owner/OwnerLayout";
 import OwnerDashboardPage from "./pages/owner/OwnerDashboardPage";
 import OwnerFieldsPage from "./pages/owner/OwnerFieldsPage";
+import OwnerFieldDetailPage from "./pages/owner/OwnerFieldDetailPage";
 import OwnerBookingsPage from "./pages/owner/OwnerBookingsPage";
+import OwnerServiceBookingsPage from "./pages/owner/OwnerServiceBookingsPage";
 import OwnerRefundsPage from "./pages/owner/OwnerRefundsPage";
 import OwnerWalletPage from "./pages/owner/OwnerWalletPage";
 import OwnerWithdrawPage from "./pages/owner/OwnerWithdrawPage";
@@ -163,6 +165,7 @@ function App() {
             <Route path="dashboard" element={<OwnerDashboardPage />} />
             <Route path="fields" element={<OwnerFieldsPage />} />
             <Route path="bookings" element={<OwnerBookingsPage />} />
+            <Route path="service-bookings" element={<OwnerServiceBookingsPage />} />
             <Route path="refunds" element={<OwnerRefundsPage />} />
             <Route path="wallet" element={<OwnerWalletPage />} />
             <Route path="withdraw" element={<OwnerWithdrawPage />} />

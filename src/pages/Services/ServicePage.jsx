@@ -12,7 +12,9 @@ function formatPrice(price) {
 }
 
 function formatDate(dateStr) {
+  if (!dateStr) return '';
   const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 'Ngày không xác định';
   return d.toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
@@ -39,24 +41,40 @@ export default function ServicePage() {
     try {
       if (auth.accessToken) setAuthToken(auth.accessToken);
       const data = await bookingService.getMyBookings();
+      console.log('Fetched bookings:', JSON.stringify(data.bookings?.slice(0,1)));
       setBookings(data.bookings || []);
       
       const allEntries = [];
       for (const b of (data.bookings || [])) {
+        const statusKey = (b.status || '').toString().trim().toLowerCase();
+        console.log('Processing booking:', b.fieldName, 'status:', statusKey);
+        if (statusKey.includes('cancel')) {
+          console.log('Skipping cancelled booking:', b.id);
+          continue;
+        }
+        
         const allTimes = [];
+        let hasEndedSlot = false;
         for (const dateGroup of (b.allDates || [])) {
           for (const slot of (dateGroup.slots || [])) {
+            const slotStatus = String(slot.status || '').trim();
+            if (slotStatus === 'End' || slotStatus === 'Cancel') {
+              hasEndedSlot = true;
+              continue;
+            }
             allTimes.push(`${dateGroup.date} ${slot.start}-${slot.end}`);
           }
         }
+        if (allTimes.length === 0) continue;
         allEntries.push({
           id: b.id,
           fieldName: b.fieldName,
           timeSlots: allTimes.join(', '),
-          status: b.status,
+          status: statusKey,
           services: b.services || [],
           totalPrice: b.servicesTotal || 0,
-          createdAt: b.createdAt
+          createdAt: b.createdAt,
+          canFeedback: b.canFeedback && hasEndedSlot
         });
       }
       setServicesList(allEntries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
@@ -67,7 +85,12 @@ export default function ServicePage() {
     }
   };
 
-  useEffect(() => { fetchBookings(); }, []);
+  useEffect(() => { 
+    setLoading(true);
+    fetchBookings(); 
+    const interval = setInterval(fetchBookings, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSlotClick = async (slot, booking) => {
     setSelectedSlot({ ...slot, bookingId: booking.id, fieldName: booking.fieldName });
@@ -103,8 +126,20 @@ export default function ServicePage() {
     setSelectedServices(prev => {
       const exists = prev.find(s => s.serviceId === service._id);
       if (exists) return prev.filter(s => s.serviceId !== service._id);
-      return [...prev, { serviceId: service._id, serviceName: service.serviceName, price: service.price, quantity: 1 }];
+      return [...prev, { serviceId: service._id, serviceName: service.serviceName, price: service.price, quantity: 1, stock: service.stock }];
     });
+  };
+
+  const updateQuantity = (serviceId, delta) => {
+    setSelectedServices(prev => prev.map(s => {
+      if (s.serviceId === serviceId) {
+        const newQty = (s.quantity || 1) + delta;
+        const maxStock = s.stock || 999;
+        if (newQty < 1 || newQty > maxStock) return s;
+        return { ...s, quantity: newQty };
+      }
+      return s;
+    }));
   };
 
   const handleBookServices = async () => {
@@ -132,7 +167,15 @@ export default function ServicePage() {
   const totalServicesPrice = selectedServices.reduce((sum, s) => sum + (s.price * s.quantity), 0);
   const walletSufficient = walletBalance >= totalServicesPrice;
 
-  const activeBookings = bookings.filter(b => b.status === 'Confirmed' || b.status === 'Booked');
+  const activeBookings = bookings.filter(b => {
+    const statusKey = (b.status || '').toString().trim().toLowerCase();
+    if (statusKey.includes('cancel')) return false;
+    const hasActiveSlot = (b.allDates || []).some(d => (d.slots || []).some(s => {
+      const slotStatus = (s.status || '').toString().trim().toLowerCase();
+      return slotStatus === 'active';
+    }));
+    return hasActiveSlot;
+  });
   const totalPages = Math.ceil(servicesList.length / itemsPerPage);
   const paginatedServices = servicesList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
@@ -169,14 +212,22 @@ export default function ServicePage() {
             <h1 className="text-2xl font-bold text-white">Dịch vụ</h1>
             <p className="text-sm text-gray-500">{showHistory ? 'Lịch sử đặt' : 'Chọn slot để thêm dịch vụ'}</p>
           </div>
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
-              showHistory ? 'bg-[#4ade80] text-black' : 'bg-[#1a1a1a] text-gray-400 hover:text-white'
-            }`}
-          >
-            {showHistory ? '← Quay lại' : '📋 Lịch sử'}
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setLoading(true); fetchBookings(); }}
+              className="px-3 py-2 bg-[#1a1a1a] text-gray-400 hover:text-white rounded-lg"
+            >
+              🔄
+            </button>
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
+                showHistory ? 'bg-[#4ade80] text-black' : 'bg-[#1a1a1a] text-gray-400 hover:text-white'
+              }`}
+            >
+              {showHistory ? '← Quay lại' : '📋 Lịch sử'}
           </button>
+        </div>
         </div>
 
         {showHistory ? (
@@ -207,6 +258,12 @@ export default function ServicePage() {
                         </div>
                       )) : <p className="text-sm text-gray-600">Chưa đặt dịch vụ</p>}
                     </div>
+                    {group.canFeedback && (
+                      <button className="mt-3 w-full py-2 bg-[#4ade80] text-black font-medium rounded-lg flex items-center justify-center gap-2">
+                        <span className="material-symbols-outlined">star</span>
+                        <span>Đánh giá</span>
+                      </button>
+                    )}
                   </div>
                 ))}
 
@@ -270,7 +327,11 @@ export default function ServicePage() {
                         <h3 className="font-semibold text-white truncate">{booking.fieldName}</h3>
                         <p className="text-xs text-gray-500">{booking.allDates?.map(d => formatDate(d.date)).join(', ')}</p>
                       </div>
-                      <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded-full font-medium shrink-0">{booking.status}</span>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${
+                        booking.status === 'Confirmed' ? 'bg-green-500/20 text-green-400' :
+                        booking.status === 'Booked' ? 'bg-blue-500/20 text-blue-400' :
+                        'bg-gray-500/20 text-gray-400'
+                      }`}>{booking.status === 'Booked' ? 'Đã đặt' : booking.status}</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {booking.allDates?.flatMap(dateObj =>
@@ -321,16 +382,45 @@ export default function ServicePage() {
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {availableServices.map((service) => {
                   const isSelected = selectedServices.some(s => s.serviceId === service._id);
+                  const selected = selectedServices.find(s => s.serviceId === service._id);
+                  const stock = service.stock || 0;
+                  const outOfStock = stock === 0;
                   return (
                     <div
                       key={service._id}
-                      onClick={() => toggleService(service)}
-                      className={`p-3 rounded-lg cursor-pointer flex justify-between items-center transition ${
+                      onClick={() => !outOfStock && toggleService(service)}
+                      className={`p-3 rounded-lg flex justify-between items-center transition ${
                         isSelected ? 'bg-green-500/20 border border-green-500' : 'bg-[#262626] border border-transparent hover:border-green-500/50'
-                      }`}
+                      } ${outOfStock ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
-                      <span className={isSelected ? 'text-green-400' : 'text-white'}>{service.serviceName}</span>
-                      <span className="text-green-400 font-medium">{formatPrice(service.price)}</span>
+                      <div className="flex-1">
+                        <span className={isSelected ? 'text-green-400' : 'text-white'}>{service.serviceName}</span>
+                        <span className={`ml-2 text-xs ${stock > 0 ? 'text-gray-500' : 'text-red-400'}`}>
+                          {outOfStock ? 'Hết hàng' : `Kho: ${stock}`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isSelected && selected && stock > 0 && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); updateQuantity(service._id, -1); }}
+                              disabled={selected.quantity <= 1}
+                              className="w-6 h-6 rounded bg-[#1a1a1a] text-white disabled:opacity-30 flex items-center justify-center"
+                            >
+                              -
+                            </button>
+                            <span className="w-6 text-center text-white text-sm">{selected.quantity}</span>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); updateQuantity(service._id, 1); }}
+                              disabled={selected.quantity >= stock}
+                              className="w-6 h-6 rounded bg-[#1a1a1a] text-white disabled:opacity-30 flex items-center justify-center"
+                            >
+                              +
+                            </button>
+                          </div>
+                        )}
+                        <span className="text-green-400 font-medium">{formatPrice(service.price)}</span>
+                      </div>
                     </div>
                   );
                 })}
@@ -338,7 +428,9 @@ export default function ServicePage() {
 
               {selectedServices.length > 0 && (
                 <div className="p-3 bg-[#262626] rounded-lg flex justify-between items-center">
-                  <span className="text-gray-400">{selectedServices.length} dịch vụ</span>
+                  <span className="text-gray-400">
+                    {selectedServices.length} dịch vụ ({selectedServices.reduce((sum, s) => sum + (s.quantity || 1), 0)} items)
+                  </span>
                   <span className="text-green-400 font-bold text-lg">{formatPrice(totalServicesPrice)}</span>
                 </div>
               )}

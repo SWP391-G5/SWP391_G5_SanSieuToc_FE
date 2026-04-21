@@ -35,11 +35,11 @@ export default function AdminLayout() {
           <div className="mt-1 text-[10px] uppercase tracking-widest text-[#fdfdf6]/50">Hệ thống</div>
 
           <div className="mt-5 flex flex-col gap-1">
-            <NavItem to="/admin/managers" label="Tài khoản Quản lý" icon="manage_accounts" />
-            <NavItem to="/admin/owners" label="Tài khoản Chủ sân" icon="domain" />
-            <NavItem to="/admin/customers" label="Tài khoản Khách hàng" icon="group" />
-            <NavItem to="/admin/reports" label="Báo cáo" icon="report" />
-            <NavItem to="/admin/profile" label="Hồ sơ của tôi" icon="account_circle" />
+            <NavItem to="/admin/managers" label="Manager Account" icon="manage_accounts" />
+            <NavItem to="/admin/owners" label="Owner Account" icon="domain" />
+            <NavItem to="/admin/customers" label="Customer Account" icon="group" />
+            <NavItem to="/admin/reports" label="Reports" icon="report" />
+            <NavItem to="/admin/profile" label="My Profile" icon="account_circle" />
           </div>
 
           <div className="mt-auto pt-6">
