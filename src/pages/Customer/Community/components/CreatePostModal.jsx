@@ -214,7 +214,6 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editingPos
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const err = validatePublish();
     if (err) {
       notifyWarning(err);
