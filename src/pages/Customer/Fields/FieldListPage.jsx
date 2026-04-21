@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import SimpleImageSlider from '../../../components/ads/SimpleImageSlider';
 import Pagination from '../../../components/common/Pagination';
@@ -80,8 +80,7 @@ export default function FieldListPage() {
     shower: false,
   });
 
-  const [dynamicMaxPriceK, setDynamicMaxPriceK] = useState(DEFAULT_PRICE_MAX_K);
-  const hasPriceMaxFilter = Number.isFinite(priceMaxK) && priceMaxK < dynamicMaxPriceK;
+  const normalizedPriceMaxK = Number.isFinite(priceMaxK) ? Math.max(0, priceMaxK) : null;
 
   const fieldsParams = useMemo(() => {
     const selectedUtilities = Object.entries(utilities)
@@ -95,68 +94,68 @@ export default function FieldListPage() {
       street: selectedCity === 'All' || selectedDistrict === 'All' || selectedStreet === 'All' ? undefined : selectedStreet,
       sizeKey: selectedSize || undefined,
       priceMin: 0,
-      priceMax: hasPriceMaxFilter ? priceMaxK * 1000 : undefined,
+      priceMax: normalizedPriceMaxK === null ? undefined : normalizedPriceMaxK * 1000,
       utilities: selectedUtilities.length ? selectedUtilities.join(',') : undefined,
       sortBy,
       // Date is not currently used to filter fields in the list, but we keep it in state for consistency
     };
-  }, [hasPriceMaxFilter, priceMaxK, searchText, selectedCity, selectedDistrict, selectedSize, selectedStreet, sortBy, utilities]);
+  }, [normalizedPriceMaxK, searchText, selectedCity, selectedDistrict, selectedSize, selectedStreet, sortBy, utilities]);
 
   const { loading: fieldsLoading, error: fieldsError, items: fields, meta: fieldsMeta } = useFields(fieldsParams);
+  const { items: allLocationFields } = useFields();
 
-  useEffect(() => {
+  const dynamicMaxPriceK = useMemo(() => {
     const maxPrice = Number(fieldsMeta?.priceRange?.max);
-    if (!Number.isFinite(maxPrice) || maxPrice <= 0) return;
+    if (!Number.isFinite(maxPrice) || maxPrice <= 0) return DEFAULT_PRICE_MAX_K;
 
     const maxInK = Math.ceil(maxPrice / 1000);
-    const roundedMaxInK = Math.ceil(maxInK / 10) * 10;
-    setDynamicMaxPriceK(roundedMaxInK);
-  }, [fieldsMeta]);
+    return Math.ceil(maxInK / 10) * 10;
+  }, [DEFAULT_PRICE_MAX_K, fieldsMeta]);
 
-  useEffect(() => {
-    setPriceMaxK((prev) => {
-      if (prev === null) return null;
-      return prev > dynamicMaxPriceK ? dynamicMaxPriceK : prev;
-    });
-  }, [dynamicMaxPriceK]);
+  const effectivePriceMaxK = useMemo(() => {
+    if (normalizedPriceMaxK === null) return dynamicMaxPriceK;
+    return Math.min(normalizedPriceMaxK, dynamicMaxPriceK);
+  }, [dynamicMaxPriceK, normalizedPriceMaxK]);
 
-  const effectivePriceMaxK = priceMaxK === null ? dynamicMaxPriceK : priceMaxK;
+  const cityOptions = useMemo(() => {
+    const source = Array.isArray(allLocationFields) ? allLocationFields : [];
+    const set = new Set(
+      source
+        .map((f) => String(f?.city || '').trim())
+        .filter(Boolean)
+    );
 
-  const areaParams = useMemo(
-    () => ({
-      city: selectedCity === 'All' ? undefined : selectedCity,
-    }),
-    [selectedCity]
-  );
-
-  const { items: areaFields } = useFields(areaParams);
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
+  }, [allLocationFields]);
 
   const districtOptions = useMemo(() => {
     if (selectedCity === 'All') return [];
 
-    const source = Array.isArray(areaFields) ? areaFields : [];
+    const source = Array.isArray(allLocationFields) ? allLocationFields : [];
     const set = new Set(
       source
+        .filter((f) => String(f?.city || '').trim() === selectedCity)
         .map((f) => String(f?.district || '').trim())
         .filter(Boolean)
     );
 
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
-  }, [areaFields, selectedCity]);
+  }, [allLocationFields, selectedCity]);
 
   const streetOptions = useMemo(() => {
     if (selectedCity === 'All' || selectedDistrict === 'All') return [];
 
-    const source = Array.isArray(areaFields) ? areaFields : [];
+    const source = Array.isArray(allLocationFields) ? allLocationFields : [];
     const set = new Set(
       source
+        .filter((f) => String(f?.city || '').trim() === selectedCity)
         .filter((f) => String(f?.district || '').trim() === selectedDistrict)
         .map((f) => inferStreetFromField(f))
         .filter(Boolean)
     );
 
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
-  }, [areaFields, selectedCity, selectedDistrict]);
+  }, [allLocationFields, selectedCity, selectedDistrict]);
 
   const clearFilters = () => {
     setSelectedCity('All');
@@ -221,8 +220,11 @@ export default function FieldListPage() {
                   className="w-full appearance-none rounded-lg border border-[#474944]/20 bg-[#181a16] px-3 py-2 pr-10 text-sm outline-none transition-all focus:border-[#8eff71] focus:ring-1 focus:ring-[#8eff71]"
                 >
                   <option value="All">All</option>
-                  <option value="TP.HCM">TP.HCM</option>
-                  <option value="Ha Noi">Ha Noi</option>
+                  {cityOptions.map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
                 </select>
                 <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#abaca5]">
                   expand_more

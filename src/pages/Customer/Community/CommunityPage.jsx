@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import useCustomerBanners from '../../../hooks/useCustomerBanners';
 import { useAuth } from '../../../context/AuthContext';
@@ -19,6 +20,7 @@ function clamp(n, min, max) {
 }
 
 export default function CommunityPage() {
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const itemsPerPage = 6; // 2 columns x 3 rows
   const [page, setPage] = useState(1);
@@ -133,14 +135,27 @@ export default function CommunityPage() {
 
             <div className="flex flex-col gap-4 sm:flex-row md:items-center">
               {isAuthenticated && (
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(true)}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-[#8eff71] px-6 py-2.5 text-sm font-black uppercase tracking-widest text-[#0d6100] transition-all hover:scale-[1.03] active:scale-[0.97]"
-                >
-                  <span className="material-symbols-outlined text-xl">add_comment</span>
-                  Post
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/community/my-posts')}
+                    className="flex h-12 w-20 items-center justify-center rounded-xl border border-[#8eff71]/35 bg-[#121410] text-[#8eff71] transition-all hover:bg-[#8eff71]/10"
+                    title="Bài viết của tôi"
+                    aria-label="Bài viết của tôi"
+                  >
+                    <span className="material-symbols-outlined text-xl">note_alt</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(true)}
+                    className="flex h-12 w-20 items-center justify-center rounded-xl bg-[#8eff71] text-[#0d6100] transition-all hover:scale-[1.03] active:scale-[0.97]"
+                    title="Tạo bài viết"
+                    aria-label="Tạo bài viết"
+                  >
+                    <span className="material-symbols-outlined text-xl">add_comment</span>
+                  </button>
+                </>
               )}
 
               <div className="group relative w-full xl:max-w-sm">
@@ -179,7 +194,7 @@ export default function CommunityPage() {
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             onSuccess={() => {
-              // The post is pending
+              setIsModalOpen(false);
             }}
           />
 
