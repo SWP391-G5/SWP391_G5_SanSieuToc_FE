@@ -88,6 +88,18 @@ export default function OwnerWithdrawPage() {
       setMessage('Vui lòng điền đầy đủ thông tin ngân hàng');
       return;
     }
+    if (!/^\d{15}$/.test(accountNumber)) {
+      setMessage('Số tài khoản phải đủ 15 chữ số');
+      return;
+    }
+    if (/\d/.test(accountName)) {
+      setMessage('Tên người thụ hưởng không được chứa số');
+      return;
+    }
+    if (!accountName || accountName.trim() === '') {
+      setMessage('Tên người thụ hưởng không được để trống');
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -173,8 +185,9 @@ export default function OwnerWithdrawPage() {
           <input
             type="text"
             value={accountNumber}
-            onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ''))}
-            placeholder="Nhập số tài khoản"
+            onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 15))}
+            maxLength={15}
+            placeholder="Nhập số tài khoản (15 số)"
             className="w-full bg-surface p-4 rounded-lg text-on-surface border border-outline focus:border-primary outline-none"
           />
         </div>
@@ -184,7 +197,7 @@ export default function OwnerWithdrawPage() {
           <input
             type="text"
             value={accountName}
-            onChange={(e) => setAccountName(e.target.value.toUpperCase())}
+            onChange={(e) => setAccountName(e.target.value.replace(/[0-9]/g, '').toUpperCase())}
             placeholder="Nhập tên chủ tài khoản"
             className="w-full bg-surface p-4 rounded-lg text-on-surface border border-outline focus:border-primary outline-none"
           />
