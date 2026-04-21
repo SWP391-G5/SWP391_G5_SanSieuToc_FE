@@ -180,7 +180,9 @@ export default function OwnerRevenuePage() {
             Bang xep hang dich vu ban chay theo san
           </h2>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-on-surface-variant">Khoang thoi gian</span>
+            <span className="text-xs text-on-surface-variant">
+              Khoang thoi gian
+            </span>
             <select
               className="h-9 rounded-lg bg-surface px-3 text-xs border border-outline-variant text-on-surface"
               value={period}
@@ -193,7 +195,9 @@ export default function OwnerRevenuePage() {
               ))}
             </select>
 
-            <span className="text-xs text-on-surface-variant ml-2">Xep hang theo</span>
+            <span className="text-xs text-on-surface-variant ml-2">
+              Xep hang theo
+            </span>
             <select
               className="h-9 rounded-lg bg-surface px-3 text-xs border border-outline-variant text-on-surface"
               value={sortBy}
