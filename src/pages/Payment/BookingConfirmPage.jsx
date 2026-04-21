@@ -219,14 +219,22 @@ export default function BookingConfirmPage() {
                       className="flex-1 px-3 py-2 rounded-lg bg-[#121410] border border-[#474944] text-[#fdfdf6] font-headline text-sm placeholder-[#abaca5]"
                     />
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         if (!voucherCode) {
                           alert('Please enter a voucher code');
                           return;
                         }
-                        // TODO: Call API to validate voucher
-                        setVoucherApplied(voucherCode);
-                        setVoucherDiscount(20000); // Example discount
+                        try {
+                          const res = await bookingService.validateVoucher(voucherCode, field?.fieldID || field?._id, grandTotal);
+                          if (res.valid) {
+                            setVoucherApplied(voucherCode);
+                            setVoucherDiscount(res.discountAmount);
+                          } else {
+                            alert(res.message || 'Invalid voucher');
+                          }
+                        } catch (err) {
+                          alert(err.response?.data?.message || 'Failed to validate voucher');
+                        }
                       }}
                       className="px-3 py-2 rounded-lg font-headline text-xs font-bold bg-[#8eff71] text-[#0d6100]"
                     >

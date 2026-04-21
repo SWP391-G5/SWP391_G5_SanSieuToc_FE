@@ -31,6 +31,7 @@ export default function OwnerLayout() {
     { name: 'Fields Management', path: '/owner/fields', icon: 'stadium', endIconAttr: { style: { fontVariationSettings: "'FILL' 1" } } },
     { name: 'Bookings Management', path: '/owner/bookings', icon: 'event_available' },
     { name: 'Refunds', path: '/owner/refunds', icon: 'replay', badge: true },
+    { name: 'Reports', path: '/owner/reports', icon: 'report' },
     { name: 'Wallet', path: '/owner/wallet', icon: 'account_balance_wallet' },
     { name: 'Marketing', path: '/owner/marketing', icon: 'rss_feed' },
     { name: 'Vouchers ', path: '/owner/vouchers', icon: 'confirmation_number' },

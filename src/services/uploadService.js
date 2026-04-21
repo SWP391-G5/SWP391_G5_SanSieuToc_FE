@@ -21,12 +21,11 @@ const uploadService = {
     const fd = new FormData();
     list.slice(0, 6).forEach((f) => fd.append('images', f));
 
-    const { data } = await axiosInstance.post(ENDPOINTS.UPLOADS.UPLOAD_IMAGES, fd, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    // Do NOT manually set Content-Type here; Axios/browser will attach the correct boundary.
+    const { data } = await axiosInstance.post(ENDPOINTS.UPLOADS.UPLOAD_IMAGES, fd);
 
     const urls = Array.isArray(data?.urls) ? data.urls : [];
-    return urls.map(String);
+    return urls.map(String).map((x) => x.trim()).filter(Boolean);
   },
 };
 

@@ -64,6 +64,14 @@ const bookingService = {
     const { data } = await axiosInstance.delete(ENDPOINTS.BOOKING.FEEDBACK_DELETE(feedbackId));
     return data;
   },
+  async validateVoucher(voucherCode, fieldId, grandTotal) {
+    const { data } = await axiosInstance.post('/api/bookings/validate-voucher', {
+      voucherCode,
+      fieldId,
+      grandTotal,
+    });
+    return data;
+  },
 };
 
 export default bookingService;

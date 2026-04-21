@@ -268,6 +268,7 @@ export default function FieldDetailPage() {
   const { isPreviewMode } = usePreviewMode();
   const { user: authUser } = useAuth();
   const { notifyError, notifySuccess } = useNotification();
+  const { isAuthenticated } = useAuth();
   const [field, setField] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -551,18 +552,18 @@ export default function FieldDetailPage() {
     // OR we need to fetch eligibility for THAT feedback's booking.
     // For simplicity, if we don't have feedbackBookingId or it's different, we might need more logic.
     // However, the user said "navigate sang field detail thôi", so they might arrive without bookingId.
-    
+
     // If we have eligibility and the slot is in reviewableSlots, great.
     const slotId = fb.bookingDetailID;
     const bId = fb.bookingID;
-    
+
     if (bId && bId !== feedbackBookingId) {
-       setActiveFeedbackBookingId(bId);
-       // The useEffect for eligibility will trigger automatically
+      setActiveFeedbackBookingId(bId);
+      // The useEffect for eligibility will trigger automatically
     }
 
     const existsInSlots = (slots) => slots.find(s => String(s.id) === String(slotId));
-    
+
     if (existsInSlots(reviewableSlots)) {
       setSelectedFeedbackSlotId(String(slotId));
       setIsFeedbackFormOpen(true);
@@ -570,9 +571,9 @@ export default function FieldDetailPage() {
         feedbackFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 100);
     } else {
-       // If it doesn't exist yet, it's because eligibility is still loading for the new bId.
-       // We'll set a "pending open" state.
-       setPendingFeedbackSlotId(String(slotId));
+      // If it doesn't exist yet, it's because eligibility is still loading for the new bId.
+      // We'll set a "pending open" state.
+      setPendingFeedbackSlotId(String(slotId));
     }
   };
 
@@ -635,8 +636,8 @@ export default function FieldDetailPage() {
   const avgRateNumber = Number.isFinite(fromSummary) && fromSummary > 0
     ? normalizeRate(fromSummary)
     : Number.isFinite(fromField) && fromField > 0
-    ? normalizeRate(fromField)
-    : 5;
+      ? normalizeRate(fromField)
+      : 5;
 
   const avgRateText = avgRateNumber.toFixed(1);
   const totalFeedback = Number(feedbackSummary?.total) || feedbacks.length;
@@ -665,6 +666,11 @@ export default function FieldDetailPage() {
   };
 
   const handleBook = () => {
+    if (!isAuthenticated) {
+      navigate('/auth', { state: { from: '/fields/' + id, message: 'Vui lòng đăng nhập để đặt sân' } });
+      return;
+    }
+
     if (isPreviewMode) {
       alert(
         "Bạn đang ở chế độ xem trước (preview mode) nên không thể đặt sân.",
@@ -1118,15 +1124,17 @@ export default function FieldDetailPage() {
                             key={slot}
                             type="button"
                             onClick={() => toggleSlot(slot)}
-                            disabled={isBooked || isPast}
+                            disabled={!selectedDate || isBooked || isPast}
                             className={
-                              isPast
-                                ? "font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through"
-                                : isBooked
+                              !selectedDate
+                                ? "font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed"
+                                : isPast
                                   ? "font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through"
-                                  : isSelected
-                                    ? "font-headline rounded-lg bg-[#8eff71] px-1 py-2 text-[10px] font-bold text-[#0d6100]"
-                                    : "font-headline rounded-lg bg-[#242721] px-1 py-2 text-[10px] font-bold text-[#abaca5] transition-colors hover:bg-[#474944]/50 hover:text-[#fdfdf6]"
+                                  : isBooked
+                                    ? "font-headline rounded-lg bg-[#2a2a2a] px-1 py-2 text-[10px] font-bold text-[#555] cursor-not-allowed line-through"
+                                    : isSelected
+                                      ? "font-headline rounded-lg bg-[#8eff71] px-1 py-2 text-[10px] font-bold text-[#0d6100]"
+                                      : "font-headline rounded-lg bg-[#242721] px-1 py-2 text-[10px] font-bold text-[#abaca5] transition-colors hover:bg-[#474944]/50 hover:text-[#fdfdf6]"
                             }
                           >
                             {slot}

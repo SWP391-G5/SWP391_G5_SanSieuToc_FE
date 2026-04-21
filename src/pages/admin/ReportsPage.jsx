@@ -203,7 +203,8 @@ export default function ReportsPage() {
               </thead>
               <tbody>
                 {filteredItems.map((it) => {
-                  const disabled = submittingId === it.id;
+                  const isPending = String(it.status) === 'Pending';
+                  const disabled = submittingId === it.id || !isPending;
                   const note = noteById[it.id] ?? '';
 
                   return (
@@ -270,6 +271,7 @@ export default function ReportsPage() {
                         <textarea
                           value={note}
                           onChange={(e) => setNoteById((p) => ({ ...p, [it.id]: e.target.value }))}
+                          disabled={disabled}
                           className="h-20 w-64 resize-none rounded-md border border-white/10 bg-[#0d0f0b] px-3 py-2 text-xs outline-none focus:border-[#8eff71]/40"
                           placeholder="Ghi chú (bắt buộc khi từ chối)"
                         />
