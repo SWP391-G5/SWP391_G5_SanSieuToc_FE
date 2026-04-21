@@ -1,12 +1,15 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axiosInstance from "../../services/axios";
 
 export default function OwnerLayout() {
   const { user, logout, accessToken } = useAuth();
   const location = useLocation();
   const [refundCount, setRefundCount] = useState(0);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const settingsMenuRef = useRef(null);
+  const settingsButtonRef = useRef(null);
 
   useEffect(() => {
     const fetchRefundCount = async () => {
@@ -27,6 +30,20 @@ export default function OwnerLayout() {
   const handleLogout = () => {
     logout();
   };
+
+  useEffect(() => {
+    if (!showSettingsMenu) return;
+
+    const handleClickOutside = (event) => {
+      const target = event.target;
+      if (settingsMenuRef.current?.contains(target)) return;
+      if (settingsButtonRef.current?.contains(target)) return;
+      setShowSettingsMenu(false);
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showSettingsMenu]);
 
   const navItems = [
     { name: "Dashboard", path: "/owner/dashboard", icon: "dashboard" },
@@ -97,13 +114,6 @@ export default function OwnerLayout() {
             <span className="material-symbols-outlined mr-3">help</span>
             <span className="font-label text-sm">Hỗ trợ</span>
           </Link>
-          <button
-            onClick={handleLogout}
-            className="flex items-center py-2 w-full text-left text-on-surface/40 hover:text-error transition-colors"
-          >
-            <span className="material-symbols-outlined mr-3">logout</span>
-            <span className="font-label text-sm">Đăng xuất</span>
-          </button>
         </div>
       </aside>
 
@@ -121,13 +131,42 @@ export default function OwnerLayout() {
             />
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 relative">
           <button className="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors duration-200">
             <span className="material-symbols-outlined">notifications</span>
           </button>
-          <button className="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors duration-200">
+          <button
+            className="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors duration-200"
+            onClick={() => setShowSettingsMenu((prev) => !prev)}
+            type="button"
+            ref={settingsButtonRef}
+          >
             <span className="material-symbols-outlined">settings</span>
           </button>
+          {showSettingsMenu ? (
+            <div
+              className="absolute right-0 top-12 w-44 rounded-xl border border-outline-variant/40 bg-surface-container-high shadow-lg z-50"
+              ref={settingsMenuRef}
+            >
+              <Link
+                to="/owner/profile"
+                onClick={() => setShowSettingsMenu(false)}
+                className="block px-4 py-2 text-sm text-on-surface hover:bg-surface"
+              >
+                Hồ sơ
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSettingsMenu(false);
+                  handleLogout();
+                }}
+                className="w-full px-4 py-2 text-sm text-left text-on-surface hover:bg-surface"
+              >
+                Đăng xuất
+              </button>
+            </div>
+          ) : null}
           <div className="h-8 w-8 rounded-full overflow-hidden border border-primary/20 bg-surface-container-high flex items-center justify-center">
             {user?.image ? (
               <img

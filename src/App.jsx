@@ -174,6 +174,7 @@ function App() {
             <Route path="withdraw" element={<OwnerWithdrawPage />} />
             <Route path="posts" element={<OwnerPostsPage />} />
             <Route path="revenue" element={<OwnerRevenuePage />} />
+            <Route path="profile" element={<UserProfilePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
 
