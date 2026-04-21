@@ -187,7 +187,7 @@ export default function OwnerWithdrawPage() {
             value={accountNumber}
             onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 15))}
             maxLength={15}
-            placeholder="Nhập số tài khoản (15 số)"
+            placeholder="Nhập số tài khoản (Max 15 số)"
             className="w-full bg-surface p-4 rounded-lg text-on-surface border border-outline focus:border-primary outline-none"
           />
         </div>
