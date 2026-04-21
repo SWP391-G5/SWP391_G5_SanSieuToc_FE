@@ -11,10 +11,16 @@ const PERIOD_OPTIONS = [
   { value: "year", label: "Nam" },
 ];
 
+const SORT_OPTIONS = [
+  { value: "quantity", label: "So luong" },
+  { value: "revenue", label: "Doanh thu" },
+];
+
 export default function OwnerRevenuePage() {
   const [inventory, setInventory] = useState([]);
   const [topByField, setTopByField] = useState([]);
   const [period, setPeriod] = useState("week");
+  const [sortBy, setSortBy] = useState("quantity");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [detailOpen, setDetailOpen] = useState(false);
@@ -29,6 +35,7 @@ export default function OwnerRevenuePage() {
 
   const formatNumber = (value) =>
     new Intl.NumberFormat("vi-VN").format(value || 0);
+  const formatCurrency = (value) => `${formatNumber(value)} d`;
   const formatDateTime = (value) => {
     if (!value) return "—";
     const d = new Date(value);
@@ -55,7 +62,7 @@ export default function OwnerRevenuePage() {
     try {
       const [invRes, topRes] = await Promise.all([
         getOwnerInventoryByField(),
-        getOwnerTopServicesByField(period, 5),
+        getOwnerTopServicesByField(period, 5, sortBy),
       ]);
 
       setInventory(invRes?.items || []);
@@ -74,7 +81,7 @@ export default function OwnerRevenuePage() {
   useEffect(() => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period]);
+  }, [period, sortBy]);
 
   const openDetail = async (fieldId) => {
     if (!fieldId) return;
@@ -172,16 +179,27 @@ export default function OwnerRevenuePage() {
           <h2 className="text-lg font-semibold text-on-surface">
             Bang xep hang dich vu ban chay theo san
           </h2>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-on-surface-variant">
-              Khoang thoi gian
-            </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-on-surface-variant">Khoang thoi gian</span>
             <select
               className="h-9 rounded-lg bg-surface px-3 text-xs border border-outline-variant text-on-surface"
               value={period}
               onChange={(e) => setPeriod(e.target.value)}
             >
               {PERIOD_OPTIONS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+
+            <span className="text-xs text-on-surface-variant ml-2">Xep hang theo</span>
+            <select
+              className="h-9 rounded-lg bg-surface px-3 text-xs border border-outline-variant text-on-surface"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              {SORT_OPTIONS.map((p) => (
                 <option key={p.value} value={p.value}>
                   {p.label}
                 </option>
@@ -220,7 +238,9 @@ export default function OwnerRevenuePage() {
                         <tr className="text-left text-xs uppercase tracking-widest text-on-surface-variant">
                           <th className="px-3 py-2">#</th>
                           <th className="px-3 py-2">Dich vu</th>
-                          <th className="px-3 py-2 text-right">So luong</th>
+                          <th className="px-3 py-2 text-right">
+                            {sortBy === "revenue" ? "Doanh thu" : "So luong"}
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-outline-variant/20">
@@ -233,7 +253,9 @@ export default function OwnerRevenuePage() {
                               {svc.serviceName || "—"}
                             </td>
                             <td className="px-3 py-2 text-right font-semibold text-on-surface">
-                              {formatNumber(svc.totalQty)}
+                              {sortBy === "revenue"
+                                ? formatCurrency(svc.totalRevenue)
+                                : formatNumber(svc.totalQty)}
                             </td>
                           </tr>
                         ))}

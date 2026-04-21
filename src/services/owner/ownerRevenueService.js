@@ -5,10 +5,11 @@ export const getOwnerInventoryByField = async () => {
    return res.data;
 };
 
-export const getOwnerTopServicesByField = async (period = 'week', limit = 5) => {
+export const getOwnerTopServicesByField = async (period = 'week', limit = 5, sortBy = 'quantity') => {
    const params = new URLSearchParams();
    if (period) params.append('period', period);
    if (limit) params.append('limit', String(limit));
+   if (sortBy) params.append('sortBy', sortBy);
    const res = await axios.get(`/api/owner/revenue/top-services?${params.toString()}`);
    return res.data;
 };
