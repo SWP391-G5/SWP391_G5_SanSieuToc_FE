@@ -8,21 +8,40 @@ export default function OwnerWalletPage() {
   const [revenue, setRevenue] = useState(null);
   const [loading, setLoading] = useState(true);
   const [transactionType, setTransactionType] = useState('field');
+  const [showWithdrawHistory, setShowWithdrawHistory] = useState(false);
+  const [withdrawHistory, setWithdrawHistory] = useState([]);
 
   useEffect(() => {
     console.log('Token check:', localStorage.getItem('token'));
     loadData();
-    const interval = setInterval(loadData, 5000);
+    const interval = setInterval(loadData, 30000);
     return () => clearInterval(interval);
-  }, [transactionType]);
+  }, [transactionType, showWithdrawHistory]);
+
+  useEffect(() => {
+    if (showWithdrawHistory) {
+      loadWithdrawHistory();
+    }
+  }, [showWithdrawHistory]);
+
+  const loadWithdrawHistory = async () => {
+    try {
+      const res = await getOwnerTransactions(20, 'Withdraw');
+      setWithdrawHistory(res.transactions || []);
+    } catch (error) {
+      console.error('Failed to load withdraw history:', error);
+    }
+  };
 
   const loadData = async () => {
     try {
       setLoading(true);
       const revenueType = transactionType === 'service' ? 'service' : null;
+      const bookingType = transactionType === 'field' ? 'field' : transactionType === 'service' ? 'service' : null;
+      const typeFilter = transactionType === 'field' ? 'Field Payment,Refund' : transactionType === 'service' ? 'Service Payment,Refund' : 'All';
       const [walletRes, transRes, revenueRes] = await Promise.all([
         getOwnerWallet(),
-        getOwnerTransactions(10, transactionType),
+        getOwnerTransactions(10, typeFilter, bookingType),
         getOwnerRevenue(null, null, revenueType),
       ]);
       setWallet(walletRes.wallet);
@@ -73,8 +92,8 @@ export default function OwnerWalletPage() {
           <Link to="/owner/withdraw" className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
             Withdraw
           </Link>
-          <button className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-            
+          <button onClick={() => setShowWithdrawHistory(!showWithdrawHistory)} className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+            {showWithdrawHistory ? 'Hide History' : 'Withdraw History'}
           </button>
         </div>
       </div>
@@ -141,6 +160,43 @@ export default function OwnerWalletPage() {
           )}
         </div>
       </div>
+
+      {showWithdrawHistory && (
+        <div className="bg-surface-container-low rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-outline-variant/10 flex items-center justify-between">
+            <h2 className="font-semibold text-on-surface">Withdraw History</h2>
+            <div className="text-xs text-on-surface-variant">24h delay before processing</div>
+          </div>
+          <div className="divide-y divide-outline-variant/10">
+            {withdrawHistory.length === 0 ? (
+              <div className="px-4 py-8 text-center text-on-surface-variant">No withdraw history</div>
+            ) : (
+              withdrawHistory.map((tx) => (
+                <div key={tx.id} className="px-4 py-3 flex items-center justify-between">
+                  <div>
+                    <div className="text-on-surface font-medium">{tx.description}</div>
+                    <div className="text-on-surface-variant text-sm">
+                      {formatDate(tx.createdAt)}
+                      {tx.scheduledAt && ` → ${formatDate(tx.scheduledAt)}`}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold text-error">
+                      -{formatVnd(Math.abs(tx.amount))}
+                    </div>
+                    <div className={`text-sm ${
+                      tx.withdrawStatus === 'Completed' ? 'text-primary' : 
+                      tx.withdrawStatus === 'Pending' ? 'text-amber-400' : 'text-error'
+                    }`}>
+                      {tx.withdrawStatus}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

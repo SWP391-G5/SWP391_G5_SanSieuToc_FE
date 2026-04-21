@@ -51,6 +51,15 @@ const bookingService = {
     const { data } = await axiosInstance.post(ENDPOINTS.BOOKING.FEEDBACK_CREATE, payload);
     return data;
   },
+
+  async validateVoucher(voucherCode, fieldId, grandTotal) {
+    const { data } = await axiosInstance.post('/api/bookings/validate-voucher', {
+      voucherCode,
+      fieldId,
+      grandTotal,
+    });
+    return data;
+  },
 };
 
 export default bookingService;

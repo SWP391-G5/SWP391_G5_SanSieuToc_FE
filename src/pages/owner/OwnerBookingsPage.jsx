@@ -5,15 +5,17 @@ import { useNotification } from "../../context/NotificationContext";
 
 const STATUS_FILTERS = [
   { label: "Tất cả", value: "All" },
-  { label: "Đã đặt", value: "Booked" },
+  { label: "Đang đặt", value: "Active" },
   { label: "Yêu cầu hủy", value: "Cancel Request" },
-  { label: "Đã hủy", value: "Cancel" },
+  { label: "Đã hủy", value: "Cancelled" },
+  { label: "Đã kết thúc", value: "Ended" },
 ];
 
 const statusStyle = {
-  Booked: "bg-primary/15 text-primary",
+  Active: "bg-primary/15 text-primary",
   "Cancel Request": "bg-amber-500/15 text-amber-400",
-  Cancel: "bg-error/15 text-error",
+  Cancelled: "bg-error/15 text-error",
+  Ended: "bg-on-surface-variant/15 text-on-surface-variant",
 };
 
 const paymentStyle = {
@@ -59,9 +61,9 @@ export default function OwnerBookingsPage() {
       notifySuccess();
       setBookings((prev) =>
         prev.map((b) =>
-          b.id === id
-            ? { ...b, bookingStatus: "Cancel", paymentStatus: "Refunded" }
-            : b,
+b.id === id
+             ? { ...b, bookingStatus: "Cancelled", paymentStatus: "Refunded" }
+             : b,
         ),
       );
       if (detailBooking?.id === id) setDetailBooking(null);
@@ -80,9 +82,9 @@ export default function OwnerBookingsPage() {
       notifySuccess();
       setBookings((prev) =>
         prev.map((b) =>
-          b.id === id
-            ? { ...b, bookingStatus: "Booked", paymentStatus: "Completed" }
-            : b,
+b.id === id
+             ? { ...b, bookingStatus: "Active", paymentStatus: "Completed" }
+             : b,
         ),
       );
       if (detailBooking?.id === id) setDetailBooking(null);
@@ -94,7 +96,7 @@ export default function OwnerBookingsPage() {
   };
 
   const cancelRequestCount = bookings.filter(
-    (b) => b.bookingStatus === "Cancel Request",
+    (b) => b.bookingStatus === "Cancel Request"
   ).length;
 
   return (

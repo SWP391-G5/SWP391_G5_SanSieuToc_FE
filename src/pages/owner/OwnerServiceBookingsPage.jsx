@@ -5,15 +5,15 @@ import { useNotification } from "../../context/NotificationContext";
 
 const STATUS_FILTERS = [
   { label: "Tất cả", value: "All" },
-  { label: "Đã đặt", value: "Booked" },
+  { label: "Đã đặt", value: "Active" },
   { label: "Yêu cầu hủy", value: "Cancel Request" },
-  { label: "Đã hủy", value: "Cancel" },
+  { label: "Đã hủy", value: "Cancelled" },
 ];
 
 const statusStyle = {
-  Booked: "bg-primary/15 text-primary",
+  Active: "bg-primary/15 text-primary",
   "Cancel Request": "bg-amber-500/15 text-amber-400",
-  Cancel: "bg-error/15 text-error",
+  Cancelled: "bg-error/15 text-error",
 };
 
 const paymentStyle = {
