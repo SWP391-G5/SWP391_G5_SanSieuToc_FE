@@ -12,6 +12,7 @@ import FieldListPage from "./pages/Customer/Fields/FieldListPage";
 import HomePage from "./pages/Customer/Home/HomePage";
 import WishlistPage from "./pages/Customer/Wishlist/WishlistPage";
 import CommunityPage from "./pages/Customer/Community/CommunityPage";
+import CommunityMyPostsPage from "./pages/Customer/Community/CommunityMyPostsPage";
 import CommunityPostDetailPage from "./pages/Customer/Community/CommunityPostDetailPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import UserProfilePage from "./pages/UserProfilePage";
@@ -79,6 +80,7 @@ function App() {
             <Route path="booking-confirm" element={<BookingConfirmPage />} />
             <Route path="wishlist" element={<WishlistPage />} />
             <Route path="community" element={<CommunityPage />} />
+            <Route path="community/my-posts" element={<CommunityMyPostsPage />} />
             <Route path="community/:id" element={<CommunityPostDetailPage />} />
             <Route path="auth" element={<AuthPage />} />
             <Route path="forgot-password" element={<ForgotPasswordPage />} />

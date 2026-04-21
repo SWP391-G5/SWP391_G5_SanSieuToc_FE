@@ -102,6 +102,7 @@ export default function FieldListPage() {
   }, [normalizedPriceMaxK, searchText, selectedCity, selectedDistrict, selectedSize, selectedStreet, sortBy, utilities]);
 
   const { loading: fieldsLoading, error: fieldsError, items: fields, meta: fieldsMeta } = useFields(fieldsParams);
+  const { items: allLocationFields } = useFields();
 
   const dynamicMaxPriceK = useMemo(() => {
     const maxPrice = Number(fieldsMeta?.priceRange?.max);
@@ -116,41 +117,45 @@ export default function FieldListPage() {
     return Math.min(normalizedPriceMaxK, dynamicMaxPriceK);
   }, [dynamicMaxPriceK, normalizedPriceMaxK]);
 
-  const areaParams = useMemo(
-    () => ({
-      city: selectedCity === 'All' ? undefined : selectedCity,
-    }),
-    [selectedCity]
-  );
+  const cityOptions = useMemo(() => {
+    const source = Array.isArray(allLocationFields) ? allLocationFields : [];
+    const set = new Set(
+      source
+        .map((f) => String(f?.city || '').trim())
+        .filter(Boolean)
+    );
 
-  const { items: areaFields } = useFields(areaParams);
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
+  }, [allLocationFields]);
 
   const districtOptions = useMemo(() => {
     if (selectedCity === 'All') return [];
 
-    const source = Array.isArray(areaFields) ? areaFields : [];
+    const source = Array.isArray(allLocationFields) ? allLocationFields : [];
     const set = new Set(
       source
+        .filter((f) => String(f?.city || '').trim() === selectedCity)
         .map((f) => String(f?.district || '').trim())
         .filter(Boolean)
     );
 
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
-  }, [areaFields, selectedCity]);
+  }, [allLocationFields, selectedCity]);
 
   const streetOptions = useMemo(() => {
     if (selectedCity === 'All' || selectedDistrict === 'All') return [];
 
-    const source = Array.isArray(areaFields) ? areaFields : [];
+    const source = Array.isArray(allLocationFields) ? allLocationFields : [];
     const set = new Set(
       source
+        .filter((f) => String(f?.city || '').trim() === selectedCity)
         .filter((f) => String(f?.district || '').trim() === selectedDistrict)
         .map((f) => inferStreetFromField(f))
         .filter(Boolean)
     );
 
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'vi'));
-  }, [areaFields, selectedCity, selectedDistrict]);
+  }, [allLocationFields, selectedCity, selectedDistrict]);
 
   const clearFilters = () => {
     setSelectedCity('All');
@@ -215,8 +220,11 @@ export default function FieldListPage() {
                   className="w-full appearance-none rounded-lg border border-[#474944]/20 bg-[#181a16] px-3 py-2 pr-10 text-sm outline-none transition-all focus:border-[#8eff71] focus:ring-1 focus:ring-[#8eff71]"
                 >
                   <option value="All">All</option>
-                  <option value="TP.HCM">TP.HCM</option>
-                  <option value="Ha Noi">Ha Noi</option>
+                  {cityOptions.map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
                 </select>
                 <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#abaca5]">
                   expand_more
