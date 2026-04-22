@@ -106,6 +106,16 @@ export default function FieldFormModal({
     const closingTrimmed = String(formData.closingTime || "").trim();
     const hourlyPriceNumber = Number(formData.hourlyPrice);
     const slotDurationNumber = Number(formData.slotDuration);
+    const parseTimeToMinutes = (value) => {
+      const s = String(value || "").trim();
+      const parts = s.split(":");
+      if (parts.length !== 2) return null;
+      const h = Number(parts[0]);
+      const m = Number(parts[1]);
+      if (Number.isNaN(h) || Number.isNaN(m)) return null;
+      if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+      return h * 60 + m;
+    };
 
     if (!nameTrimmed) nextErrors.fieldName = "Vui lòng nhập tên sân.";
     if (!typeTrimmed) nextErrors.fieldType = "Vui lòng chọn loại sân.";
@@ -122,6 +132,17 @@ export default function FieldFormModal({
     }
     if (Number.isNaN(slotDurationNumber) || slotDurationNumber <= 0) {
       nextErrors.slotDuration = "Thời lượng slot không hợp lệ.";
+    } else if (slotDurationNumber % 30 !== 0) {
+      nextErrors.slotDuration = "Thời lượng slot phải là bội số của 30 phút.";
+    }
+
+    const openingMinutes = parseTimeToMinutes(openingTrimmed);
+    const closingMinutes = parseTimeToMinutes(closingTrimmed);
+    if (openingMinutes === null || closingMinutes === null) {
+      nextErrors.openingTime =
+        nextErrors.openingTime || "Giờ mở/đóng cửa không hợp lệ.";
+    } else if (closingMinutes <= openingMinutes) {
+      nextErrors.closingTime = "Giờ đóng cửa phải lớn hơn giờ mở cửa.";
     }
 
     setErrors(nextErrors);
