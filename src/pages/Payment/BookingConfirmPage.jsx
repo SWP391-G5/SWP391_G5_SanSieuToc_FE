@@ -102,8 +102,9 @@ export default function BookingConfirmPage() {
         fieldImage: fieldImage,
         date: date,
         timeSlots: timeSlotsArray,
-        grandTotal: grandTotal,
+        grandTotal: grandTotal - voucherDiscount, // apply discount
         paymentMethod: 'wallet',
+        voucherCode: voucherApplied || '',
       };
 
       await bookingService.createBooking(bookingPayload);

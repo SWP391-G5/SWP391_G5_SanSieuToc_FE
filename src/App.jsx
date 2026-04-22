@@ -55,6 +55,7 @@ import OwnerWithdrawPage from "./pages/owner/OwnerWithdrawPage";
 import OwnerPostsPage from "./pages/owner/OwnerPostsPage";
 import OwnerRevenuePage from "./pages/owner/OwnerRevenuePage";
 import OwnerReportsPage from "./pages/owner/OwnerReportsPage";
+import OwnerVouchersPage from "./pages/owner/OwnerVouchersPage";
 
 import { useAuth } from "./context/AuthContext";
 import { PreviewModeProvider } from "./context/PreviewModeContext";
@@ -181,6 +182,7 @@ function App() {
             <Route path="posts" element={<OwnerPostsPage />} />
             <Route path="revenue" element={<OwnerRevenuePage />} />
             <Route path="reports" element={<OwnerReportsPage />} />
+            <Route path="vouchers" element={<OwnerVouchersPage />} />
             <Route path="profile" element={<UserProfilePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
