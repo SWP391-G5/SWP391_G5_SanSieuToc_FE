@@ -1,13 +1,40 @@
 /**
- * postUploadHelpers.js
- * Image picking helpers for Manager Posts form (client-side only).
+ * ============================================================
+ * FILE: src/pages/Manager/posts/postUploadHelpers.js
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   Client-side image picker helpers for Manager Post form.
+ *   Pure helpers for building preview URLs and appending files.
+ *
+ * RESPONSIBILITIES:
+ *   - Build preview objects from FileList
+ *   - Revoke preview URLs
+ *   - Append new file objects to FormData
+ *
+ * DATA FLOW:
+ *   <input type=file> → buildPickedImagePreviews() → UI previews
+ *   Submit → appendNewImagesToFormData() → FormData(images[])
+ *
+ * USED IN:
+ *   - src/pages/Manager/posts/PostFormModal.jsx
+ * ============================================================
  */
+
+// ── CHANGE [2026-04-21]: Add sections + structured header (no behavior change) ──
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 1: CONSTANTS
+// ─────────────────────────────────────────────────────────────
 
 /**
  * MAX_IMAGES_PER_POST
  * Maximum number of images allowed per post.
  */
 export const MAX_IMAGES_PER_POST = 6;
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 2: PREVIEW HELPERS
+// ─────────────────────────────────────────────────────────────
 
 /**
  * buildPickedImagePreviews
@@ -49,6 +76,10 @@ export function revokePreviewUrl(url) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// SECTION 3: FORMDATA HELPERS
+// ─────────────────────────────────────────────────────────────
+
 /**
  * appendNewImagesToFormData
  * Appends up to MAX_IMAGES_PER_POST new file objects into a FormData.
@@ -65,3 +96,5 @@ export function appendNewImagesToFormData({ formData, images }) {
 
   newFiles.forEach((x) => formData.append('images', x.file));
 }
+
+// ── END CHANGE ─────────────────────────────────────────────

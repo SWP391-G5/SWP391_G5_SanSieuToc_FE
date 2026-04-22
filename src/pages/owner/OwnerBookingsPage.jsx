@@ -5,15 +5,17 @@ import { useNotification } from "../../context/NotificationContext";
 
 const STATUS_FILTERS = [
   { label: "Tất cả", value: "All" },
-  { label: "Đã đặt", value: "Booked" },
+  { label: "Đang đặt", value: "Active" },
   { label: "Yêu cầu hủy", value: "Cancel Request" },
-  { label: "Đã hủy", value: "Cancel" },
+  { label: "Đã hủy", value: "Cancelled" },
+  { label: "Đã kết thúc", value: "Ended" },
 ];
 
 const statusStyle = {
-  Booked: "bg-primary/15 text-primary",
+  Active: "bg-primary/15 text-primary",
   "Cancel Request": "bg-amber-500/15 text-amber-400",
-  Cancel: "bg-error/15 text-error",
+  Cancelled: "bg-error/15 text-error",
+  Ended: "bg-on-surface-variant/15 text-on-surface-variant",
 };
 
 const paymentStyle = {
@@ -59,9 +61,9 @@ export default function OwnerBookingsPage() {
       notifySuccess();
       setBookings((prev) =>
         prev.map((b) =>
-          b.id === id
-            ? { ...b, bookingStatus: "Cancel", paymentStatus: "Refunded" }
-            : b,
+b.id === id
+             ? { ...b, bookingStatus: "Cancelled", paymentStatus: "Refunded" }
+             : b,
         ),
       );
       if (detailBooking?.id === id) setDetailBooking(null);
@@ -80,9 +82,9 @@ export default function OwnerBookingsPage() {
       notifySuccess();
       setBookings((prev) =>
         prev.map((b) =>
-          b.id === id
-            ? { ...b, bookingStatus: "Booked", paymentStatus: "Completed" }
-            : b,
+b.id === id
+             ? { ...b, bookingStatus: "Active", paymentStatus: "Completed" }
+             : b,
         ),
       );
       if (detailBooking?.id === id) setDetailBooking(null);
@@ -94,7 +96,7 @@ export default function OwnerBookingsPage() {
   };
 
   const cancelRequestCount = bookings.filter(
-    (b) => b.bookingStatus === "Cancel Request",
+    (b) => b.bookingStatus === "Cancel Request"
   ).length;
 
   return (
@@ -110,7 +112,7 @@ export default function OwnerBookingsPage() {
             <span className="text-primary italic">Requests</span>
           </h2>
           <p className="text-on-surface-variant mt-3 max-w-md">
-            Quản lý toàn bộ lịch đặt sân. Duyệt hoặc từ chối các yêu cầu hủy từ
+            Quản lý toàn bộ lịch đặt sân. Duyệt các yêu cầu hủy từ
             khách hàng.
           </p>
         </div>
@@ -275,17 +277,6 @@ export default function OwnerBookingsPage() {
                       </span>
                       Duyệt
                     </button>
-                    <button
-                      onClick={() => handleReject(b.id)}
-                      disabled={processingId === b.id}
-                      className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold uppercase rounded bg-error/10 text-error hover:bg-error hover:text-white transition-all disabled:opacity-50"
-                      title="Từ chối hủy"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">
-                        cancel
-                      </span>
-                      Từ chối
-                    </button>
                   </div>
                 )}
 
@@ -415,13 +406,6 @@ export default function OwnerBookingsPage() {
                       className="flex-1 py-2 bg-primary text-on-primary font-bold text-sm rounded-lg hover:opacity-90 disabled:opacity-50 transition-all"
                     >
                       ✅ Duyệt hủy & Hoàn tiền
-                    </button>
-                    <button
-                      onClick={() => handleReject(detailBooking.id)}
-                      disabled={processingId === detailBooking.id}
-                      className="flex-1 py-2 bg-error/10 text-error font-bold text-sm rounded-lg hover:bg-error hover:text-white disabled:opacity-50 transition-all"
-                    >
-                      ❌ Từ chối hủy
                     </button>
                   </div>
                 )}

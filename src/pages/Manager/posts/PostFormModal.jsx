@@ -1,9 +1,39 @@
 /**
- * PostFormModal.jsx
- * Create/Edit modal for Manager Posts.
+ * ============================================================
+ * FILE: src/pages/Manager/posts/PostFormModal.jsx
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   Create/Edit modal for Manager Posts (EXECUTOR).
+ *   This modal renders controlled inputs. Parent orchestrator
+ *   owns the canonical form state and submit handlers.
+ *
+ * RESPONSIBILITIES:
+ *   - Render Title/Content/Tags/Images inputs
+ *   - Provide client-side validation hints (min/max tags, length)
+ *   - Upload image files to Cloudinary via uploadService when needed
+ *
+ * DATA FLOW:
+ *   ManagerPostsPage.jsx state (form,setForm) → [THIS FILE]
+ *   Tags: GET /api/public/post-tags → publicApi.getPostTags()
+ *   Images: local File → uploadService.uploadImages() → URL(s) → setForm()
+ *
+ * USED IN:
+ *   - src/pages/Manager/ManagerPostsPage.jsx
+ * ============================================================
+ */
+
+/**
+ * ============================================================
+ * STATE MAP (PostFormModal)
+ * ============================================================
+ * tagOptions      {Array}   Tag list for pill selector
+ *                             Set by: tags useEffect when modal opens
+ *                             Used by: tag selector buttons
+ * ============================================================
  */
 
 import { useEffect, useMemo, useState } from "react";
+import PropTypes from "prop-types";
 import {
   MAX_IMAGES_PER_POST,
   buildPickedImagePreviews,
@@ -455,3 +485,27 @@ export default function PostFormModal({
     </div>
   );
 }
+
+// ── CHANGE [2026-04-21]: Add State Map/PropTypes/useEffect docs (no behavior change) ──
+
+PostFormModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  editing: PropTypes.object,
+  form: PropTypes.object.isRequired,
+  setForm: PropTypes.func.isRequired,
+  formBusy: PropTypes.bool.isRequired,
+  formError: PropTypes.string,
+  onClose: PropTypes.func.isRequired,
+  onSaveDraft: PropTypes.func,
+  onPublish: PropTypes.func.isRequired,
+  notify: PropTypes.object.isRequired,
+  hideDraftActions: PropTypes.bool,
+  publishLabel: PropTypes.string,
+};
+
+PostFormModal.defaultProps = {
+  editing: null,
+  formError: null,
+  hideDraftActions: false,
+  publishLabel: "Publish",
+};

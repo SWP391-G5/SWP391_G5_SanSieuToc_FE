@@ -1,4 +1,10 @@
-export default function FeaturedFieldsSection({ featured, onViewAll }) {
+export default function FeaturedFieldsSection({ featured, onViewAll, onBookNow }) {
+  const handleBookNow = (fieldId) => {
+    const id = String(fieldId || '').trim();
+    if (!id || typeof onBookNow !== 'function') return;
+    onBookNow(id);
+  };
+
   return (
     <section id="field" className="scroll-mt-24 mx-auto max-w-7xl px-6 py-24 md:px-8">
       <div className="mb-16 flex items-end justify-between gap-6">
@@ -42,6 +48,7 @@ export default function FeaturedFieldsSection({ featured, onViewAll }) {
                 <div className="text-[10px] uppercase tracking-tighter text-[#abaca5]">{featured.large.priceUnit}</div>
                 <button
                   type="button"
+                  onClick={() => handleBookNow(featured.large.id)}
                   className="mt-4 rounded-lg bg-[#fdfdf6] px-6 py-3 text-xs font-black uppercase text-[#0d0f0b] transition-colors hover:bg-[#8eff71] hover:text-[#0d6100]"
                 >
                   Book now
@@ -69,10 +76,12 @@ export default function FeaturedFieldsSection({ featured, onViewAll }) {
               <span className="font-headline font-bold text-[#8eff71]">{featured.small1.price}</span>
               <button
                 type="button"
-                className="material-symbols-outlined rounded-lg bg-[#242721] p-2 transition-colors hover:text-[#8eff71]"
-                aria-label="Add to cart"
+                onClick={() => handleBookNow(featured.small1.id)}
+                className="inline-flex items-center gap-1 rounded-lg bg-[#242721] px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-colors hover:bg-[#8eff71] hover:text-[#0d6100]"
+                aria-label="Book now"
               >
-                add_shopping_cart
+                <span>Book now</span>
+                <span className="material-symbols-outlined text-sm">arrow_forward</span>
               </button>
             </div>
           </div>
@@ -96,10 +105,12 @@ export default function FeaturedFieldsSection({ featured, onViewAll }) {
               <span className="font-headline font-bold text-[#8eff71]">{featured.small2.price}</span>
               <button
                 type="button"
-                className="material-symbols-outlined rounded-lg bg-[#242721] p-2 transition-colors hover:text-[#8eff71]"
-                aria-label="Add to cart"
+                onClick={() => handleBookNow(featured.small2.id)}
+                className="inline-flex items-center gap-1 rounded-lg bg-[#242721] px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-colors hover:bg-[#8eff71] hover:text-[#0d6100]"
+                aria-label="Book now"
               >
-                add_shopping_cart
+                <span>Book now</span>
+                <span className="material-symbols-outlined text-sm">arrow_forward</span>
               </button>
             </div>
           </div>
@@ -123,6 +134,7 @@ export default function FeaturedFieldsSection({ featured, onViewAll }) {
               <p className="mb-6 text-sm leading-relaxed text-[#abaca5]">{featured.medium.desc}</p>
               <button
                 type="button"
+                onClick={() => handleBookNow(featured.medium.id)}
                 className="inline-flex w-fit items-center gap-2 rounded-lg bg-[#242721] px-5 py-3 text-xs font-black uppercase tracking-widest text-[#fdfdf6] transition-colors hover:bg-[#8eff71] hover:text-[#0d6100]"
               >
                 {featured.medium.cta}

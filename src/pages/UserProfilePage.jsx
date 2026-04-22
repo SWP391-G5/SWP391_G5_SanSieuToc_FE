@@ -85,7 +85,7 @@ function formatVnd(amount) {
   }
 }
 
-async function uploadToCloudinary({ file, cloudName, uploadPreset }) {
+async function _uploadToCloudinary({ file, cloudName, uploadPreset }) {
   const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
   const formData = new FormData();
   formData.append('file', file);
@@ -123,11 +123,11 @@ function BookingCard({ booking, onCancel, onFeedback }) {
 
   const hasEndedSlot = (booking.allDates || []).some(d => (d.slots || []).some(s => s.status === 'End'));
   const hasAvailableSlots = (booking.allDetails || []).some(d => d.status !== 'Cancel');
-  const canCancel = (booking.status === 'Confirmed' || booking.status === 'Booked') && booking.statusPayment === 'Paid' && hasAvailableSlots && !isEnded;
+  const canCancel = (booking.status === 'Active' || booking.status === 'Confirmed') && booking.statusPayment === 'Paid' && hasAvailableSlots && !isEnded;
   const canFeedback =
     typeof booking.canFeedback === 'boolean'
       ? booking.canFeedback
-      : (isEnded || hasEndedSlot) && booking.statusPayment === 'Paid' && !booking.hasFeedback;
+      : (isEnded || hasEndedSlot) && booking.statusPayment === 'Paid';
 
   const multipleSlots = (booking.timeSlots?.length || 0) > 1;
 
@@ -216,7 +216,7 @@ function BookingCard({ booking, onCancel, onFeedback }) {
                 onClick={() => onFeedback && onFeedback(booking)}
               >
                 <span className="material-symbols-outlined booking-feedback-btn-icon">star</span>
-                <span>Đánh giá</span>
+                <span>{booking.hasFeedback ? "Sửa đánh giá" : "Đánh giá"}</span>
               </button>
             )}
             {canCancel && (
@@ -482,7 +482,7 @@ export default function UserProfilePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const auth = useAuth();
-  const { notifyError, notifyInfo, notifySuccess } = useNotification();
+  const { notifyError, notifySuccess } = useNotification();
 
   const [activeTab, setActiveTab] = useState('personal');
   const [bookings, setBookings] = useState([]);
@@ -595,7 +595,7 @@ export default function UserProfilePage() {
 
         // Clear the refresh state after fetching to prevent re-fetching on unrelated re-renders
         if (location.state?.refreshWallet) {
-          const { refreshWallet, ...restState } = location.state;
+          const { refreshWallet: _refreshWallet, ...restState } = location.state;
           navigate('.', { state: restState, replace: true });
         }
       } catch (err) {
@@ -609,7 +609,7 @@ export default function UserProfilePage() {
     return () => {
       ignore = true;
     };
-  }, [auth.isAuthenticated, accountType, isAdminAccount, navigate, notifyError, location.state?.refreshWallet]);
+  }, [auth.isAuthenticated, accountType, isAdminAccount, navigate, notifyError, location.state, location.state?.refreshWallet]);
 
 // Effect to fetch bookings when tab is active
   useEffect(() => {
@@ -625,7 +625,7 @@ export default function UserProfilePage() {
           if (!ignore) {
             setBookings(data?.bookings || []);
           }
-        } catch (err) {
+        } catch {
           if (!ignore) {
             notifyError('Could not load booking history.');
             setBookings([]);
@@ -654,7 +654,7 @@ export default function UserProfilePage() {
             setTransactions(data?.transactions || []);
             setWalletBalance(Number(data?.walletBalance || 0));
           }
-        } catch (err) {
+        } catch {
           if (!ignore) {
             notifyError('Could not load transaction history.');
             setTransactions([]);
@@ -683,7 +683,26 @@ export default function UserProfilePage() {
   };
 
   const handleOpenFeedback = (booking) => {
-    navigate(`/feedback?bookingId=${booking.id}&fieldName=${encodeURIComponent(booking.fieldName)}`);
+    const fieldId = String(booking?.fieldId || '').trim();
+    const bookingId = String(booking?.id || '').trim();
+
+    if (!fieldId) {
+      notifyError('Không tìm thấy sân để đánh giá.');
+      return;
+    }
+
+    if (!bookingId) {
+      notifyError('Không tìm thấy đơn booking để đánh giá.');
+      return;
+    }
+
+    navigate(`/fields/${fieldId}?bookingId=${bookingId}`, {
+      state: {
+        feedbackBookingId: bookingId,
+        feedbackFieldName: booking?.fieldName || '',
+        fromBookingFeedback: true,
+      },
+    });
   };
 
   const onPickAvatar = () => {

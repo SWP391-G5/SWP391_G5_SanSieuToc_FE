@@ -1,14 +1,38 @@
 /**
- * PostsTable.jsx
- * Fixed-layout table UI for the Manager Posts list.
- * Column widths are locked so that long titles do not break the grid.
- * Header cells include inline Status and Owner filter dropdowns.
+ * ============================================================
+ * FILE: src/pages/Manager/posts/PostsTable.jsx
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   Fixed-layout table for Manager Posts list (EXECUTOR).
+ *   Renders rows and header filters. Owns ONLY UI state needed
+ *   for header options (e.g., loading tag options).
+ *
+ * RESPONSIBILITIES:
+ *   - Render the table UI for posts + drafts
+ *   - Provide header filters (status/owner/tag/sort) via callbacks
+ *   - Provide row actions via callbacks (edit/preview/approve/...)
+ *
+ * DATA FLOW:
+ *   ManagerPostsPage.jsx state → props.items → [THIS FILE]
+ *   Tag options: GET /api/public/post-tags → publicApi.getPostTags()
+ *
+ * USED IN:
+ *   - src/pages/Manager/ManagerPostsPage.jsx
+ * ============================================================
  */
 
-// 2. Third-party
-import { useEffect, useMemo, useState } from "react";
+/**
+ * ============================================================
+ * STATE MAP (PostsTable)
+ * ============================================================
+ * tagOptions      {Array}   Options for the Tag filter dropdown.
+ *                             Set by: useEffect fetchTags()
+ *                             Used by: header <select> for tag
+ * ============================================================
+ */
 
-// 3. Internal
+import { useEffect, useMemo, useState } from "react";
+import PropTypes from "prop-types";
 import publicApi from "../../../services/public/publicApi";
 import {
   formatDateTime,
@@ -584,3 +608,46 @@ export default function PostsTable({
     </div>
   );
 }
+
+// ─── CHANGE [2026-04-21]: Add PropTypes + State Map + effect docs (no logic change) ──
+
+PostsTable.propTypes = {
+  loading: PropTypes.bool.isRequired,
+  items: PropTypes.array.isRequired,
+  page: PropTypes.number.isRequired,
+  limit: PropTypes.number.isRequired,
+  status: PropTypes.string.isRequired,
+  onChangeStatus: PropTypes.func.isRequired,
+  tableOwner: PropTypes.string.isRequired,
+  onChangeOwner: PropTypes.func,
+  sortBy: PropTypes.string.isRequired,
+  onChangeSort: PropTypes.func.isRequired,
+  onPreview: PropTypes.func.isRequired,
+  onEditDraft: PropTypes.func,
+  onPublishDraft: PropTypes.func,
+  onDeleteDraft: PropTypes.func,
+  onEdit: PropTypes.func,
+  canEditPost: PropTypes.func,
+  onApprove: PropTypes.func,
+  onDelete: PropTypes.func,
+  onReject: PropTypes.func,
+  userId: PropTypes.string,
+  tag: PropTypes.string,
+  onChangeTag: PropTypes.func.isRequired,
+  hideOwnerFilter: PropTypes.bool,
+};
+
+PostsTable.defaultProps = {
+  tag: "",
+  onChangeOwner: undefined,
+  onEditDraft: undefined,
+  onPublishDraft: undefined,
+  onDeleteDraft: undefined,
+  onEdit: undefined,
+  canEditPost: undefined,
+  onApprove: undefined,
+  onDelete: undefined,
+  onReject: undefined,
+  userId: "",
+  hideOwnerFilter: false,
+};

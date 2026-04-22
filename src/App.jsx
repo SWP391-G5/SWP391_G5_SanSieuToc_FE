@@ -12,6 +12,7 @@ import FieldListPage from "./pages/Customer/Fields/FieldListPage";
 import HomePage from "./pages/Customer/Home/HomePage";
 import WishlistPage from "./pages/Customer/Wishlist/WishlistPage";
 import CommunityPage from "./pages/Customer/Community/CommunityPage";
+import CommunityMyPostsPage from "./pages/Customer/Community/CommunityMyPostsPage";
 import CommunityPostDetailPage from "./pages/Customer/Community/CommunityPostDetailPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import UserProfilePage from "./pages/UserProfilePage";
@@ -53,6 +54,7 @@ import OwnerWalletPage from "./pages/owner/OwnerWalletPage";
 import OwnerWithdrawPage from "./pages/owner/OwnerWithdrawPage";
 import OwnerPostsPage from "./pages/owner/OwnerPostsPage";
 import OwnerRevenuePage from "./pages/owner/OwnerRevenuePage";
+import OwnerReportsPage from "./pages/owner/OwnerReportsPage";
 
 import { useAuth } from "./context/AuthContext";
 import { PreviewModeProvider } from "./context/PreviewModeContext";
@@ -83,6 +85,10 @@ function App() {
             <Route path="booking-confirm" element={<BookingConfirmPage />} />
             <Route path="wishlist" element={<WishlistPage />} />
             <Route path="community" element={<CommunityPage />} />
+            <Route
+              path="community/my-posts"
+              element={<CommunityMyPostsPage />}
+            />
             <Route path="community/:id" element={<CommunityPostDetailPage />} />
             <Route path="auth" element={<AuthPage />} />
             <Route path="forgot-password" element={<ForgotPasswordPage />} />
@@ -174,6 +180,7 @@ function App() {
             <Route path="withdraw" element={<OwnerWithdrawPage />} />
             <Route path="posts" element={<OwnerPostsPage />} />
             <Route path="revenue" element={<OwnerRevenuePage />} />
+            <Route path="reports" element={<OwnerReportsPage />} />
             <Route path="profile" element={<UserProfilePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>

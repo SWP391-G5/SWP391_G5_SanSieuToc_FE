@@ -16,7 +16,23 @@ const communityService = {
   async getMyPosts() {
     const { data } = await axiosInstance.get('/api/user/posts/my-posts');
     return data;
-  }
+  },
+
+  /**
+   * Update one of current user's posts.
+   */
+  async updateMyPost(postId, payload) {
+    const { data } = await axiosInstance.put(`/api/user/posts/${postId}`, payload);
+    return data;
+  },
+
+  /**
+   * Soft-delete one of current user's posts.
+   */
+  async deleteMyPost(postId) {
+    const { data } = await axiosInstance.delete(`/api/user/posts/${postId}`);
+    return data;
+  },
 };
 
 export default communityService;

@@ -85,7 +85,42 @@ export default function ServicePage() {
     }
   };
 
-  useEffect(() => { 
+const fetchServiceHistory = async () => {
+    setLoading(true);
+    try {
+      if (auth.accessToken) setAuthToken(auth.accessToken);
+      const data = await serviceService.getMyServiceHistory();
+      console.log('Service history raw:', data);
+      
+      const rawServices = data.services || [];
+      console.log('Raw services list length:', rawServices.length);
+      
+const entries = rawServices.map(sh => {
+        const servicesArr = sh.services || sh.service || [];
+        const slotId = sh.bookingDetailId || sh.id;
+        
+        return {
+          id: sh.id,
+          fieldName: sh.fieldName || 'Unknown',
+          slotInfo: sh.slotInfo || '',
+          services: servicesArr,
+          totalPrice: sh.totalPrice || 0,
+          status: sh.status || '',
+          bookingDetailId: slotId,
+          createdAt: sh.createdAt ? new Date(sh.createdAt) : new Date(),
+        };
+      }).sort((a, b) => (b.id || '').localeCompare(a.id || ''));
+      
+      console.log('Entries:', entries);
+      setServicesList(entries);
+    } catch (err) {
+      console.error('Failed to fetch service history:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     setLoading(true);
     fetchBookings(); 
     const interval = setInterval(fetchBookings, 15000);
@@ -219,14 +254,21 @@ export default function ServicePage() {
             >
               🔄
             </button>
-            <button
-              onClick={() => setShowHistory(!showHistory)}
+<button
+              onClick={() => {
+                setShowHistory(!showHistory);
+                if (!showHistory) {
+                  fetchServiceHistory();
+                } else {
+                  fetchBookings();
+                }
+              }}
               className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
                 showHistory ? 'bg-[#4ade80] text-black' : 'bg-[#1a1a1a] text-gray-400 hover:text-white'
               }`}
             >
               {showHistory ? '← Quay lại' : '📋 Lịch sử'}
-          </button>
+            </button>
         </div>
         </div>
 
@@ -246,17 +288,39 @@ export default function ServicePage() {
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h3 className="font-semibold text-white">{group.fieldName}</h3>
-                        <p className="text-xs text-gray-500 mt-0.5">{group.timeSlots}</p>
+                        <p className="text-xs text-cyan-400 mt-0.5 font-medium">{group.slotInfo || group.timeSlots}</p>
                       </div>
                       <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded-full font-medium">{group.status}</span>
                     </div>
-                    <div className="space-y-1.5 pt-2 border-t border-gray-800">
-                      {group.services?.length > 0 ? group.services.map((s, i) => (
-                        <div key={i} className="flex justify-between text-sm">
-                          <span className="text-gray-300">{s.serviceName}</span>
-                          <span className="text-green-400 font-medium">{formatPrice(s.price)}</span>
-                        </div>
-                      )) : <p className="text-sm text-gray-600">Chưa đặt dịch vụ</p>}
+                    <div className="space-y-2 pt-2 border-t border-gray-800">
+                      {group.services?.length > 0 ? (
+                        <>
+                          <div className="flex justify-between text-xs text-gray-500 pb-1">
+                            <span>Dịch vụ</span>
+                            <span>Thành tiền</span>
+                          </div>
+                          {group.services.map((s, i) => (
+                            <div key={i} className="flex justify-between text-sm">
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-300">{s.serviceName}</span>
+                                {s.quantity > 1 && (
+                                  <span className="text-xs bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">x{s.quantity}</span>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <span className="text-green-400 font-medium">{formatPrice(s.price * (s.quantity || 1))}</span>
+                                {s.quantity > 1 && (
+                                  <span className="text-xs text-gray-500 ml-1">({formatPrice(s.price)} x {s.quantity})</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          <div className="flex justify-between text-sm pt-2 border-t border-gray-700">
+                            <span className="text-white font-medium">Tổng cộng</span>
+                            <span className="text-green-400 font-bold">{formatPrice(group.totalPrice)}</span>
+                          </div>
+                        </>
+                      ) : <p className="text-sm text-gray-600">Chưa đặt dịch vụ</p>}
                     </div>
                     {group.canFeedback && (
                       <button className="mt-3 w-full py-2 bg-[#4ade80] text-black font-medium rounded-lg flex items-center justify-center gap-2">
@@ -328,10 +392,11 @@ export default function ServicePage() {
                         <p className="text-xs text-gray-500">{booking.allDates?.map(d => formatDate(d.date)).join(', ')}</p>
                       </div>
                       <span className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${
-                        booking.status === 'Confirmed' ? 'bg-green-500/20 text-green-400' :
-                        booking.status === 'Booked' ? 'bg-blue-500/20 text-blue-400' :
+                        booking.status === 'Active' ? 'bg-blue-500/20 text-blue-400' :
+                        booking.status === 'Cancel Request' ? 'bg-amber-500/20 text-amber-400' :
+                        booking.status === 'Cancelled' ? 'bg-red-500/20 text-red-400' :
                         'bg-gray-500/20 text-gray-400'
-                      }`}>{booking.status === 'Booked' ? 'Đã đặt' : booking.status}</span>
+                      }`}>{booking.status === 'Active' ? 'Đã đặt' : booking.status}</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {booking.allDates?.flatMap(dateObj =>
@@ -409,7 +474,23 @@ export default function ServicePage() {
                             >
                               -
                             </button>
-                            <span className="w-6 text-center text-white text-sm">{selected.quantity}</span>
+                            <input
+                              type="number"
+                              min="1"
+                              max={stock}
+                              value={selected.quantity}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                const val = parseInt(e.target.value, 10);
+                                if (!isNaN(val) && val >= 1 && val <= stock) {
+                                  setSelectedServices(prev => prev.map(s => 
+                                    s.serviceId === service._id ? { ...s, quantity: val } : s
+                                  ));
+                                }
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-10 text-center text-white text-sm bg-transparent border border-gray-600 rounded"
+                            />
                             <button
                               onClick={(e) => { e.stopPropagation(); updateQuantity(service._id, 1); }}
                               disabled={selected.quantity >= stock}

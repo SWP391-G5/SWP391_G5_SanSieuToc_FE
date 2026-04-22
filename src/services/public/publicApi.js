@@ -39,6 +39,11 @@ const publicApi = {
     return data;
   },
 
+  async getLocationFilters() {
+    const { data } = await axiosInstance.get('/api/public/fields/location-filters');
+    return data;
+  },
+
 
   async getPosts(params) {
     const { data } = await axiosInstance.get(`/api/public/posts${buildQuery(params)}`);

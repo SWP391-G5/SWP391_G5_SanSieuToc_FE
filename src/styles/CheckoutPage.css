@@ -159,6 +159,13 @@
   gap: 10px;
 }
 
+.card-error {
+  color: #ff4444;
+  font-size: 0.75rem;
+  margin-top: -8px;
+  margin-bottom: 8px;
+}
+
 .paypal-info {
   color: #00d4ff;
   font-size: 1.1rem;

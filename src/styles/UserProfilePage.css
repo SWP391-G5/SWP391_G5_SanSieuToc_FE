@@ -2131,9 +2131,9 @@
   white-space: nowrap;
 }
 
-.booking-status-badge.status-confirmed {
-  background: rgba(109, 255, 158, 0.15);
-  color: #6dff9e;
+.booking-status-badge.status-active {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
 }
 
 .booking-status-badge.status-cancel-request {
@@ -2142,8 +2142,8 @@
 }
 
 .booking-status-badge.status-cancelled {
-  background: rgba(255, 77, 77, 0.15);
-  color: #ff4d4d;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
 }
 
 .booking-payment-badge.paid {
@@ -2451,9 +2451,9 @@
   color: #9e9e9e;
 }
 
-.booking-status-badge.status-confirmed {
-  background: rgba(109, 255, 158, 0.15);
-  color: #6dff9e;
+.booking-status-badge.status-active {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
 }
 
 .booking-status-badge.status-cancel-request {
@@ -2462,8 +2462,8 @@
 }
 
 .booking-status-badge.status-cancelled {
-  background: rgba(255, 77, 77, 0.15);
-  color: #ff4d4d;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
 }
 
 .booking-card-body {

@@ -1,8 +1,20 @@
 /**
- * postDraftStorage.js
- * DEPRECATED: drafts are now persisted in DB (Post.status = 'Draft').
- * Kept as a compatibility shim; should be removed once no longer imported.
+ * ============================================================
+ * FILE: src/pages/Manager/posts/postDraftStorage.js
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   DEPRECATED compatibility shim.
+ *   Local draft storage has been replaced by DB drafts.
+ *
+ * RESPONSIBILITIES:
+ *   - Provide no-op/throwing functions so legacy imports remain explicit
+ *
+ * USED IN:
+ *   (Should be none; safe to keep until fully removed.)
+ * ============================================================
  */
+
+// ── CHANGE [2026-04-21]: Add structured header for deprecated shim ──
 
 export function buildDraftStorageKey() {
   return '__deprecated__';
@@ -27,3 +39,5 @@ export function deleteDraftById() {
 export function getDraftById() {
   return null;
 }
+
+// ── END CHANGE ─────────────────────────────────────────────

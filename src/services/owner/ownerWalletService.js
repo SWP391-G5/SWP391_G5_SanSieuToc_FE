@@ -5,9 +5,10 @@ export const getOwnerWallet = async () => {
   return response.data;
 };
 
-export const getOwnerTransactions = async (limit = 20, bookingType = null) => {
+export const getOwnerTransactions = async (limit = 20, type = null, bookingType = null) => {
   const params = new URLSearchParams();
   params.append('limit', limit);
+  if (type) params.append('type', type);
   if (bookingType) params.append('bookingType', bookingType);
   const response = await axiosInstance.get(`/api/owner/wallet/transactions?${params.toString()}`);
   return response.data;
