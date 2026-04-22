@@ -149,7 +149,7 @@ export default function WishlistCard({
               onClick={onViewInList}
               className="font-headline rounded-lg bg-[#242721] px-4 py-2 text-xs font-bold transition-all hover:bg-[#8eff71] hover:text-[#0d6100]"
             >
-              View in list
+              View detail
             </button>
           </div>
         </div>

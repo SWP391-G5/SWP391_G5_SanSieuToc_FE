@@ -46,9 +46,30 @@ const bookingService = {
     const { data } = await axiosInstance.get(ENDPOINTS.BOOKING.FEEDBACK_ELIGIBILITY(bookingId));
     return data;
   },
+  async getFeedbackEligibilityByField(fieldId) {
+    const { data } = await axiosInstance.get(ENDPOINTS.BOOKING.FEEDBACK_FIELD_ELIGIBILITY(fieldId));
+    return data;
+  },
 
   async createFeedback(payload) {
     const { data } = await axiosInstance.post(ENDPOINTS.BOOKING.FEEDBACK_CREATE, payload);
+    return data;
+  },
+
+  async updateFeedback(feedbackId, payload) {
+    const { data } = await axiosInstance.put(ENDPOINTS.BOOKING.FEEDBACK_UPDATE(feedbackId), payload);
+    return data;
+  },
+  async deleteFeedback(feedbackId) {
+    const { data } = await axiosInstance.delete(ENDPOINTS.BOOKING.FEEDBACK_DELETE(feedbackId));
+    return data;
+  },
+  async validateVoucher(voucherCode, fieldId, grandTotal) {
+    const { data } = await axiosInstance.post('/api/bookings/validate-voucher', {
+      voucherCode,
+      fieldId,
+      grandTotal,
+    });
     return data;
   },
 };

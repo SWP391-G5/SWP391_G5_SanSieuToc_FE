@@ -121,12 +121,6 @@ export default function OwnerRefundsPage() {
                   >
                     Duyệt hoàn tiền
                   </button>
-                  <button
-                    onClick={() => handleRefund(booking._id, false)}
-                    className="flex-1 bg-error text-on-primary py-2 rounded-lg font-medium hover:opacity-90"
-                  >
-                    Từ chối
-                  </button>
                 </div>
               </div>
             );

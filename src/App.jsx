@@ -52,6 +52,7 @@ import OwnerServiceBookingsPage from "./pages/owner/OwnerServiceBookingsPage";
 import OwnerRefundsPage from "./pages/owner/OwnerRefundsPage";
 import OwnerWalletPage from "./pages/owner/OwnerWalletPage";
 import OwnerWithdrawPage from "./pages/owner/OwnerWithdrawPage";
+import OwnerReportsPage from "./pages/owner/OwnerReportsPage";
 
 import { useAuth } from "./context/AuthContext";
 import { PreviewModeProvider } from "./context/PreviewModeContext";
@@ -167,6 +168,7 @@ function App() {
             <Route path="bookings" element={<OwnerBookingsPage />} />
             <Route path="service-bookings" element={<OwnerServiceBookingsPage />} />
             <Route path="refunds" element={<OwnerRefundsPage />} />
+            <Route path="reports" element={<OwnerReportsPage />} />
             <Route path="wallet" element={<OwnerWalletPage />} />
             <Route path="withdraw" element={<OwnerWithdrawPage />} />
             <Route path="*" element={<NotFoundPage />} />

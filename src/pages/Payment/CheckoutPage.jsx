@@ -153,9 +153,45 @@ const CheckoutPage = () => {
     }
   };
 
-  const handleCardPayment = async () => {
+  const validateCardForm = () => {
     if (!cardInfo.cardNumber || !cardInfo.cardName || !cardInfo.expiryDate || !cardInfo.cvv) {
       setError('Please fill in all card details');
+      return false;
+    }
+
+    const namePattern = /^[^.,;]+$/;
+    if (!namePattern.test(cardInfo.cardName)) {
+      setError('Cardholder name cannot contain special characters (. , ;)');
+      return false;
+    }
+
+    const expiryParts = cardInfo.expiryDate.split('/');
+    if (expiryParts.length !== 2) {
+      setError('Invalid expiry date format (use MM/YY)');
+      return false;
+    }
+    const month = parseInt(expiryParts[0], 10);
+    const year = parseInt('20' + expiryParts[1], 10);
+    if (month < 1 || month > 12) {
+      setError('Month must be between 01 and 12');
+      return false;
+    }
+    if (year < 2027) {
+      setError('Year must be 27 or later');
+      return false;
+    }
+
+    if (cardInfo.cvv.length < 3 || cardInfo.cvv.length > 4) {
+      setError('CVV must be 3 or 4 digits');
+      return false;
+    }
+
+    setError('');
+    return true;
+  };
+
+  const handleCardPayment = async () => {
+    if (!validateCardForm()) {
       return;
     }
 
@@ -257,32 +293,47 @@ const CheckoutPage = () => {
                       type="text"
                       placeholder="Cardholder Name"
                       value={cardInfo.cardName}
-                      onChange={(e) => setCardInfo({...cardInfo, cardName: e.target.value})}
+                      onChange={(e) => {
+                        const value = e.target.value.toUpperCase().replace(/[.,;]/g, '');
+                        setCardInfo({...cardInfo, cardName: value});
+                      }}
                       className="card-input"
                     />
                     <div className="card-row">
-                      <input
-                        type="text"
-                        placeholder="MM/YY"
-                        maxLength="5"
-                        value={cardInfo.expiryDate}
-                        onChange={(e) => {
-                          let val = e.target.value.replace(/\D/g, '');
-                          if (val.length >= 2) {
-                            val = val.slice(0, 2) + '/' + val.slice(2, 4);
-                          }
-                          setCardInfo({...cardInfo, expiryDate: val});
-                        }}
-                        className="card-input"
-                      />
-                      <input
-                        type="password"
-                        placeholder="CVV"
-                        maxLength="3"
-                        value={cardInfo.cvv}
-                        onChange={(e) => setCardInfo({...cardInfo, cvv: e.target.value.replace(/\D/g, '')})}
-                        className="card-input"
-                      />
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="MM/YY"
+                          maxLength="5"
+                          value={cardInfo.expiryDate}
+                          onChange={(e) => {
+                            let val = e.target.value.replace(/\D/g, '');
+                            if (val.length >= 2) {
+                              let mm = parseInt(val.slice(0, 2), 10);
+                              if (mm > 12) mm = 1;
+                              if (mm < 1) mm = 1;
+                              val = mm.toString().padStart(2, '0') + '/' + val.slice(2, 4);
+                            }
+                            if (val.length === 5) {
+                              let yy = parseInt(val.slice(3, 5), 10);
+                              if (yy < 27) yy = 27;
+                              val = val.slice(0, 3) + yy.toString();
+                            }
+                            setCardInfo({...cardInfo, expiryDate: val});
+                          }}
+                          className="card-input"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="password"
+                          placeholder="CVV"
+                          maxLength="4"
+                          value={cardInfo.cvv}
+                          onChange={(e) => setCardInfo({...cardInfo, cvv: e.target.value.replace(/\D/g, '')})}
+                          className="card-input"
+                        />
+                      </div>
                     </div>
                     <button 
                       className="confirm-button"

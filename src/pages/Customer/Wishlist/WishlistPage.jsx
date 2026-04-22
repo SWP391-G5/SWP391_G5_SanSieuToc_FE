@@ -341,7 +341,7 @@ export default function WishlistPage() {
               field={f}
               wished={wishlistIds.has(f.id)}
               onToggleWishlist={toggleWishlist}
-              onViewInList={() => navigate('/fields')}
+              onViewInList={() => navigate(`/fields/${f.id}`)}
               onToggleCompare={toggleCompare}
               isCompared={compareIds.includes(String(f.id))}
               compareDisabled={compareIds.length >= 3}
