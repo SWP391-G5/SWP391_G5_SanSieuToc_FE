@@ -398,8 +398,8 @@ export default function ManagerStatisticsPage() {
     <div className="space-y-8">
       <header className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-headline font-bold">Statistics</h1>
-          <p className="text-sm text-on-surface-variant">Thống kê theo phạm vi Manager (chỉ owner được phân công).</p>
+          <h1 className="text-2xl font-headline font-bold">Statistics - Thống kê toàn thời gian</h1>
+          <p className="text-sm text-on-surface-variant">Thống kê theo phạm vi Owner được uỷ quyền cho Manager.</p>
 
           {ownerId ? (
             <div className="mt-2 space-y-4">
