@@ -22,3 +22,13 @@ export const getOwnerRevenue = async (startDate, endDate, bookingType = null) =>
   const response = await axiosInstance.get(`/api/owner/wallet/revenue?${params.toString()}`);
   return response.data;
 };
+
+export const getOwnerRevenueSeries = async (startDate, endDate, interval = 'day', bookingType = null) => {
+  const params = new URLSearchParams();
+  if (startDate) params.append('startDate', startDate);
+  if (endDate) params.append('endDate', endDate);
+  if (interval) params.append('interval', interval);
+  if (bookingType) params.append('bookingType', bookingType);
+  const response = await axiosInstance.get(`/api/owner/wallet/revenue-series?${params.toString()}`);
+  return response.data;
+};

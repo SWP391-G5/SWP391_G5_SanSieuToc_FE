@@ -52,7 +52,10 @@ import OwnerServiceBookingsPage from "./pages/owner/OwnerServiceBookingsPage";
 import OwnerRefundsPage from "./pages/owner/OwnerRefundsPage";
 import OwnerWalletPage from "./pages/owner/OwnerWalletPage";
 import OwnerWithdrawPage from "./pages/owner/OwnerWithdrawPage";
+import OwnerPostsPage from "./pages/owner/OwnerPostsPage";
+import OwnerRevenuePage from "./pages/owner/OwnerRevenuePage";
 import OwnerReportsPage from "./pages/owner/OwnerReportsPage";
+import OwnerVouchersPage from "./pages/owner/OwnerVouchersPage";
 
 import { useAuth } from "./context/AuthContext";
 import { PreviewModeProvider } from "./context/PreviewModeContext";
@@ -83,7 +86,10 @@ function App() {
             <Route path="booking-confirm" element={<BookingConfirmPage />} />
             <Route path="wishlist" element={<WishlistPage />} />
             <Route path="community" element={<CommunityPage />} />
-            <Route path="community/my-posts" element={<CommunityMyPostsPage />} />
+            <Route
+              path="community/my-posts"
+              element={<CommunityMyPostsPage />}
+            />
             <Route path="community/:id" element={<CommunityPostDetailPage />} />
             <Route path="auth" element={<AuthPage />} />
             <Route path="forgot-password" element={<ForgotPasswordPage />} />
@@ -166,11 +172,18 @@ function App() {
             <Route path="dashboard" element={<OwnerDashboardPage />} />
             <Route path="fields" element={<OwnerFieldsPage />} />
             <Route path="bookings" element={<OwnerBookingsPage />} />
-            <Route path="service-bookings" element={<OwnerServiceBookingsPage />} />
+            <Route
+              path="service-bookings"
+              element={<OwnerServiceBookingsPage />}
+            />
             <Route path="refunds" element={<OwnerRefundsPage />} />
-            <Route path="reports" element={<OwnerReportsPage />} />
             <Route path="wallet" element={<OwnerWalletPage />} />
             <Route path="withdraw" element={<OwnerWithdrawPage />} />
+            <Route path="posts" element={<OwnerPostsPage />} />
+            <Route path="revenue" element={<OwnerRevenuePage />} />
+            <Route path="reports" element={<OwnerReportsPage />} />
+            <Route path="vouchers" element={<OwnerVouchersPage />} />
+            <Route path="profile" element={<UserProfilePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
 

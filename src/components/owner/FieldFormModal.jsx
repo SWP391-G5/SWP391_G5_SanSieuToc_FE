@@ -22,6 +22,7 @@ export default function FieldFormModal({
   });
 
   const [previewImages, setPreviewImages] = useState([]);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (initialData) {
@@ -50,6 +51,7 @@ export default function FieldFormModal({
       });
       setPreviewImages([]);
     }
+    setErrors({});
   }, [initialData, isOpen]);
 
   if (!isOpen) return null;
@@ -96,6 +98,56 @@ export default function FieldFormModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const nextErrors = {};
+    const nameTrimmed = String(formData.fieldName || "").trim();
+    const typeTrimmed = String(formData.fieldType || "").trim();
+    const addressTrimmed = String(formData.address || "").trim();
+    const openingTrimmed = String(formData.openingTime || "").trim();
+    const closingTrimmed = String(formData.closingTime || "").trim();
+    const hourlyPriceNumber = Number(formData.hourlyPrice);
+    const slotDurationNumber = Number(formData.slotDuration);
+    const parseTimeToMinutes = (value) => {
+      const s = String(value || "").trim();
+      const parts = s.split(":");
+      if (parts.length !== 2) return null;
+      const h = Number(parts[0]);
+      const m = Number(parts[1]);
+      if (Number.isNaN(h) || Number.isNaN(m)) return null;
+      if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+      return h * 60 + m;
+    };
+
+    if (!nameTrimmed) nextErrors.fieldName = "Vui lòng nhập tên sân.";
+    if (!typeTrimmed) nextErrors.fieldType = "Vui lòng chọn loại sân.";
+    if (!addressTrimmed) nextErrors.address = "Vui lòng nhập địa chỉ.";
+    if (!openingTrimmed) nextErrors.openingTime = "Vui lòng chọn giờ mở cửa.";
+    if (!closingTrimmed) nextErrors.closingTime = "Vui lòng chọn giờ đóng cửa.";
+
+    if (
+      formData.hourlyPrice === "" ||
+      Number.isNaN(hourlyPriceNumber) ||
+      hourlyPriceNumber < 0
+    ) {
+      nextErrors.hourlyPrice = "Giá/giờ không hợp lệ.";
+    }
+    if (Number.isNaN(slotDurationNumber) || slotDurationNumber <= 0) {
+      nextErrors.slotDuration = "Thời lượng slot không hợp lệ.";
+    } else if (slotDurationNumber % 30 !== 0) {
+      nextErrors.slotDuration = "Thời lượng slot phải là bội số của 30 phút.";
+    }
+
+    const openingMinutes = parseTimeToMinutes(openingTrimmed);
+    const closingMinutes = parseTimeToMinutes(closingTrimmed);
+    if (openingMinutes === null || closingMinutes === null) {
+      nextErrors.openingTime =
+        nextErrors.openingTime || "Giờ mở/đóng cửa không hợp lệ.";
+    } else if (closingMinutes <= openingMinutes) {
+      nextErrors.closingTime = "Giờ đóng cửa phải lớn hơn giờ mở cửa.";
+    }
+
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
     const hourlyPrice =
       formData.hourlyPrice === "" ? undefined : Number(formData.hourlyPrice);
     const payload = {
@@ -110,8 +162,21 @@ export default function FieldFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-surface-container-low border border-outline-variant/20 rounded-2xl w-full max-w-3xl my-8 overflow-hidden shadow-2xl">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+      onClick={onClose}
+      role="button"
+      tabIndex={-1}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
+    >
+      <div
+        className="bg-surface-container-low border border-outline-variant/20 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="p-6 border-b border-outline-variant/10 flex justify-between items-center">
           <h3 className="headline-font text-2xl font-bold text-on-surface">
             {initialData ? "Cập nhật Sân Bóng" : "Thêm Sân Mới"}
@@ -124,7 +189,10 @@ export default function FieldFormModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-80px)]"
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Field Name */}
             <div className="space-y-2">
@@ -140,6 +208,9 @@ export default function FieldFormModal({
                 className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-on-surface-variant/30"
                 placeholder="VD: Sân Chảo Lửa 1"
               />
+              {errors.fieldName ? (
+                <div className="text-xs text-error">{errors.fieldName}</div>
+              ) : null}
             </div>
 
             {/* Field Type & Status */}
@@ -158,6 +229,9 @@ export default function FieldFormModal({
                   <option value="Sân 7 người">Sân 7 người</option>
                   <option value="Sân 11 người">Sân 11 người</option>
                 </select>
+                {errors.fieldType ? (
+                  <div className="text-xs text-error">{errors.fieldType}</div>
+                ) : null}
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
@@ -188,6 +262,9 @@ export default function FieldFormModal({
                 className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-on-surface focus:border-primary focus:outline-none placeholder:text-on-surface-variant/30"
                 placeholder="VD: 123 Đường ABC, Quận X..."
               />
+              {errors.address ? (
+                <div className="text-xs text-error">{errors.address}</div>
+              ) : null}
             </div>
 
             {/* Timings & Duration */}
@@ -205,6 +282,9 @@ export default function FieldFormModal({
                 onChange={handleChange}
                 className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-on-surface focus:border-primary focus:outline-none"
               />
+              {errors.slotDuration ? (
+                <div className="text-xs text-error">{errors.slotDuration}</div>
+              ) : null}
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
@@ -220,6 +300,9 @@ export default function FieldFormModal({
                 className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-on-surface focus:border-primary focus:outline-none"
                 placeholder="VD: 200000"
               />
+              {errors.hourlyPrice ? (
+                <div className="text-xs text-error">{errors.hourlyPrice}</div>
+              ) : null}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -233,6 +316,9 @@ export default function FieldFormModal({
                   onChange={handleChange}
                   className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-on-surface focus:border-primary focus:outline-none"
                 />
+                {errors.openingTime ? (
+                  <div className="text-xs text-error">{errors.openingTime}</div>
+                ) : null}
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
@@ -245,6 +331,9 @@ export default function FieldFormModal({
                   onChange={handleChange}
                   className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-on-surface focus:border-primary focus:outline-none"
                 />
+                {errors.closingTime ? (
+                  <div className="text-xs text-error">{errors.closingTime}</div>
+                ) : null}
               </div>
             </div>
 
