@@ -130,11 +130,11 @@ export default function HomePage() {
 
   const goToFields = (q) => {
     const value = String(q ?? '').trim();
-    navigate('/fields', { 
-      state: { 
+    navigate('/fields', {
+      state: {
         searchText: value,
         searchDate: selectedDate || undefined
-      } 
+      }
     });
   };
 
@@ -361,9 +361,8 @@ export default function HomePage() {
             <button
               key={i.label}
               type="button"
-              className={`flex flex-col items-center gap-1 rounded-lg px-2 py-2 text-xs ${
-                i.active ? 'text-[#8eff71]' : 'text-[#fdfdf6]/70'
-              }`}
+              className={`flex flex-col items-center gap-1 rounded-lg px-2 py-2 text-xs ${i.active ? 'text-[#8eff71]' : 'text-[#fdfdf6]/70'
+                }`}
             >
               <span className="material-symbols-outlined">{i.icon}</span>
               <span className="font-label uppercase tracking-widest">{i.label}</span>
