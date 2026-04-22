@@ -1,10 +1,30 @@
 /**
- * PostPreviewModal.jsx
- * Customer-facing preview modal for Manager Posts.
+ * ============================================================
+ * FILE: src/pages/Manager/posts/PostPreviewModal.jsx
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   Read-only preview modal (EXECUTOR) that renders a post using
+ *   the same content fields users would see.
+ *
+ * RESPONSIBILITIES:
+ *   - Display title, tags, dates, images, and content
+ *   - Provide a Close button
+ *
+ * DATA FLOW:
+ *   ManagerPostsPage.jsx state (previewing) → props.post → [THIS FILE]
+ *
+ * USED IN:
+ *   - src/pages/Manager/ManagerPostsPage.jsx
+ * ============================================================
  */
 
+// ── Third-party ────────────────────────────────────────────
+import PropTypes from 'prop-types';
+
+// ── Internal: formatting helpers ───────────────────────────
 import { formatDateTime, getPostContent, getPostImages, getPostTitle, getPostTags } from './postFormatters';
 
+// ── CHANGE [2026-04-21]: Add PropTypes + structured docs for reviewability ──
 export default function PostPreviewModal({ open, post, onClose }) {
   if (!open || !post) return null;
 
@@ -69,3 +89,15 @@ export default function PostPreviewModal({ open, post, onClose }) {
     </div>
   );
 }
+
+PostPreviewModal.propTypes = {
+  open: PropTypes.bool.isRequired, // Whether modal is visible
+  post: PropTypes.object, // Post-like object (from API)
+  onClose: PropTypes.func, // Close handler
+};
+
+PostPreviewModal.defaultProps = {
+  post: null,
+  onClose: undefined,
+};
+// ── END CHANGE ─────────────────────────────────────────────

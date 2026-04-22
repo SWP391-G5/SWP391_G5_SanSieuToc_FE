@@ -1,11 +1,67 @@
 /**
- * ManagerStatisticsPage.jsx
- * Manager dashboard statistics page.
+ * ============================================================
+ * FILE: src/pages/Manager/ManagerStatisticsPage.jsx
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   Manager Statistics main screen (ORCHESTRATOR).
+ *   Aggregates summary + trends + top fields for the manager scope.
+ *
+ * RESPONSIBILITIES:
+ *   - Build query params from URL + local filters (preset/groupBy/ownerId)
+ *   - Fetch data via React Query (summary, trends, hot-fields, field detail)
+ *   - Provide UI state for owner scope modal + field detail modal
+ *
+ * DATA FLOW (high-level):
+ *   UI filters/URL → query objects → managerApi.* → React Query → local state → charts/tables
+ *
+ * CALLS INTO:
+ *   - src/services/manager/managerApi.js
+ *
+ * NOTES:
+ *   - This page intentionally mirrors some query results into local state
+ *     (summary/bookingsTrend/revenueTrend/hotFields) to minimize JSX churn.
+ * ============================================================
  */
 
+/**
+ * ============================================================
+ * STATE MAP (ManagerStatisticsPage)
+ * ============================================================
+ * searchParams        URLSearchParams  From react-router, contains ownerId
+ * ownerId             {string}         Selected owner scope (optional)
+ *
+ * preset              {string}         Range preset: last7days|thisMonth|thisYear
+ * groupBy             {string}         Trend grouping: day|week|month (auto-adjusted)
+ * trendViewMode       {string}         'chart' | 'table'
+ *
+ * loading             {boolean}        Derived from ReactQuery isLoading flags
+ * error               {string}         First query failure message
+ *
+ * summary             {object|null}    Statistics summary payload
+ * bookingsTrend       {Array}          Trend series for bookings
+ * revenueTrend        {Array}          Trend series for revenue
+ * hotFields           {Array}          Ranking of top fields
+ *
+ * scopeOpen           {boolean}        Owner scope modal visibility
+ * scopeLoading        {boolean}        Owner scope modal: in-flight fetch
+ * scopeError          {string}         Owner scope modal: error message
+ * managedOwners       {Array}          Owners assigned to this manager
+ *
+ * fieldViewOpen       {boolean}        Field detail modal visibility
+ * fieldViewing        {object|null}    Field card selected from UI
+ * ============================================================
+ */
+
+// ── React core ─────────────────────────────────────────────
 import { useEffect, useMemo, useState } from 'react';
+
+// ── Routing ────────────────────────────────────────────────
 import { useSearchParams } from 'react-router-dom';
-import managerApi from '../../services/manager/managerApi';
+
+// ── Internal services ──────────────────────────────────────
+import managerApi from '../../services/manager/managerApi'; // Manager statistics + scope + field detail APIs
+
+// ── Vendor: charting ───────────────────────────────────────
 import {
   Bar,
   BarChart,
@@ -19,9 +75,12 @@ import {
   YAxis,
 } from 'recharts';
 
-// ✅ React Query
+// ── Vendor: React Query ────────────────────────────────────
 import { useQuery } from '@tanstack/react-query';
 
+// ─────────────────────────────────────────────────────────────
+// SECTION 1: URL SCOPE + FILTERS
+// ─────────────────────────────────────────────────────────────
 function formatCompactNumber(n) {
   const v = Number(n) || 0;
   return v.toLocaleString();
@@ -64,14 +123,21 @@ const PRESETS = [
  * @returns {JSX.Element} statistics page
  */
 export default function ManagerStatisticsPage() {
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 1: URL SCOPE + FILTERS
+  // ─────────────────────────────────────────────────────────────
   const [searchParams, setSearchParams] = useSearchParams();
   const ownerId = String(searchParams.get('ownerId') || '').trim();
+  const fieldId = String(searchParams.get('fieldId') || '').trim();
 
   const [preset, setPreset] = useState('last7days');
   // Default to day; will be auto-adjusted per preset
   const [groupBy, setGroupBy] = useState('day');
   const [trendViewMode, setTrendViewMode] = useState('chart');
 
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 2: PAGE STATE (loading/error + normalized data)
+  // ─────────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -80,6 +146,9 @@ export default function ManagerStatisticsPage() {
   const [revenueTrend, setRevenueTrend] = useState([]);
   const [hotFields, setHotFields] = useState([]);
 
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 3: MODALS (scope + field detail)
+  // ─────────────────────────────────────────────────────────────
   const [scopeOpen, setScopeOpen] = useState(false);
   const [scopeLoading, setScopeLoading] = useState(false);
   const [scopeError, setScopeError] = useState('');
@@ -113,8 +182,12 @@ export default function ManagerStatisticsPage() {
 
   const displayField = fieldDetail || fieldViewing;
 
-  const query = useMemo(() => ({ preset, ...(ownerId ? { ownerId } : {}) }), [preset, ownerId]);
-  const trendQuery = useMemo(() => ({ preset, groupBy, ...(ownerId ? { ownerId } : {}) }), [preset, groupBy, ownerId]);
+  // NOTE: Summary/trend APIs support (ownerId) and now also (fieldId) for Focus Field behavior.
+  const query = useMemo(() => ({ preset, ...(ownerId ? { ownerId } : {}), ...(fieldId ? { fieldId } : {}) }), [preset, ownerId, fieldId]);
+  const trendQuery = useMemo(
+    () => ({ preset, groupBy, ...(ownerId ? { ownerId } : {}), ...(fieldId ? { fieldId } : {}) }),
+    [preset, groupBy, ownerId, fieldId]
+  );
 
   // =========================
   // React Query: statistics
@@ -146,6 +219,17 @@ export default function ManagerStatisticsPage() {
   const anyLoading = summaryQ.isLoading || bookingsTrendQ.isLoading || revenueTrendQ.isLoading || hotFieldsQ.isLoading;
   const firstError = summaryQ.error || bookingsTrendQ.error || revenueTrendQ.error || hotFieldsQ.error;
 
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 4: EFFECTS (status sync + result sync)
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * EFFECT: Derive loading + error banner from ReactQuery state
+   * ----------------------------------------------------------
+   * WHEN IT RUNS: When any query enters/leaves loading or any query errors.
+   * WHAT IT DOES: Updates (loading, error) UI state.
+   * CLEANUP: None
+   */
   useEffect(() => {
     setLoading(anyLoading);
     if (!firstError) {
@@ -155,23 +239,43 @@ export default function ManagerStatisticsPage() {
     setError(firstError?.response?.data?.message || firstError?.message || 'Tải thống kê thất bại');
   }, [anyLoading, firstError]);
 
-  // Sync query results into local state (minimizes JSX edits)
+  /**
+   * EFFECT: Mirror summary query result into local state
+   * ----------------------------------------------------------
+   * Purpose: keep JSX stable by reading from local `summary`.
+   */
   useEffect(() => {
     if (summaryQ.data !== undefined) setSummary(summaryQ.data || null);
   }, [summaryQ.data]);
 
+  /**
+   * EFFECT: Mirror bookingsTrend query result into local state
+   */
   useEffect(() => {
     if (bookingsTrendQ.data !== undefined) setBookingsTrend(bookingsTrendQ.data?.series || []);
   }, [bookingsTrendQ.data]);
 
+  /**
+   * EFFECT: Mirror revenueTrend query result into local state
+   */
   useEffect(() => {
     if (revenueTrendQ.data !== undefined) setRevenueTrend(revenueTrendQ.data?.series || []);
   }, [revenueTrendQ.data]);
 
+  /**
+   * EFFECT: Mirror hotFields query result into local state
+   */
   useEffect(() => {
     if (hotFieldsQ.data !== undefined) setHotFields(hotFieldsQ.data?.items || []);
   }, [hotFieldsQ.data]);
 
+  /**
+   * EFFECT: Ensure managed owner scope list is loaded when ownerId is present
+   * ----------------------------------------------------------
+   * WHY: If user lands on /manager/statistics?ownerId=... directly,
+   *      we need to load managedOwners to display owner info.
+   * CLEANUP: cancellation flag to avoid state update after unmount.
+   */
   useEffect(() => {
     let cancelled = false;
 
@@ -247,9 +351,21 @@ export default function ManagerStatisticsPage() {
     return o?.fields || [];
   }, [managedOwners, ownerId]);
 
+  const focusedField = useMemo(() => {
+    if (!fieldId) return null;
+    return (focusedOwnerFields || []).find((f) => String(f?.id) === String(fieldId)) || null;
+  }, [fieldId, focusedOwnerFields]);
+
   const clearOwnerFocus = () => {
     const next = new URLSearchParams(searchParams);
     next.delete('ownerId');
+    next.delete('fieldId');
+    setSearchParams(next, { replace: true });
+  };
+
+  const clearFieldFocus = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('fieldId');
     setSearchParams(next, { replace: true });
   };
 
@@ -257,24 +373,34 @@ export default function ManagerStatisticsPage() {
     const next = new URLSearchParams(searchParams);
     if (id) next.set('ownerId', String(id));
     else next.delete('ownerId');
+
+    // When switching owner, reset field focus to avoid invalid fieldId.
+    next.delete('fieldId');
+
     setSearchParams(next, { replace: true });
     setScopeOpen(false);
+  };
+
+  const selectFieldFocus = (id) => {
+    const next = new URLSearchParams(searchParams);
+    if (id) next.set('fieldId', String(id));
+    else next.delete('fieldId');
+    setSearchParams(next, { replace: true });
   };
 
   const focusOwnerFromHotField = (f) => {
     const nextOwnerId = String(f?.ownerId || '').trim();
     if (!nextOwnerId) {
-      // Hot fields could be missing ownerId if BE not updated
-      // Keep silent in UI but still help debugging
       setError('Không xác định được owner của sân này để Focus Owner.');
       return;
     }
+    // Focus owner only (top fields remains global per requirement)
     selectOwnerFocus(nextOwnerId);
   };
 
-  const openFieldView = (field) => {
+  // Detail modal is now accessed explicitly (separate from focus field)
+  const openFieldDetail = (field) => {
     if (!field) return;
-    // ensure modal renders basic info immediately while full detail loads
     setFieldViewing(field);
     setFieldViewOpen(true);
   };
@@ -299,8 +425,8 @@ export default function ManagerStatisticsPage() {
     <div className="space-y-8">
       <header className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-headline font-bold">Statistics</h1>
-          <p className="text-sm text-on-surface-variant">Thống kê theo phạm vi Manager (chỉ owner được phân công).</p>
+          <h1 className="text-2xl font-headline font-bold">Statistics - Thống kê toàn thời gian</h1>
+          <p className="text-sm text-on-surface-variant">Thống kê theo phạm vi Owner được uỷ quyền cho Manager.</p>
 
           {ownerId ? (
             <div className="mt-2 space-y-4">
@@ -323,6 +449,15 @@ export default function ManagerStatisticsPage() {
                         {focusedOwner?.address ? `Địa chỉ: ${focusedOwner.address}` : ''}
                       </div>
                     ) : null}
+
+                    {fieldId ? (
+                      <div className="mt-2">
+                        <div className="text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60">Field đang lọc</div>
+                        <div className="text-sm font-bold text-[#fdfdf6] truncate">
+                          {focusedField?.fieldName || focusedField?.name ? `${focusedField?.fieldName || focusedField?.name}` : `Field: ${fieldId}`}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -334,6 +469,17 @@ export default function ManagerStatisticsPage() {
                     >
                       Đổi Owner
                     </button>
+
+                    {fieldId ? (
+                      <button
+                        type="button"
+                        onClick={clearFieldFocus}
+                        className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/80 hover:text-[#f97316] hover:bg-white/10"
+                      >
+                        Bỏ lọc Field
+                      </button>
+                    ) : null}
+
                     <button
                       type="button"
                       onClick={clearOwnerFocus}
@@ -353,31 +499,54 @@ export default function ManagerStatisticsPage() {
                       {focusedOwnerFields.length ? `Tổng: ${focusedOwnerFields.length}` : 'Không tìm thấy sân nào cho owner này.'}
                     </div>
                   </div>
-                  <div className="text-[11px] text-[#fdfdf6]/50">Bấm vào thẻ để xem chi tiết.</div>
+                  <div className="text-[11px] text-[#fdfdf6]/50">Bấm vào thẻ để lọc theo sân. Dùng nút “Chi tiết” để xem thông tin sân.</div>
                 </div>
 
                 {focusedOwnerFields.length ? (
                   <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {focusedOwnerFields.map((f) => (
-                      <button
-                        key={f.id}
-                        type="button"
-                        onClick={() => openFieldView(f)}
-                        className="rounded-xl border border-white/10 bg-[#0d0f0b] p-4 text-left hover:bg-white/5 transition-colors"
-                        title="Xem chi tiết sân"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="text-sm font-bold text-[#fdfdf6] truncate">{f.fieldName || 'Chưa có tên sân'}</div>
-                            <div className="text-[11px] text-[#fdfdf6]/60 truncate">{f.fieldType || 'Chưa rõ loại sân'}</div>
+                    {focusedOwnerFields.map((f) => {
+                      const isSelected = fieldId && String(fieldId) === String(f?.id);
+
+                      return (
+                        <div
+                          key={f.id}
+                          className={`rounded-xl border bg-[#0d0f0b] p-4 text-left transition-colors ${
+                            isSelected ? 'border-[#f97316] bg-white/5' : 'border-white/10 hover:bg-white/5'
+                          }`}
+                          title="Click để Focus Field"
+                        >
+                          <button type="button" onClick={() => selectFieldFocus(f.id)} className="block w-full text-left">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="text-sm font-bold text-[#fdfdf6] truncate">{f.fieldName || 'Chưa có tên sân'}</div>
+                                <div className="text-[11px] text-[#fdfdf6]/60 truncate">{f.fieldType || 'Chưa rõ loại sân'}</div>
+                              </div>
+                              {f.status ? (
+                                <div className="text-[10px] font-black uppercase tracking-widest text-[#8eff71]">{String(f.status)}</div>
+                              ) : null}
+                            </div>
+                            <div className="mt-2 text-[11px] text-[#fdfdf6]/60 line-clamp-2">{f.address || 'Chưa có địa chỉ'}</div>
+                          </button>
+
+                          <div className="mt-3 flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openFieldDetail(f)}
+                              className="h-8 rounded-lg px-3 text-[11px] font-black uppercase tracking-widest border border-white/10 bg-white/5 text-[#fdfdf6]/80 hover:bg-white/10"
+                              title="Xem chi tiết sân"
+                            >
+                              Chi tiết
+                            </button>
                           </div>
-                          {f.status ? (
-                            <div className="text-[10px] font-black uppercase tracking-widest text-[#8eff71]">{String(f.status)}</div>
-                          ) : null}
                         </div>
-                        <div className="mt-2 text-[11px] text-[#fdfdf6]/60 line-clamp-2">{f.address || 'Chưa có địa chỉ'}</div>
-                      </button>
-                    ))}
+                      );
+                    })}
+
+                    {focusedOwnerFields.length === 1 ? (
+                      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+                        <div className="h-full w-full rounded-xl border-2 border-dashed border-[#8eff71] opacity-50" />
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
               </div>
@@ -606,6 +775,13 @@ export default function ManagerStatisticsPage() {
                     </div>
                   </button>
                 ))}
+
+                {/* CHANGE: auto-focus first owner card if any */}
+                {managedOwners.length === 1 ? (
+                  <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+                    <div className="h-full w-full rounded-xl border-2 border-dashed border-[#8eff71] opacity-50" />
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>

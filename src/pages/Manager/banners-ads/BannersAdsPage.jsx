@@ -1,23 +1,96 @@
 /**
- * BannersAdsPage.jsx
- * Unified manager module: Banners & Ads (placement-based).
+ * ============================================================
+ * FILE: src/pages/Manager/banners-ads/BannersAdsPage.jsx
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   Manager Banner/Ads main screen (ORCHESTRATOR).
+ *   Owns page state, data fetching, and action handlers.
+ *   Rendering is delegated to child components in `./`.
  *
- * This module consolidates the previous `marketing/` and `banners/` folders.
+ * RESPONSIBILITIES:
+ *   - List banner/ad items by placement
+ *   - Filter active-only (client-side)
+ *   - Open Create/Edit modal (BannersAdsFormModal)
+ *   - Confirm deletes (PostConfirmModal)
+ *   - Call manager APIs to create/update/delete banner items
+ *
+ * DATA FLOW:
+ *   MongoDB → (BE) /api/manager/banners → managerApi.getBanners()
+ *           → useManagerBannersAds() → [THIS FILE] state
+ *           → BannersAdsTable.jsx (render)
+ *           → BannersAdsFormModal.jsx (create/edit)
+ *
+ * CHILD COMPONENTS USED:
+ *   - src/pages/Manager/banners-ads/BannersAdsTable.jsx
+ *   - src/pages/Manager/banners-ads/BannersAdsFormModal.jsx
+ *   - src/pages/Manager/posts/PostConfirmModal.jsx
+ *
+ * API CALLS (via):
+ *   - src/services/manager/managerApi.js
+ *       - getBanners(), createBanner(), updateBanner(), deleteBanner()
+ * ============================================================
  */
 
-import { useMemo, useState } from 'react';
-import { useNotification } from '../../../context/NotificationContext';
-import managerApi from '../../../services/manager/managerApi';
+/**
+  * ============================================================
+ * STATE MAP (BannersAdsPage)
+ * ============================================================
+ * placement     {string}   Current placement key (controls server query)
+ *                           Set by: placement <select>
+ *                           Used by: useManagerBannersAds({ placement })
+ *
+ * activeOnly    {boolean}  Client-side filter for active items only
+ *                           Set by: checkbox toggle
+ *                           Used by: derived `items`
+ *
+ * showForm      {boolean}  Create/Edit modal visibility
+ *                           Set by: openCreate/openEdit/onClose
+ *
+ * busy          {boolean}  Submit in-flight flag (create/edit)
+ *                           Set by: submit() try/finally
+ *                           Used by: modal + buttons disabled states
+ *
+ * formError     {string}   Create/Edit modal error message
+ *                           Set by: submit() preValidate + catch
+ *
+ * draft         {object}   Controlled form object for modal:
+ *                           { id, title, placement, order, isActive, image, __v }
+ *                           Used by: BannersAdsFormModal (executor)
+ *
+ * confirm       {object}   Confirm modal data for destructive actions
+ *                           Shape: { title, message, variant, confirmText, onConfirm }
+ * ============================================================
+ */
 
+// ── React core ─────────────────────────────────────────────
+import { useMemo, useState } from 'react';
+
+// ── Internal: context & services ───────────────────────────
+import { useNotification } from '../../../context/NotificationContext'; // toast notifications
+import managerApi from '../../../services/manager/managerApi'; // manager endpoints for banners CRUD
+
+// ── Internal: shared UI (confirm modal reused from Posts) ───
 import PostConfirmModal from '../posts/PostConfirmModal';
 
+// ── Internal: banners-ads feature executors ─────────────────
 import BannersAdsFormModal from './BannersAdsFormModal';
 import BannersAdsTable from './BannersAdsTable';
 import useManagerBannersAds from './useManagerBannersAds';
 
+// ── Internal: feature metadata & DTO helpers ────────────────
 import { PLACEMENTS, DEFAULT_PLACEMENT, placementLabel } from './placementsMeta';
 import { normalizeBannerItem } from './bannerDto';
 
+/**
+ * openPreview
+ * ----------------------------------------------------------
+ * Opens the placement preview page in a new tab.
+ *
+ * TRIGGERS: Header button "Xem trước"
+ *
+ * @param {string} previewPath - a relative path or absolute URL
+ * @returns {void}
+ */
 function openPreview(previewPath) {
   if (!previewPath) return;
   try {
@@ -31,9 +104,35 @@ function openPreview(previewPath) {
 }
 
 export default function BannersAdsPage() {
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 1: CONTEXT
+  // ─────────────────────────────────────────────────────────────
   const notify = useNotification();
 
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 2: LOCAL HELPERS (placement-specific rules)
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * getPlacementMeta
+   * --------------------------------------------------------
+   * Looks up placement metadata (label, max items, preview path).
+   *
+   * @param {string} key - placement key
+   * @returns {object|null} placement meta definition
+   */
   const getPlacementMeta = (key) => (PLACEMENTS || []).find((p) => p.key === key) || null;
+
+  /**
+   * clampOrderByPlacement
+   * --------------------------------------------------------
+   * Ensures `order` stays within valid range when a placement
+   * has a fixed slot count.
+   *
+   * @param {number} order
+   * @param {string} placementKey
+   * @returns {number} safe order (>=0 and < maxItems where applicable)
+   */
   const clampOrderByPlacement = (order, placementKey) => {
     const meta = getPlacementMeta(placementKey);
     const max = meta?.maxItems;
@@ -42,6 +141,20 @@ export default function BannersAdsPage() {
     return Math.max(0, n);
   };
 
+  /**
+   * preValidate
+   * --------------------------------------------------------
+   * Client-side guard rails before calling the API.
+   *
+   * VALIDATIONS:
+   *   - order is within placement slot range (if fixed slots)
+   *   - no duplicate ACTIVE items for same (placement + order)
+   *   - during create: placement capacity check applies ONLY for ACTIVE items
+   *
+   * NOTE:
+   *   This function does not save anything — it only returns
+   *   normalized values for safe FormData building.
+   */
   const preValidate = ({ nextDraft, currentItems, mode, currentId } = {}) => {
     const d = nextDraft || {};
     const selfId = currentId != null ? String(currentId) : '';
@@ -75,8 +188,8 @@ export default function BannersAdsPage() {
       }
     }
 
-    // IMPORTANT CHANGE:
-    // - Do NOT enforce "capacity" for inactive items.
+    // IMPORTANT:
+    // - Do NOT enforce capacity for inactive items.
     // - Only block creation when placement has fixed slots AND the new item is active.
     if (mode === 'create' && nextActive) {
       if (typeof max === 'number' && max > 0) {
@@ -95,6 +208,10 @@ export default function BannersAdsPage() {
     return { ok: true, normalized: { placement: nextPlacement, order: nextOrder, isActive: nextActive } };
   };
 
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 3: STATE
+  // ─────────────────────────────────────────────────────────────
+
   const [placement, setPlacement] = useState(DEFAULT_PLACEMENT);
   const placementMeta = useMemo(() => PLACEMENTS.find((p) => p.key === placement) || null, [placement]);
 
@@ -102,6 +219,7 @@ export default function BannersAdsPage() {
 
   const { loading, error, items: rawItems, reload } = useManagerBannersAds({ placement });
 
+  // Derived list
   const items = useMemo(() => {
     const list = (rawItems || []).map(normalizeBannerItem);
     const filtered = activeOnly ? list.filter((x) => x.isActive) : list;
@@ -134,8 +252,14 @@ export default function BannersAdsPage() {
     __v: 0,
   });
 
+  // NOTE: BannersAdsFormModal expects a tuple: [form, setForm]
   const formStateTuple = useMemo(() => [draft, setDraft], [draft]);
+
   const [confirm, setConfirm] = useState(null);
+
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 4: DERIVED SUGGESTIONS
+  // ─────────────────────────────────────────────────────────────
 
   const nextSuggestedOrder = useMemo(() => {
     const meta = placementMeta;
@@ -155,6 +279,15 @@ export default function BannersAdsPage() {
     return Math.max(0, maxOrder + 1);
   }, [items, placementMeta]);
 
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 5: EVENT HANDLERS / ACTIONS
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * openCreate
+   * --------------------------------------------------------
+   * Opens the Create modal with a normalized suggested order.
+   */
   const openCreate = () => {
     const v = preValidate({ nextDraft: { placement, isActive: true, order: nextSuggestedOrder }, currentItems: rawItems || [], mode: 'create' });
     if (!v.ok) {
@@ -175,6 +308,11 @@ export default function BannersAdsPage() {
     setShowForm(true);
   };
 
+  /**
+   * openEdit
+   * --------------------------------------------------------
+   * Opens the Edit modal prefilled from the selected row.
+   */
   const openEdit = (b) => {
     setDraft({
       id: b?.id,
@@ -189,6 +327,19 @@ export default function BannersAdsPage() {
     setShowForm(true);
   };
 
+  /**
+   * submit
+   * --------------------------------------------------------
+   * Builds FormData and calls create/update banner API.
+   *
+   * DATA SHAPE sent to BE (multipart/form-data):
+   *   - title: string
+   *   - placement: string
+   *   - order: string (number)
+   *   - isActive: 'true' | 'false'
+   *   - __v: string (optional; for optimistic concurrency)
+   *   - images: File (only when user picked a new image)
+   */
   const submit = async () => {
     setBusy(true);
     setFormError('');
@@ -242,6 +393,11 @@ export default function BannersAdsPage() {
     }
   };
 
+  /**
+   * requestDelete
+   * --------------------------------------------------------
+   * Opens confirm modal and deletes the chosen record when confirmed.
+   */
   const requestDelete = (b) => {
     const id = b?.id;
     if (!id) return;
@@ -264,6 +420,12 @@ export default function BannersAdsPage() {
     });
   };
 
+  /**
+   * toggleActive
+   * --------------------------------------------------------
+   * Toggles an item's active flag (requires preValidate to
+   * prevent slot collisions among active items).
+   */
   const toggleActive = async (b) => {
     if (!b?.id) return;
 
@@ -290,6 +452,7 @@ export default function BannersAdsPage() {
     }
   };
 
+  // NOTE: updateOrder is currently unused in this page (kept for possible future inline editing)
   const updateOrder = async (b, nextOrder) => {
     if (!b?.id) return;
 
@@ -316,6 +479,11 @@ export default function BannersAdsPage() {
     }
   };
 
+  /**
+   * refresh
+   * --------------------------------------------------------
+   * Manual refresh button that re-calls reload() and shows toasts.
+   */
   const refresh = async () => {
     try {
       await reload?.();
@@ -325,12 +493,17 @@ export default function BannersAdsPage() {
     }
   };
 
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 6: RENDER
+  // ─────────────────────────────────────────────────────────────
+
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-headline font-bold">Banner / Quảng cáo</h1>
-          <p className="text-sm text-on-surface-variant">Quản lý ảnh marketing theo vị trí hiển thị (placement) trên trang khách.</p>
+          <p className="text-sm text-on-surface-variant">- Quản lý ảnh marketing theo vị trí hiển thị (placement) trên trang khách.</p>
+          <p className="text-sm text-on-surface-variant">- Tự động sử dụng ảnh có sẵn (Default) với các Order(Thứ tự ảnh) nếu chưa có ảnh "Active"</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -419,18 +592,14 @@ export default function BannersAdsPage() {
 
       <PostConfirmModal
         open={!!confirm}
-        title={confirm?.title}
+        title={confirm?.title || 'Confirm'}
         message={confirm?.message}
-        cancelText={confirm?.cancelText || 'Hủy'}
-        confirmText={confirm?.confirmText || 'Đồng ý'}
+        cancelText="Cancel"
+        confirmText={confirm?.confirmText || 'OK'}
         confirmVariant={confirm?.variant === 'danger' ? 'danger' : 'primary'}
-        onCancel={() => {
-          confirm?.onCancel?.();
-          setConfirm(null);
-        }}
-        onConfirm={async () => {
-          await confirm?.onConfirm?.();
-        }}
+        onCancel={() => setConfirm(null)}
+        onConfirm={confirm?.onConfirm}
+        zIndexClassName="z-[61]"
       />
     </div>
   );

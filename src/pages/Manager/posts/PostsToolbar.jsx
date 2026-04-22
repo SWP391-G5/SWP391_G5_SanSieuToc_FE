@@ -1,11 +1,29 @@
 /**
- * PostsToolbar.jsx
- * Search input and page-size selector for the Manager Posts list.
- * Receives controlled values and setter callbacks from the parent page.
+ * ============================================================
+ * FILE: src/pages/Manager/posts/PostsToolbar.jsx
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   Toolbar row for Manager Posts screen (EXECUTOR).
+ *   Pure UI: search input + reset button.
+ *
+ * RESPONSIBILITIES:
+ *   - Render controlled search input
+ *   - Expose Reset action via callback
+ *
+ * DATA FLOW:
+ *   ManagerPostsPage.jsx state → props.search → [THIS FILE]
+ *   User input → props.onSearchChange(string)
+ *   Reset click → props.onReset()
+ *
+ * USED IN:
+ *   - src/pages/Manager/ManagerPostsPage.jsx
+ * ============================================================
  */
 
-// 2. Third-party
+// ── Third-party ────────────────────────────────────────────
 import PropTypes from 'prop-types';
+
+// ── CHANGE [2026-04-21]: Add structured header/import groups (no behavior change) ──
 
 /**
  * PostsToolbar component
@@ -49,3 +67,5 @@ PostsToolbar.propTypes = {
   onSearchChange: PropTypes.func.isRequired,
   onReset: PropTypes.func.isRequired,
 };
+
+// ── END CHANGE ─────────────────────────────────────────────

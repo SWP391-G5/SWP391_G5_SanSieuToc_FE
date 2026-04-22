@@ -1,7 +1,30 @@
 /**
- * postFilters.js
- * Filtering helpers for the Manager Posts table.
+ * ============================================================
+ * FILE: src/pages/Manager/posts/postFilters.js
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   Client-side filtering helpers for Manager Posts.
+ *   Pure functions used by the orchestrator to filter merged lists.
+ *
+ * RESPONSIBILITIES:
+ *   - Normalize search needle
+ *   - Filter by status/owner/tag
+ *   - Match keyword tokens against title/content
+ *
+ * DATA FLOW:
+ *   ManagerPostsPage.jsx (merged list + filters) → filterPostLikeList()
+ *   → filtered array → rendered in PostsTable
+ *
+ * USED IN:
+ *   - src/pages/Manager/ManagerPostsPage.jsx
+ * ============================================================
  */
+
+// ── CHANGE [2026-04-21]: Add sections + structured header (no behavior change) ──
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 1: SEARCH HELPERS
+// ─────────────────────────────────────────────────────────────
 
 /**
  * buildSearchNeedle
@@ -33,6 +56,10 @@ export function matchesSearch({ needle, title, content }) {
 
   return tokens.every((t) => hay.includes(t));
 }
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 2: LIST FILTERING
+// ─────────────────────────────────────────────────────────────
 
 /**
  * filterPostLikeList
@@ -85,3 +112,5 @@ export function filterPostLikeList({ merged, status, tableOwner, searchNeedle, i
     return true;
   });
 }
+
+// ── END CHANGE ─────────────────────────────────────────────

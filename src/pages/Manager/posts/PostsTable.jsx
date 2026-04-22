@@ -1,15 +1,46 @@
 /**
- * PostsTable.jsx
- * Fixed-layout table UI for the Manager Posts list.
- * Column widths are locked so that long titles do not break the grid.
- * Header cells include inline Status and Owner filter dropdowns.
+ * ============================================================
+ * FILE: src/pages/Manager/posts/PostsTable.jsx
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   Fixed-layout table for Manager Posts list (EXECUTOR).
+ *   Renders rows and header filters. Owns ONLY UI state needed
+ *   for header options (e.g., loading tag options).
+ *
+ * RESPONSIBILITIES:
+ *   - Render the table UI for posts + drafts
+ *   - Provide header filters (status/owner/tag/sort) via callbacks
+ *   - Provide row actions via callbacks (edit/preview/approve/...)
+ *
+ * DATA FLOW:
+ *   ManagerPostsPage.jsx state → props.items → [THIS FILE]
+ *   Tag options: GET /api/public/post-tags → publicApi.getPostTags()
+ *
+ * USED IN:
+ *   - src/pages/Manager/ManagerPostsPage.jsx
+ * ============================================================
  */
 
-// 2. Third-party
+/**
+ * ============================================================
+ * STATE MAP (PostsTable)
+ * ============================================================
+ * tagOptions      {Array}   Options for the Tag filter dropdown.
+ *                             Set by: useEffect fetchTags()
+ *                             Used by: header <select> for tag
+ * ============================================================
+ */
+
+// ── React core ─────────────────────────────────────────────
 import { useEffect, useMemo, useState } from 'react';
 
-// 3. Internal
-import publicApi from '../../../services/public/publicApi';
+// ── Third-party ────────────────────────────────────────────
+import PropTypes from 'prop-types';
+
+// ── Internal: API layer ────────────────────────────────────
+import publicApi from '../../../services/public/publicApi'; // public endpoint: /api/public/post-tags
+
+// ── Internal: presentation helpers ─────────────────────────
 import { formatDateTime, isLocalDraftPost, normalizeOwnerLabel } from './postFormatters';
 
 // All server-side statuses (Draft is a local-only pseudo-status)
@@ -496,3 +527,34 @@ export default function PostsTable({
     </div>
   );
 }
+
+// ─── CHANGE [2026-04-21]: Add PropTypes + State Map + effect docs (no logic change) ──
+
+PostsTable.propTypes = {
+  loading: PropTypes.bool.isRequired,
+  items: PropTypes.array.isRequired,
+  page: PropTypes.number.isRequired,
+  limit: PropTypes.number.isRequired,
+  status: PropTypes.string.isRequired,
+  onChangeStatus: PropTypes.func.isRequired,
+  tableOwner: PropTypes.string.isRequired,
+  onChangeOwner: PropTypes.func.isRequired,
+  sortBy: PropTypes.string.isRequired,
+  onChangeSort: PropTypes.func.isRequired,
+  onPreview: PropTypes.func.isRequired,
+  onEditDraft: PropTypes.func.isRequired,
+  onPublishDraft: PropTypes.func.isRequired,
+  onDeleteDraft: PropTypes.func.isRequired,
+  onEdit: PropTypes.func.isRequired,
+  canEditPost: PropTypes.func.isRequired,
+  onApprove: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
+  onReject: PropTypes.func.isRequired,
+  userId: PropTypes.string.isRequired,
+  tag: PropTypes.string,
+  onChangeTag: PropTypes.func.isRequired,
+};
+
+PostsTable.defaultProps = {
+  tag: '',
+};
