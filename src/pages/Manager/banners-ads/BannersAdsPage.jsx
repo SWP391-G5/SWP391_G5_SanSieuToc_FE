@@ -502,7 +502,8 @@ export default function BannersAdsPage() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-headline font-bold">Banner / Quảng cáo</h1>
-          <p className="text-sm text-on-surface-variant">Quản lý ảnh marketing theo vị trí hiển thị (placement) trên trang khách.</p>
+          <p className="text-sm text-on-surface-variant">- Quản lý ảnh marketing theo vị trí hiển thị (placement) trên trang khách.</p>
+          <p className="text-sm text-on-surface-variant">- Tự động sử dụng ảnh có sẵn (Default) với các Order(Thứ tự ảnh) nếu chưa có ảnh "Active"</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

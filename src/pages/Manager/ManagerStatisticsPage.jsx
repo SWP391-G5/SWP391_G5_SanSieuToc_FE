@@ -128,6 +128,7 @@ export default function ManagerStatisticsPage() {
   // ─────────────────────────────────────────────────────────────
   const [searchParams, setSearchParams] = useSearchParams();
   const ownerId = String(searchParams.get('ownerId') || '').trim();
+  const fieldId = String(searchParams.get('fieldId') || '').trim();
 
   const [preset, setPreset] = useState('last7days');
   // Default to day; will be auto-adjusted per preset
@@ -181,8 +182,12 @@ export default function ManagerStatisticsPage() {
 
   const displayField = fieldDetail || fieldViewing;
 
-  const query = useMemo(() => ({ preset, ...(ownerId ? { ownerId } : {}) }), [preset, ownerId]);
-  const trendQuery = useMemo(() => ({ preset, groupBy, ...(ownerId ? { ownerId } : {}) }), [preset, groupBy, ownerId]);
+  // NOTE: Summary/trend APIs support (ownerId) and now also (fieldId) for Focus Field behavior.
+  const query = useMemo(() => ({ preset, ...(ownerId ? { ownerId } : {}), ...(fieldId ? { fieldId } : {}) }), [preset, ownerId, fieldId]);
+  const trendQuery = useMemo(
+    () => ({ preset, groupBy, ...(ownerId ? { ownerId } : {}), ...(fieldId ? { fieldId } : {}) }),
+    [preset, groupBy, ownerId, fieldId]
+  );
 
   // =========================
   // React Query: statistics
@@ -346,9 +351,21 @@ export default function ManagerStatisticsPage() {
     return o?.fields || [];
   }, [managedOwners, ownerId]);
 
+  const focusedField = useMemo(() => {
+    if (!fieldId) return null;
+    return (focusedOwnerFields || []).find((f) => String(f?.id) === String(fieldId)) || null;
+  }, [fieldId, focusedOwnerFields]);
+
   const clearOwnerFocus = () => {
     const next = new URLSearchParams(searchParams);
     next.delete('ownerId');
+    next.delete('fieldId');
+    setSearchParams(next, { replace: true });
+  };
+
+  const clearFieldFocus = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('fieldId');
     setSearchParams(next, { replace: true });
   };
 
@@ -356,24 +373,34 @@ export default function ManagerStatisticsPage() {
     const next = new URLSearchParams(searchParams);
     if (id) next.set('ownerId', String(id));
     else next.delete('ownerId');
+
+    // When switching owner, reset field focus to avoid invalid fieldId.
+    next.delete('fieldId');
+
     setSearchParams(next, { replace: true });
     setScopeOpen(false);
+  };
+
+  const selectFieldFocus = (id) => {
+    const next = new URLSearchParams(searchParams);
+    if (id) next.set('fieldId', String(id));
+    else next.delete('fieldId');
+    setSearchParams(next, { replace: true });
   };
 
   const focusOwnerFromHotField = (f) => {
     const nextOwnerId = String(f?.ownerId || '').trim();
     if (!nextOwnerId) {
-      // Hot fields could be missing ownerId if BE not updated
-      // Keep silent in UI but still help debugging
       setError('Không xác định được owner của sân này để Focus Owner.');
       return;
     }
+    // Focus owner only (top fields remains global per requirement)
     selectOwnerFocus(nextOwnerId);
   };
 
-  const openFieldView = (field) => {
+  // Detail modal is now accessed explicitly (separate from focus field)
+  const openFieldDetail = (field) => {
     if (!field) return;
-    // ensure modal renders basic info immediately while full detail loads
     setFieldViewing(field);
     setFieldViewOpen(true);
   };
@@ -422,6 +449,15 @@ export default function ManagerStatisticsPage() {
                         {focusedOwner?.address ? `Địa chỉ: ${focusedOwner.address}` : ''}
                       </div>
                     ) : null}
+
+                    {fieldId ? (
+                      <div className="mt-2">
+                        <div className="text-xs font-black uppercase tracking-widest text-[#fdfdf6]/60">Field đang lọc</div>
+                        <div className="text-sm font-bold text-[#fdfdf6] truncate">
+                          {focusedField?.fieldName || focusedField?.name ? `${focusedField?.fieldName || focusedField?.name}` : `Field: ${fieldId}`}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -433,6 +469,17 @@ export default function ManagerStatisticsPage() {
                     >
                       Đổi Owner
                     </button>
+
+                    {fieldId ? (
+                      <button
+                        type="button"
+                        onClick={clearFieldFocus}
+                        className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-[#fdfdf6]/80 hover:text-[#f97316] hover:bg-white/10"
+                      >
+                        Bỏ lọc Field
+                      </button>
+                    ) : null}
+
                     <button
                       type="button"
                       onClick={clearOwnerFocus}
@@ -452,33 +499,49 @@ export default function ManagerStatisticsPage() {
                       {focusedOwnerFields.length ? `Tổng: ${focusedOwnerFields.length}` : 'Không tìm thấy sân nào cho owner này.'}
                     </div>
                   </div>
-                  <div className="text-[11px] text-[#fdfdf6]/50">Bấm vào thẻ để xem chi tiết.</div>
+                  <div className="text-[11px] text-[#fdfdf6]/50">Bấm vào thẻ để lọc theo sân. Dùng nút “Chi tiết” để xem thông tin sân.</div>
                 </div>
 
                 {focusedOwnerFields.length ? (
                   <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {focusedOwnerFields.map((f) => (
-                      <button
-                        key={f.id}
-                        type="button"
-                        onClick={() => openFieldView(f)}
-                        className="rounded-xl border border-white/10 bg-[#0d0f0b] p-4 text-left hover:bg-white/5 transition-colors"
-                        title="Xem chi tiết sân"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="text-sm font-bold text-[#fdfdf6] truncate">{f.fieldName || 'Chưa có tên sân'}</div>
-                            <div className="text-[11px] text-[#fdfdf6]/60 truncate">{f.fieldType || 'Chưa rõ loại sân'}</div>
-                          </div>
-                          {f.status ? (
-                            <div className="text-[10px] font-black uppercase tracking-widest text-[#8eff71]">{String(f.status)}</div>
-                          ) : null}
-                        </div>
-                        <div className="mt-2 text-[11px] text-[#fdfdf6]/60 line-clamp-2">{f.address || 'Chưa có địa chỉ'}</div>
-                      </button>
-                    ))}
+                    {focusedOwnerFields.map((f) => {
+                      const isSelected = fieldId && String(fieldId) === String(f?.id);
 
-                    {/* CHANGE: auto-focus first field card if any */}
+                      return (
+                        <div
+                          key={f.id}
+                          className={`rounded-xl border bg-[#0d0f0b] p-4 text-left transition-colors ${
+                            isSelected ? 'border-[#f97316] bg-white/5' : 'border-white/10 hover:bg-white/5'
+                          }`}
+                          title="Click để Focus Field"
+                        >
+                          <button type="button" onClick={() => selectFieldFocus(f.id)} className="block w-full text-left">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="text-sm font-bold text-[#fdfdf6] truncate">{f.fieldName || 'Chưa có tên sân'}</div>
+                                <div className="text-[11px] text-[#fdfdf6]/60 truncate">{f.fieldType || 'Chưa rõ loại sân'}</div>
+                              </div>
+                              {f.status ? (
+                                <div className="text-[10px] font-black uppercase tracking-widest text-[#8eff71]">{String(f.status)}</div>
+                              ) : null}
+                            </div>
+                            <div className="mt-2 text-[11px] text-[#fdfdf6]/60 line-clamp-2">{f.address || 'Chưa có địa chỉ'}</div>
+                          </button>
+
+                          <div className="mt-3 flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openFieldDetail(f)}
+                              className="h-8 rounded-lg px-3 text-[11px] font-black uppercase tracking-widest border border-white/10 bg-white/5 text-[#fdfdf6]/80 hover:bg-white/10"
+                              title="Xem chi tiết sân"
+                            >
+                              Chi tiết
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+
                     {focusedOwnerFields.length === 1 ? (
                       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
                         <div className="h-full w-full rounded-xl border-2 border-dashed border-[#8eff71] opacity-50" />
