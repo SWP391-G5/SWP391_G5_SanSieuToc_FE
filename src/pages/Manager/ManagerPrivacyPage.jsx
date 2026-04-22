@@ -28,6 +28,17 @@ function normalizePrivacyItem(x) {
 function PrivacyFormModal({ open, busy, error, draft, setDraft, onClose, onSubmit }) {
   if (!open) return null;
 
+  // NOTE: Hard limits chosen for UX consistency and to prevent overly long public content.
+  // - Title: 3..80 characters (short, scannable list items)
+  // - Content: 20..3000 characters (enough detail, still readable)
+  const TITLE_MIN = 3;
+  const TITLE_MAX = 80;
+  const CONTENT_MIN = 20;
+  const CONTENT_MAX = 3000;
+
+  const titleLen = String(draft?.title || '').trim().length;
+  const contentLen = String(draft?.content || '').trim().length;
+
   return (
     <div className="fixed inset-0 z-[70]">
       <div className="absolute inset-0 bg-black/60" onClick={() => (busy ? null : onClose?.())} />
@@ -63,7 +74,16 @@ function PrivacyFormModal({ open, busy, error, draft, setDraft, onClose, onSubmi
                 value={draft?.title || ''}
                 onChange={(e) => setDraft?.((p) => ({ ...p, title: e.target.value }))}
                 disabled={busy}
+                maxLength={TITLE_MAX}
               />
+              <div className="mt-2 text-[11px] text-on-surface-variant">
+                Giới hạn: <span className="font-bold text-on-surface">{TITLE_MIN}–{TITLE_MAX}</span> ký tự
+                {titleLen > 0 ? (
+                  <span>
+                    {' '}• Hiện tại: <span className="font-bold text-on-surface">{titleLen}</span>
+                  </span>
+                ) : null}
+              </div>
             </div>
 
             <div>
@@ -76,7 +96,16 @@ function PrivacyFormModal({ open, busy, error, draft, setDraft, onClose, onSubmi
                 value={draft?.content || ''}
                 onChange={(e) => setDraft?.((p) => ({ ...p, content: e.target.value }))}
                 disabled={busy}
+                maxLength={CONTENT_MAX}
               />
+              <div className="mt-2 text-[11px] text-on-surface-variant">
+                Giới hạn: <span className="font-bold text-on-surface">{CONTENT_MIN}–{CONTENT_MAX}</span> ký tự
+                {contentLen > 0 ? (
+                  <span>
+                    {' '}• Hiện tại: <span className="font-bold text-on-surface">{contentLen}</span>
+                  </span>
+                ) : null}
+              </div>
             </div>
 
             {error ? <div className="text-sm text-error">{error}</div> : null}
@@ -164,12 +193,33 @@ export default function ManagerPrivacyPage() {
     setShowForm(true);
   };
 
+  // NOTE: Keep these limits in sync with `PrivacyFormModal`.
+  const TITLE_MIN = 3;
+  const TITLE_MAX = 80;
+  const CONTENT_MIN = 20;
+  const CONTENT_MAX = 3000;
+
   const submit = async () => {
     const title = String(draft?.title || '').trim();
     const content = String(draft?.content || '').trim();
 
     if (!title) {
       notify?.notifyWarning?.('Vui lòng nhập tiêu đề.');
+      return;
+    }
+
+    if (title.length < TITLE_MIN || title.length > TITLE_MAX) {
+      notify?.notifyWarning?.(`Tiêu đề phải từ ${TITLE_MIN} đến ${TITLE_MAX} ký tự.`);
+      return;
+    }
+
+    if (!content) {
+      notify?.notifyWarning?.('Vui lòng nhập nội dung chính sách.');
+      return;
+    }
+
+    if (content.length < CONTENT_MIN || content.length > CONTENT_MAX) {
+      notify?.notifyWarning?.(`Nội dung phải từ ${CONTENT_MIN} đến ${CONTENT_MAX} ký tự.`);
       return;
     }
 
@@ -203,6 +253,7 @@ export default function ManagerPrivacyPage() {
       title: 'Xác nhận',
       message: 'Bạn chắc chắn muốn xoá chính sách này? (Xoá vĩnh viễn)',
       confirmText: 'Xóa',
+      cancelText: 'Hủy',
       variant: 'danger',
       onConfirm: async () => {
         setConfirm(null);
@@ -322,6 +373,7 @@ export default function ManagerPrivacyPage() {
         open={!!confirm}
         title={confirm?.title}
         message={confirm?.message}
+        cancelText={confirm?.cancelText || 'Huỷ'}
         confirmVariant="danger"
         confirmText={confirm?.confirmText || 'OK'}
         onCancel={() => setConfirm(null)}

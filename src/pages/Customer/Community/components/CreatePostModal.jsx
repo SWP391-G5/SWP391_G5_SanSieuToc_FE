@@ -20,6 +20,7 @@ const FALLBACK_POST_TAG_OPTIONS = [
   { value: 'Khac', label: 'Khác' },
 ];
 
+// UI constraints
 const MAX_IMAGES_PER_POST = 6;
 const MIN_TAGS_PER_POST = 1;
 const MAX_TAGS_PER_POST = 3;
@@ -30,7 +31,7 @@ const INITIAL_FORM = {
   title: '',
   content: '',
   tags: [],
-  images: [],
+  images: [], // string urls OR { file: File, previewUrl: string }
 };
 
 function revokePreviewUrl(url) {
@@ -38,12 +39,14 @@ function revokePreviewUrl(url) {
   try {
     URL.revokeObjectURL(url);
   } catch {
-    // ignore invalid object url
+    // ignore
   }
 }
 
 function buildPickedImagePreviews(files) {
-  return Array.from(files || []).map((file) => ({ file, previewUrl: URL.createObjectURL(file) }));
+  return Array.from(files || [])
+    .filter((f) => f instanceof File)
+    .map((file) => ({ file, previewUrl: URL.createObjectURL(file) }));
 }
 
 export default function CreatePostModal({ isOpen, onClose, onSuccess, editingPost = null }) {
@@ -51,8 +54,10 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editingPos
   const [loading, setLoading] = useState(false);
   const [tagOptions, setTagOptions] = useState(FALLBACK_POST_TAG_OPTIONS);
   const [form, setForm] = useState(INITIAL_FORM);
+
   const isEditing = Boolean(editingPost?.id);
 
+  // Load tag options
   useEffect(() => {
     if (!isOpen) return;
 
@@ -68,12 +73,10 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editingPos
             .map((x) => ({ value: String(x?.value || '').trim(), label: String(x?.label || '').trim() }))
             .filter((x) => x.value && x.label);
 
-          if (cleaned.length > 0) {
-            setTagOptions(cleaned);
-          }
+          if (cleaned.length > 0) setTagOptions(cleaned);
         }
       } catch {
-        // keep fallback options
+        // keep fallback
       }
     })();
 
@@ -83,9 +86,9 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editingPos
   }, [isOpen]);
 
   const selectedTags = useMemo(() => (Array.isArray(form?.tags) ? form.tags : []), [form?.tags]);
-
   const knownTagValues = useMemo(() => new Set((tagOptions || []).map((t) => String(t.value))), [tagOptions]);
 
+  // Keep previously selected tags visible even if public tags list differs
   const mergedTagOptions = useMemo(() => {
     const extras = selectedTags
       .filter((v) => v && !knownTagValues.has(String(v)))
@@ -93,6 +96,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editingPos
     return [...(tagOptions || []), ...extras];
   }, [tagOptions, selectedTags, knownTagValues]);
 
+  // Initialize / hydrate form when opening modal
   useEffect(() => {
     if (!isOpen) return;
 
@@ -124,7 +128,9 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editingPos
   }, [isOpen, isEditing, editingPost]);
 
   const clearForm = () => {
-    (form?.images || []).forEach((img) => revokePreviewUrl(img?.previewUrl));
+    (form?.images || []).forEach((img) => {
+      if (img && typeof img === 'object') revokePreviewUrl(img.previewUrl);
+    });
     setForm(INITIAL_FORM);
   };
 
@@ -135,10 +141,13 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editingPos
   };
 
   const toggleTag = (value) => {
+    const v = String(value || '').trim();
+    if (!v) return;
+
     setForm((prev) => {
       const next = new Set(Array.isArray(prev?.tags) ? prev.tags : []);
-      if (next.has(value)) next.delete(value);
-      else next.add(value);
+      if (next.has(v)) next.delete(v);
+      else next.add(v);
 
       const nextArr = Array.from(next);
       if (nextArr.length > MAX_TAGS_PER_POST) {
@@ -152,25 +161,27 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editingPos
 
   const onPickFiles = (files) => {
     try {
-      const list = Array.from(files || []).filter((x) => x instanceof File);
-      if (!list.length) return;
+      const picked = buildPickedImagePreviews(files);
+      if (!picked.length) return;
 
       const currentTotalCount = Array.isArray(form?.images) ? form.images.length : 0;
       const remaining = Math.max(0, MAX_IMAGES_PER_POST - currentTotalCount);
 
       if (remaining <= 0) {
         notifyWarning(`Bạn chỉ được upload tối đa ${MAX_IMAGES_PER_POST} ảnh mỗi bài viết.`);
+        // revoke previews we just created
+        picked.forEach((x) => revokePreviewUrl(x.previewUrl));
         return;
       }
 
-      const accepted = list.slice(0, remaining);
-      const rejectedCount = list.length - accepted.length;
-      const previews = buildPickedImagePreviews(accepted);
+      const accepted = picked.slice(0, remaining);
+      const rejected = picked.slice(remaining);
+      rejected.forEach((x) => revokePreviewUrl(x.previewUrl));
 
-      setForm((prev) => ({ ...prev, images: [...(prev?.images || []), ...previews] }));
+      setForm((prev) => ({ ...prev, images: [...(prev?.images || []), ...accepted] }));
 
-      if (rejectedCount > 0) {
-        notifyInfo(`Đã bỏ qua ${rejectedCount} ảnh vì vượt quá giới hạn ${MAX_IMAGES_PER_POST} ảnh.`);
+      if (rejected.length > 0) {
+        notifyInfo(`Đã bỏ qua ${rejected.length} ảnh vì vượt quá giới hạn ${MAX_IMAGES_PER_POST} ảnh.`);
       }
     } catch (err) {
       notifyError(err?.message || 'Không thể đọc ảnh đã chọn.');
@@ -180,7 +191,7 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editingPos
   const removeImageAt = (idx) => {
     setForm((prev) => {
       const target = prev?.images?.[idx];
-      revokePreviewUrl(target?.previewUrl);
+      if (target && typeof target === 'object') revokePreviewUrl(target.previewUrl);
       return { ...prev, images: (prev?.images || []).filter((_, i) => i !== idx) };
     });
   };
@@ -211,29 +222,32 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editingPos
 
     setLoading(true);
     try {
-      const files = (form?.images || []).filter((x) => x && x.file instanceof File).map((x) => x.file);
-      const newUploadedUrls = files.length > 0 ? await uploadService.uploadImages(files) : [];
+      const localFiles = (form?.images || []).filter((x) => x && typeof x === 'object' && x.file instanceof File).map((x) => x.file);
+      const newUploadedUrls = localFiles.length > 0 ? await uploadService.uploadImages(localFiles) : [];
+
       const existingUrls = (form?.images || [])
         .filter((x) => typeof x === 'string')
         .map((x) => String(x || '').trim())
         .filter(Boolean);
 
       const finalImageUrls = [...existingUrls, ...newUploadedUrls].slice(0, MAX_IMAGES_PER_POST);
-      const tags = selectedTags.map((x) => String(x).trim()).filter(Boolean).slice(0, MAX_TAGS_PER_POST);
+      const tags = Array.isArray(form?.tags) ? form.tags.filter(Boolean) : [];
       const primaryTag = tags[0] || 'General';
 
-      const payload = {
+      const reqPayload = {
         title: String(form?.title || '').trim(),
         content: String(form?.content || '').trim(),
         tag: primaryTag,
         tags,
         image: finalImageUrls[0] || '',
         images: finalImageUrls,
+        // also send postTags for newer BE variants
+        postTags: tags,
       };
 
       const result = isEditing
-        ? await communityService.updateMyPost(editingPost.id, payload)
-        : await communityService.createPost(payload);
+        ? await communityService.updateMyPost(editingPost.id, reqPayload)
+        : await communityService.createPost(reqPayload);
 
       notifySuccess(
         isEditing
@@ -242,13 +256,14 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editingPos
       );
       onSuccess?.(result?.item || null);
       handleClose();
-    } catch (submitErr) {
-      notifyError(submitErr?.response?.data?.message || submitErr?.message || 'Không thể xử lý bài viết.');
+    } catch (err2) {
+      notifyError(err2?.response?.data?.message || err2?.message || 'Không thể xử lý bài viết.');
     } finally {
       setLoading(false);
     }
   };
 
+  // Cleanup when closing modal
   useEffect(() => {
     if (isOpen) return;
     clearForm();
@@ -414,7 +429,9 @@ export default function CreatePostModal({ isOpen, onClose, onSuccess, editingPos
                 type="submit"
                 className="h-11 rounded-lg bg-primary px-5 text-sm font-bold text-white hover:brightness-95 disabled:opacity-50"
                 disabled={loading || selectedTags.length < MIN_TAGS_PER_POST}
-                title={selectedTags.length < MIN_TAGS_PER_POST ? `Vui lòng chọn tối thiểu ${MIN_TAGS_PER_POST} tag.` : undefined}
+                title={
+                  selectedTags.length < MIN_TAGS_PER_POST ? `Vui lòng chọn tối thiểu ${MIN_TAGS_PER_POST} tag.` : undefined
+                }
               >
                 {loading ? 'Đang xử lý...' : isEditing ? 'Lưu cập nhật' : 'Publish'}
               </button>

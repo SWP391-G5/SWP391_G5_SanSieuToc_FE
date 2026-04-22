@@ -1,7 +1,27 @@
 /**
- * postsPermissions.js
- * Permission checks for Manager Posts screen.
+ * ============================================================
+ * FILE: src/pages/Manager/posts/postsPermissions.js
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   Permission helpers for Manager Posts module.
+ *   Pure functions only (no React, no API calls).
+ *
+ * RESPONSIBILITIES:
+ *   - Decide whether current manager/admin can edit a given post
+ *
+ * DATA FLOW:
+ *   ManagerPostsPage.jsx (user + post row) → canEditPost() → boolean
+ *
+ * USED IN:
+ *   - src/pages/Manager/ManagerPostsPage.jsx
+ * ============================================================
  */
+
+// ── CHANGE [2026-04-21]: Add structured header/sections (no behavior change) ──
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 1: PERMISSION CHECKS
+// ─────────────────────────────────────────────────────────────
 
 /**
  * canEditPost
@@ -30,3 +50,5 @@ export function canEditPost({ post, user }) {
 
   return myId === ownerId;
 }
+
+// ── END CHANGE ─────────────────────────────────────────────
