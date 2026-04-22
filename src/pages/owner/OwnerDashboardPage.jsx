@@ -136,18 +136,7 @@ export default function OwnerDashboardPage() {
             Business <span className="text-[#8eff71] italic">Dashboard</span>
           </h2>
         </div>
-        <div className="flex gap-3">
-          <button className="bg-[#181a16] hover:bg-[#242721] transition-colors text-[#abaca5] px-4 py-2 rounded-lg text-sm flex items-center gap-2 border border-[#474944]/30">
-            <span className="material-symbols-outlined text-lg">
-              calendar_month
-            </span>
-            This Week
-          </button>
-          <button className="bg-gradient-to-r from-[#8eff71] to-[#2ff801] text-[#0d6100] px-6 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:scale-105 transition-transform shadow-[0_0_15px_rgba(142,255,113,0.3)]">
-            <span className="material-symbols-outlined text-lg">download</span>
-            Export
-          </button>
-        </div>
+        <div className="flex gap-3" />
       </div>
 
       {/* Summary Cards */}
@@ -158,12 +147,6 @@ export default function OwnerDashboardPage() {
             <div className="p-3 bg-[#242721] rounded-xl text-[#88f6ff]">
               <span className="material-symbols-outlined">payments</span>
             </div>
-            <span className="flex items-center text-[#8eff71] text-xs font-bold bg-[#8eff71]/10 px-2 py-1 rounded-lg">
-              <span className="material-symbols-outlined text-[10px] mr-1">
-                arrow_upward
-              </span>
-              14.5%
-            </span>
           </div>
           <p className="text-[#abaca5] text-sm font-medium mb-1 relative z-10">
             Total Revenue
@@ -179,12 +162,6 @@ export default function OwnerDashboardPage() {
             <div className="p-3 bg-[#242721] rounded-xl text-[#ff4d6d]">
               <span className="material-symbols-outlined">pending_actions</span>
             </div>
-            <span className="flex items-center text-[#ff4d6d] text-xs font-bold bg-[#ff4d6d]/10 px-2 py-1 rounded-lg">
-              <span className="material-symbols-outlined text-[10px] mr-1">
-                arrow_downward
-              </span>
-              2.4%
-            </span>
           </div>
           <p className="text-[#abaca5] text-sm font-medium mb-1 relative z-10">
             Pending Bookings
