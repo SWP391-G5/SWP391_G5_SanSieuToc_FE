@@ -5,8 +5,8 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import managerApi from '@/services/manager/managerApi';
-import { useNotification } from '@/context/NotificationContext';
+import managerApi from '../../services/manager/managerApi';
+import { useNotification } from '../../context/NotificationContext';
 
 const DEFAULT_LIMIT = 10;
 
