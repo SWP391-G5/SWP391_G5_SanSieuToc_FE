@@ -107,35 +107,14 @@ export default function OwnerLayout() {
             );
           })}
         </nav>
-        <div className="px-6 mt-auto space-y-1">
-          <Link
-            to="/owner/support"
-            className="flex items-center py-2 text-on-surface/40 hover:text-primary transition-colors"
-          >
-            <span className="material-symbols-outlined mr-3">help</span>
-            <span className="font-label text-sm">Hỗ trợ</span>
-          </Link>
-        </div>
+
       </aside>
 
       {/* TopNavBar */}
-      <header className="fixed top-0 right-0 left-0 md:left-64 z-30 glass-nav h-16 flex justify-between items-center px-6 w-auto border-b border-outline-variant/5">
-        <div className="flex items-center gap-4">
-          <div className="bg-surface-container-highest flex items-center px-4 py-1.5 rounded-full border border-outline-variant/15 neon-glow">
-            <span className="material-symbols-outlined text-primary text-lg mr-2">
-              search
-            </span>
-            <input
-              type="text"
-              className="bg-transparent border-none focus:ring-0 text-sm text-on-surface placeholder:text-on-surface-variant/50 w-48 md:w-64 outline-none"
-              placeholder="Tìm kiếm cơ sở..."
-            />
-          </div>
-        </div>
+      <header className="fixed top-0 right-0 left-0 md:left-64 z-30 glass-nav h-16 flex justify-end items-center px-6 w-auto border-b border-outline-variant/5">
+
         <div className="flex items-center gap-4 relative">
-          <button className="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors duration-200">
-            <span className="material-symbols-outlined">notifications</span>
-          </button>
+
           <button
             className="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors duration-200"
             onClick={() => setShowSettingsMenu((prev) => !prev)}
