@@ -145,6 +145,10 @@ export default function FieldFormModal({
       nextErrors.closingTime = "Giờ đóng cửa phải lớn hơn giờ mở cửa.";
     }
 
+    if (!formData.image || formData.image.length === 0) {
+      nextErrors.image = "Vui lòng tải lên ít nhất 1 hình ảnh cho sân.";
+    }
+
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
@@ -395,6 +399,9 @@ export default function FieldFormModal({
                   </span>
                 </label>
               </div>
+              {errors.image ? (
+                <div className="text-xs text-error mt-2">{errors.image}</div>
+              ) : null}
 
               {/* Image Previews */}
               {previewImages.length > 0 && (
