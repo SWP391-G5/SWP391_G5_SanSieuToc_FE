@@ -39,18 +39,35 @@ function toVietnameseStatus(status) {
   return STATUS_LABELS[key] || key || '-';
 }
 
-function StatusBadge({ status }) {
+function getDaysUntil(dateStr) {
+  if (!dateStr) return null;
+  const diff = new Date(dateStr).getTime() - Date.now();
+  if (diff <= 0) return 0;
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+function StatusBadge({ status, pendingDeletion, scheduledAt }) {
+  if (pendingDeletion) {
+    const days = getDaysUntil(scheduledAt);
+    const label = days !== null && days > 0 ? `Chờ xóa (còn ${days} ngày)` : 'Chờ xóa';
+    return (
+      <span
+        className="rounded-full bg-orange-500/15 px-2 py-0.5 text-xs font-semibold text-orange-300"
+        title={scheduledAt ? `Sẽ bị xóa lúc: ${formatDate(scheduledAt)}` : undefined}
+      >
+        {label}
+      </span>
+    );
+  }
   const s = String(status || '').trim();
   const cls =
     s === 'Active'
       ? 'bg-[#8eff71]/15 text-[#8eff71]'
-      : s === 'PendingDelete'
-        ? 'bg-yellow-500/15 text-yellow-200'
       : s === 'Deleted'
         ? 'bg-white/10 text-[#fdfdf6]/60'
-      : s === 'Banned'
-        ? 'bg-red-500/15 text-red-300'
-        : 'bg-yellow-500/15 text-yellow-200';
+        : s === 'Banned'
+          ? 'bg-red-500/15 text-red-300'
+          : 'bg-yellow-500/15 text-yellow-200';
   return <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>{toVietnameseStatus(s)}</span>;
 }
 
@@ -405,7 +422,9 @@ export default function ManagerAccountsPage() {
                       </td>
                       <td className="px-5 py-4">
                         <StatusBadge
-                          status={it.deletion?.scheduledAt && String(it.status || '').trim() !== 'Deleted' ? 'PendingDelete' : it.status}
+                          status={it.status}
+                          pendingDeletion={Boolean(it.deletion?.scheduledAt) && it.status !== 'Deleted'}
+                          scheduledAt={it.deletion?.scheduledAt}
                         />
                       </td>
                       <td className="px-5 py-4 text-[#fdfdf6]/70">{formatDate(it.deletion?.requestedAt || it.createdAt)}</td>
@@ -530,6 +549,12 @@ export default function ManagerAccountsPage() {
               <div className="text-[#fdfdf6]/50">Đã xóa</div>
               <div className="mt-1 text-lg font-black text-[#fdfdf6]/60">
                 {items.filter((x) => x.status === 'Deleted').length}
+              </div>
+            </div>
+            <div className="col-span-2 rounded-lg bg-[#0d0f0b] p-3">
+              <div className="text-[#fdfdf6]/50">Chờ xóa</div>
+              <div className="mt-1 text-lg font-black text-orange-300">
+                {items.filter((x) => x.deletion?.scheduledAt && x.status !== 'Deleted').length}
               </div>
             </div>
           </div>
