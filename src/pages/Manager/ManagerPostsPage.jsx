@@ -666,7 +666,7 @@ export default function ManagerPostsPage() {
         <div>
           <h1 className="text-2xl font-headline font-bold text-on-surface">Posts</h1>
           <p className="text-sm text-on-surface-variant">
-            Quản lý bài viết hệ thống và duyệt bài do Owner/Customer gửi (lọc theo tag).
+            - Quản lý bài viết của hệ thống, duyệt những bài đăng của người dùng (Customer) và những Owner được uỷ quyền quản lý.
           </p>
         </div>
         <div className="flex gap-2">
