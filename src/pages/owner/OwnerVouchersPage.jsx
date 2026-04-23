@@ -70,8 +70,21 @@ export default function OwnerVouchersPage() {
       setToast({ message: 'End date must be after start date', type: 'error' });
       return;
     }
+    if (currentVoucher.discountValue <= 0 || currentVoucher.discountValue > 100) {
+      setToast({ message: 'Discount percentage must be between 1 and 100', type: 'error' });
+      return;
+    }
     if (currentVoucher.maxDiscount < 0 || currentVoucher.maxDiscount > 9999999) {
       setToast({ message: 'Max discount must be between 0 and 9,999,999', type: 'error' });
+      return;
+    }
+
+    if (!/^[A-Za-z0-9]+$/.test(currentVoucher.voucherName)) {
+      setToast({ message: 'Voucher code can only contain letters and numbers', type: 'error' });
+      return;
+    }
+    if (currentVoucher.voucherName.length > 50) {
+      setToast({ message: 'Voucher code must be at most 50 characters', type: 'error' });
       return;
     }
     
@@ -232,11 +245,11 @@ export default function OwnerVouchersPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1.5">
                    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Voucher Code</label>
-                   <input required type="text" value={currentVoucher.voucherName} onChange={e => setCurrentVoucher({...currentVoucher, voucherName: e.target.value.toUpperCase()})} className="w-full bg-surface border border-outline-variant/20 rounded-xl px-4 py-2.5 text-sm text-on-surface focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all uppercase placeholder:normal-case" placeholder="e.g. SUMMER2026"/>
+                   <input required maxLength="50" type="text" value={currentVoucher.voucherName} onChange={e => setCurrentVoucher({...currentVoucher, voucherName: e.target.value.toUpperCase()})} className="w-full bg-surface border border-outline-variant/20 rounded-xl px-4 py-2.5 text-sm text-on-surface focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all uppercase placeholder:normal-case" placeholder="e.g. SUMMER2026"/>
                 </div>
                 <div className="space-y-1.5">
                    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Discount (%)</label>
-                   <input required type="number" min="0" max="100" value={currentVoucher.discountValue} onChange={e => setCurrentVoucher({...currentVoucher, discountValue: e.target.value})} className="w-full bg-surface border border-outline-variant/20 rounded-xl px-4 py-2.5 text-sm text-on-surface focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"/>
+                   <input required type="number" min="1" max="100" value={currentVoucher.discountValue} onChange={e => setCurrentVoucher({...currentVoucher, discountValue: e.target.value})} className="w-full bg-surface border border-outline-variant/20 rounded-xl px-4 py-2.5 text-sm text-on-surface focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"/>
                 </div>
                 <div className="space-y-1.5 md:col-span-2">
                    <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Max Discount (VND)</label>
