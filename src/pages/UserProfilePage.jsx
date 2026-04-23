@@ -1078,7 +1078,7 @@ FIELD BOOKING
                   </div>
                 </div>
               </section>
-
+{/* 
               {!isAdminAccount && (
                 <section className="profile-terminal-card">
                   <div className="profile-terminal-card-title">
@@ -1096,7 +1096,7 @@ FIELD BOOKING
                     </button>
                   </div>
                 </section>
-              )}
+              )} */}
 
               <section className="profile-terminal-card">
                 <div className="profile-terminal-card-title">
