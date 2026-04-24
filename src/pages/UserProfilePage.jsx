@@ -1059,7 +1059,7 @@ FIELD BOOKING
                   </div>
                 </div>
               </section>
-{/* 
+
               {!isAdminAccount && (
                 <section className="profile-terminal-card">
                   <div className="profile-terminal-card-title">
@@ -1072,12 +1072,14 @@ FIELD BOOKING
                       <div className="profile-terminal-wallet-label">AVAILABLE BALANCE</div>
                       <div className="profile-terminal-wallet-balance">{formatVnd(walletBalance)}đ</div>
                     </div>
-                    <button type="button" className="profile-terminal-btn" onClick={onTopUp}>
-                      TOP UP
-                    </button>
+                    {isCustomer ? (
+                      <button type="button" className="profile-terminal-btn" onClick={onTopUp}>
+                        TOP UP
+                      </button>
+                    ) : null}
                   </div>
                 </section>
-              )} */}
+              )}
 
               <section className="profile-terminal-card">
                 <div className="profile-terminal-card-title">
