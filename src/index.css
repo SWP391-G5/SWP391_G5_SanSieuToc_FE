@@ -151,3 +151,10 @@ body {
     box-shadow: 0 0 15px rgba(142, 255, 113, 0.15);
   }
 }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
