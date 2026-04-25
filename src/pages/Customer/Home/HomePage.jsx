@@ -294,13 +294,13 @@ export default function HomePage() {
                 </li>
               ))}
             </ul>
-            <button
+            {/* <button
               type="button"
               onClick={() => navigate('/auth')}
               className="mt-8 rounded-lg bg-[#8eff71] px-6 py-3 text-xs font-black uppercase tracking-widest text-[#0d6100] transition-colors hover:bg-[#2ff801]"
             >
               Bắt đầu ngay
-            </button>
+            </button> */}
           </div>
         </div>
       </section>
@@ -328,7 +328,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="rounded-2xl bg-[#181a16] p-8">
+          {/* <div className="rounded-2xl bg-[#181a16] p-8">
             <div className="mb-6 flex items-center justify-between">
               <div className="text-sm uppercase tracking-widest text-[#abaca5]">Xem trước</div>
               <span className="rounded-full bg-[#242721] px-3 py-1 text-xs text-[#8eff71]">Bảng điều khiển</span>
@@ -345,7 +345,7 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
       </section>
 
