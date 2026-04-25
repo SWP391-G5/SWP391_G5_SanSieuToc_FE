@@ -59,6 +59,7 @@ export default function OwnerLayout() {
       icon: "event_available",
     },
     { name: "Refunds", path: "/owner/refunds", icon: "replay", badge: true },
+    { name: "Feedback management", path: "/owner/feedbacks", icon: "rate_review" },
     { name: "Reports", path: "/owner/reports", icon: "report" },
     { name: "Wallet", path: "/owner/wallet", icon: "account_balance_wallet" },
     { name: "Posts", path: "/owner/posts", icon: "rss_feed" },

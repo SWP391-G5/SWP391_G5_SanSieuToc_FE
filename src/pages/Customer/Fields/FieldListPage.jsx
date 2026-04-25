@@ -25,7 +25,7 @@ export default function FieldListPage() {
   const ADS_SLIDE_COUNT = 6;
 
   const { banners: fetchedBanners } = useCustomerBanners('fields_list_ads');
-  
+
   const adsSlides = useMemo(() => {
     return fetchedBanners.map((b) => b?.imageUrl).filter(Boolean).slice(0, ADS_SLIDE_COUNT);
   }, [fetchedBanners]);
@@ -180,7 +180,6 @@ export default function FieldListPage() {
             <h2 className="font-headline text-xl font-bold text-[#8eff71]">Filters</h2>
             <p className="text-xs font-medium text-[#abaca5]">Refine your pitch</p>
           </div>
-
           <div className="space-y-6">
             {/* Location */}
             <div className="space-y-2">
