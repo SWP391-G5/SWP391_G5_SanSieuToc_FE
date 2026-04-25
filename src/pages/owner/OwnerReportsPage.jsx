@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import ownerReportService from '../../services/ownerReportService';
 import uploadService from '../../services/uploadService';
 import { useNotification } from '../../context/NotificationContext';
+import { Modal } from '../../components/Modal';
 
 const REPORT_TYPES = [
   { value: 'Spam', label: 'Spam' },
@@ -34,6 +36,10 @@ function normalizeEvidencePreview(list) {
 
 export default function OwnerReportsPage() {
   const { notifyError, notifySuccess } = useNotification();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const lastPrefillKeyRef = useRef('');
+
+  const [prefillTargetOption, setPrefillTargetOption] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
@@ -42,6 +48,7 @@ export default function OwnerReportsPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState('');
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, item: null });
 
   const [form, setForm] = useState({
     reportType: 'Spam',
@@ -89,6 +96,31 @@ export default function OwnerReportsPage() {
     loadCustomers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const targetCustomerId = String(searchParams.get('targetCustomerId') || '').trim();
+    const targetLabel = String(searchParams.get('targetLabel') || '').trim();
+
+    if (!targetCustomerId) return;
+
+    const key = `${targetCustomerId}|${targetLabel}`;
+    if (lastPrefillKeyRef.current === key) return;
+    lastPrefillKeyRef.current = key;
+
+    setEditingId('');
+    setForm({
+      reportType: 'Spam',
+      targetCustomerId,
+      description: '',
+      evidence: [],
+    });
+
+    if (targetLabel) setPrefillTargetOption({ id: targetCustomerId, label: targetLabel });
+
+    // Clear params so resetting the form doesn't auto-prefill again.
+    setSearchParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const resetForm = () => {
     setEditingId('');
@@ -176,15 +208,21 @@ export default function OwnerReportsPage() {
     });
   };
 
-  const onDelete = async (it) => {
+  const onDelete = (it) => {
     if (!it?.id) return;
     if (String(it.status) !== 'Pending') {
       notifyError('Chỉ được xóa khi report đang chờ xử lý.');
       return;
     }
-    if (!window.confirm('Xóa report này?')) return;
+    setDeleteModal({ isOpen: true, item: it });
+  };
+
+  const confirmDelete = async () => {
+    const it = deleteModal.item;
+    if (!it?.id) return;
 
     setSubmitting(true);
+    setDeleteModal({ isOpen: false, item: null });
     try {
       const data = await ownerReportService.deleteReport(it.id);
       notifySuccess(data?.message || 'Đã xóa report.');
@@ -266,6 +304,9 @@ export default function OwnerReportsPage() {
                 <option value="">
                   {customersLoading ? 'Đang tải danh sách customer...' : customers.length ? 'Chọn đối tượng bị report' : 'Chưa có đối tượng hợp lệ'}
                 </option>
+                {prefillTargetOption?.id && !customers.some((c) => String(c.id) === String(prefillTargetOption.id)) ? (
+                  <option value={prefillTargetOption.id}>{prefillTargetOption.label || prefillTargetOption.id}</option>
+                ) : null}
                 {customers.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name || c.username} ({c.email})
@@ -484,6 +525,44 @@ export default function OwnerReportsPage() {
           </table>
         </div>
       </div>
+
+      <Modal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, item: null })}
+        title="Xác nhận xóa"
+      >
+        <div className="space-y-6">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-error/10 flex items-center justify-center text-error">
+              <span className="material-symbols-outlined text-2xl">delete_forever</span>
+            </div>
+            <div>
+              <div className="text-[#fdfdf6] font-bold text-lg">Xóa report này?</div>
+              <p className="text-[#abaca5] text-sm mt-1 leading-relaxed">
+                Hành động này sẽ xóa vĩnh viễn report <span className="text-[#fdfdf6] font-medium">"{deleteModal.item?.reportType}"</span>.
+                Bạn sẽ không thể khôi phục lại dữ liệu này.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setDeleteModal({ isOpen: false, item: null })}
+              className="px-5 py-2.5 rounded-xl bg-[#242721] text-[#abaca5] hover:text-[#fdfdf6] transition-all font-medium text-sm"
+            >
+              Hủy bỏ
+            </button>
+            <button
+              type="button"
+              onClick={confirmDelete}
+              className="px-5 py-2.5 rounded-xl bg-error text-white hover:bg-error/90 transition-all font-bold text-sm shadow-lg shadow-error/20"
+            >
+              Xác nhận xóa
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -54,6 +54,7 @@ import OwnerWalletPage from "./pages/owner/OwnerWalletPage";
 import OwnerWithdrawPage from "./pages/owner/OwnerWithdrawPage";
 import OwnerPostsPage from "./pages/owner/OwnerPostsPage";
 import OwnerRevenuePage from "./pages/owner/OwnerRevenuePage";
+import OwnerFeedbackManagementPage from "./pages/owner/OwnerFeedbackManagementPage";
 import OwnerReportsPage from "./pages/owner/OwnerReportsPage";
 import OwnerVouchersPage from "./pages/owner/OwnerVouchersPage";
 
@@ -182,6 +183,7 @@ function App() {
             <Route path="posts" element={<OwnerPostsPage />} />
             <Route path="revenue" element={<OwnerRevenuePage />} />
             <Route path="reports" element={<OwnerReportsPage />} />
+            <Route path="feedbacks" element={<OwnerFeedbackManagementPage />} />
             <Route path="vouchers" element={<OwnerVouchersPage />} />
             <Route path="profile" element={<UserProfilePage />} />
             <Route path="*" element={<NotFoundPage />} />
