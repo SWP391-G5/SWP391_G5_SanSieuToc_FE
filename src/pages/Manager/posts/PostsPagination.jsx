@@ -1,11 +1,28 @@
 /**
- * PostsPagination.jsx
- * Numeric page buttons for the Manager Posts list.
- * Renders up to MAX_VISIBLE_PAGES numbered buttons with ellipsis truncation.
+ * ============================================================
+ * FILE: src/pages/Manager/posts/PostsPagination.jsx
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   Numeric pagination control for Manager Posts screen (EXECUTOR).
+ *   Pure UI: renders page buttons and calls onPageChange.
+ *
+ * RESPONSIBILITIES:
+ *   - Render up to MAX_VISIBLE_PAGES buttons with ellipsis truncation
+ *   - Disable actions when loading
+ *
+ * DATA FLOW:
+ *   ManagerPostsPage.jsx state → props.page/totalPages → [THIS FILE]
+ *   User click → props.onPageChange(pageNum)
+ *
+ * USED IN:
+ *   - src/pages/Manager/ManagerPostsPage.jsx
+ * ============================================================
  */
 
-// 2. Third-party
+// ── Third-party ────────────────────────────────────────────
 import PropTypes from 'prop-types';
+
+// ── CHANGE [2026-04-21]: Structured header/import groups (no behavior change) ──
 
 // Maximum number of page buttons visible at once before truncating with "…"
 const MAX_VISIBLE_PAGES = 7;
@@ -118,3 +135,4 @@ PostsPagination.defaultProps = {
   totalPages: 0,
   loading: false,
 };
+// ── END CHANGE ─────────────────────────────────────────────

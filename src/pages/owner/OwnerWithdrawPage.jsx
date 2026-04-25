@@ -197,7 +197,7 @@ export default function OwnerWithdrawPage() {
           <input
             type="text"
             value={accountName}
-            onChange={(e) => setAccountName(e.target.value.replace(/[0-9]/g, '').toUpperCase())}
+            onChange={(e) => setAccountName(e.target.value.replace(/[^A-Za-zÀ-ỹ\s]/g, '').toUpperCase())}
             placeholder="Nhập tên chủ tài khoản"
             className="w-full bg-surface p-4 rounded-lg text-on-surface border border-outline focus:border-primary outline-none"
           />

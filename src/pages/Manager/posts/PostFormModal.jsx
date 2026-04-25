@@ -1,23 +1,58 @@
 /**
- * PostFormModal.jsx
- * Create/Edit modal for Manager Posts.
+ * ============================================================
+ * FILE: src/pages/Manager/posts/PostFormModal.jsx
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   Create/Edit modal for Manager Posts (EXECUTOR).
+ *   This modal renders controlled inputs. Parent orchestrator
+ *   owns the canonical form state and submit handlers.
+ *
+ * RESPONSIBILITIES:
+ *   - Render Title/Content/Tags/Images inputs
+ *   - Provide client-side validation hints (min/max tags, length)
+ *   - Upload image files to Cloudinary via uploadService when needed
+ *
+ * DATA FLOW:
+ *   ManagerPostsPage.jsx state (form,setForm) → [THIS FILE]
+ *   Tags: GET /api/public/post-tags → publicApi.getPostTags()
+ *   Images: local File → uploadService.uploadImages() → URL(s) → setForm()
+ *
+ * USED IN:
+ *   - src/pages/Manager/ManagerPostsPage.jsx
+ * ============================================================
  */
 
-import { useEffect, useMemo, useState } from 'react';
-import { MAX_IMAGES_PER_POST, buildPickedImagePreviews, revokePreviewUrl } from './postUploadHelpers';
-import publicApi from '../../../services/public/publicApi';
+/**
+ * ============================================================
+ * STATE MAP (PostFormModal)
+ * ============================================================
+ * tagOptions      {Array}   Tag list for pill selector
+ *                             Set by: tags useEffect when modal opens
+ *                             Used by: tag selector buttons
+ * ============================================================
+ */
+
+import { useEffect, useMemo, useState } from "react";
+import PropTypes from "prop-types";
+import {
+  MAX_IMAGES_PER_POST,
+  buildPickedImagePreviews,
+  revokePreviewUrl,
+} from "./postUploadHelpers";
+import uploadService from "../../../services/uploadService";
+import publicApi from "../../../services/public/publicApi";
 
 const FALLBACK_POST_TAG_OPTIONS = [
-  { value: 'ThongBao', label: 'Thông báo' },
-  { value: 'TimKeo', label: 'Tìm kèo' },
-  { value: 'Tips', label: 'Tips / Kinh nghiệm' },
-  { value: 'Review', label: 'Review' },
-  { value: 'HoiDap', label: 'Hỏi đáp' },
-  { value: 'GiaoLuu', label: 'Giao lưu' },
-  { value: 'SuKien', label: 'Sự kiện / Giải đấu' },
-  { value: 'KhuyenMai', label: 'Khuyến mãi' },
-  { value: 'BaoLoi', label: 'Báo lỗi / Góp ý' },
-  { value: 'Khac', label: 'Khác' },
+  { value: "ThongBao", label: "Thông báo" },
+  { value: "TimKeo", label: "Tìm kèo" },
+  { value: "Tips", label: "Tips / Kinh nghiệm" },
+  { value: "Review", label: "Review" },
+  { value: "HoiDap", label: "Hỏi đáp" },
+  { value: "GiaoLuu", label: "Giao lưu" },
+  { value: "SuKien", label: "Sự kiện / Giải đấu" },
+  { value: "KhuyenMai", label: "Khuyến mãi" },
+  { value: "BaoLoi", label: "Báo lỗi / Góp ý" },
+  { value: "Khac", label: "Khác" },
 ];
 
 const MIN_TAGS_PER_POST = 1;
@@ -39,6 +74,8 @@ export default function PostFormModal({
   onSaveDraft,
   onPublish,
   notify,
+  hideDraftActions = false,
+  publishLabel = "Publish",
 }) {
   const [tagOptions, setTagOptions] = useState(FALLBACK_POST_TAG_OPTIONS);
 
@@ -55,7 +92,10 @@ export default function PostFormModal({
 
         if (Array.isArray(items) && items.length > 0) {
           const cleaned = items
-            .map((x) => ({ value: String(x?.value || '').trim(), label: String(x?.label || '').trim() }))
+            .map((x) => ({
+              value: String(x?.value || "").trim(),
+              label: String(x?.label || "").trim(),
+            }))
             .filter((x) => x.value && x.label);
           if (cleaned.length > 0) setTagOptions(cleaned);
         }
@@ -75,7 +115,10 @@ export default function PostFormModal({
     return m;
   }, [tagOptions]);
 
-  const knownTagValues = useMemo(() => new Set((tagOptions || []).map((t) => String(t.value))), [tagOptions]);
+  const knownTagValues = useMemo(
+    () => new Set((tagOptions || []).map((t) => String(t.value))),
+    [tagOptions],
+  );
 
   const selectedTags = Array.isArray(form?.tags) ? form.tags : [];
 
@@ -93,7 +136,8 @@ export default function PostFormModal({
 
     // revoke any object URLs created for previews
     (form?.images || []).forEach((img) => {
-      if (img && typeof img === 'object' && img.previewUrl) revokePreviewUrl(img.previewUrl);
+      if (img && typeof img === "object" && img.previewUrl)
+        revokePreviewUrl(img.previewUrl);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -106,7 +150,9 @@ export default function PostFormModal({
       const list = Array.from(files || []);
       if (!list.length) return;
 
-      const currentNewCount = (form?.images || []).filter((x) => x && typeof x === 'object' && x.file instanceof File).length;
+      const currentNewCount = (form?.images || []).filter(
+        (x) => x && typeof x === "object" && x.file instanceof File,
+      ).length;
       const remaining = Math.max(0, MAX_IMAGES_PER_POST - currentNewCount);
 
       if (remaining <= 0) {
@@ -119,25 +165,35 @@ export default function PostFormModal({
       const rejectedCount = list.length - accepted.length;
 
       const previews = buildPickedImagePreviews(accepted);
-      setForm((prev) => ({ ...prev, images: [...(prev?.images || []), ...previews] }));
+      setForm((prev) => ({
+        ...prev,
+        images: [...(prev?.images || []), ...previews],
+      }));
 
       if (rejectedCount > 0) {
-        notify?.notifyInfo?.(`Đã bỏ qua ${rejectedCount} ảnh vì vượt quá giới hạn ${MAX_IMAGES_PER_POST} ảnh.`);
+        notify?.notifyInfo?.(
+          `Đã bỏ qua ${rejectedCount} ảnh vì vượt quá giới hạn ${MAX_IMAGES_PER_POST} ảnh.`,
+        );
       }
     } catch (e) {
-      notify?.notifyError?.(e?.message || 'Failed to read images');
+      notify?.notifyError?.(e?.message || "Failed to read images");
     }
   };
 
   const removeImageAt = (idx) => {
     setForm((prev) => {
       const target = prev?.images?.[idx];
-      if (target && typeof target === 'object' && target.previewUrl) revokePreviewUrl(target.previewUrl);
-      return { ...prev, images: (prev?.images || []).filter((_, i) => i !== idx) };
+      if (target && typeof target === "object" && target.previewUrl)
+        revokePreviewUrl(target.previewUrl);
+      return {
+        ...prev,
+        images: (prev?.images || []).filter((_, i) => i !== idx),
+      };
     });
   };
 
-  const canSaveDraft = !editing || String(editing?.status) === 'Draft' || !!editing?.__dbDraft;
+  const canSaveDraft =
+    !editing || String(editing?.status) === "Draft" || !!editing?.__dbDraft;
 
   const toggleTag = (value) => {
     setForm((prev) => {
@@ -148,7 +204,9 @@ export default function PostFormModal({
       // enforce max
       const nextArr = Array.from(next);
       if (nextArr.length > MAX_TAGS_PER_POST) {
-        notify?.notifyWarning?.(`Bạn chỉ được chọn tối đa ${MAX_TAGS_PER_POST} tag cho 1 bài.`);
+        notify?.notifyWarning?.(
+          `Bạn chỉ được chọn tối đa ${MAX_TAGS_PER_POST} tag cho 1 bài.`,
+        );
         return prev;
       }
 
@@ -157,27 +215,30 @@ export default function PostFormModal({
   };
 
   const validateDraft = () => {
-    const title = String(form?.title || '').trim();
+    const title = String(form?.title || "").trim();
     const tags = Array.isArray(form?.tags) ? form.tags.filter(Boolean) : [];
 
-    if (!title) return 'Title is required.';
-    if (title.length > MAX_TITLE_CHARS) return `Title tối đa ${MAX_TITLE_CHARS} ký tự.`;
-    if (tags.length < MIN_TAGS_PER_POST) return `Vui lòng chọn tối thiểu ${MIN_TAGS_PER_POST} tag.`;
+    if (!title) return "Title is required.";
+    if (title.length > MAX_TITLE_CHARS)
+      return `Title tối đa ${MAX_TITLE_CHARS} ký tự.`;
+    if (tags.length < MIN_TAGS_PER_POST)
+      return `Vui lòng chọn tối thiểu ${MIN_TAGS_PER_POST} tag.`;
 
-    const content = String(form?.content || '');
-    if (content.length > MAX_CONTENT_CHARS) return `Content tối đa ${MAX_CONTENT_CHARS} ký tự.`;
+    const content = String(form?.content || "");
+    if (content.length > MAX_CONTENT_CHARS)
+      return `Content tối đa ${MAX_CONTENT_CHARS} ký tự.`;
 
-    return '';
+    return "";
   };
 
   const validatePublish = () => {
     const base = validateDraft();
     if (base) return base;
 
-    const content = String(form?.content || '').trim();
-    if (!content) return 'Content is required to publish.';
+    const content = String(form?.content || "").trim();
+    if (!content) return "Content is required to publish.";
 
-    return '';
+    return "";
   };
 
   const handleSaveDraft = () => {
@@ -203,9 +264,12 @@ export default function PostFormModal({
       <div className="w-full max-w-4xl rounded-2xl bg-surface-container-high border border-outline-variant shadow-2xl my-10">
         <div className="flex items-start justify-between gap-4 border-b border-outline-variant px-5 py-4 sm:px-6">
           <div>
-            <h2 className="text-xl font-headline font-bold">{editing ? 'Edit Post' : 'New Post'}</h2>
+            <h2 className="text-xl font-headline font-bold">
+              {editing ? "Edit Post" : "New Post"}
+            </h2>
             <p className="text-sm text-on-surface-variant mt-1">
-              Khi Owner sửa bài đăng: trạng thái sẽ chuyển về <b>Pending</b> và cần duyệt lại. (Manager chỉ được sửa bài do mình tạo.)
+              Khi Owner sửa bài đăng: trạng thái sẽ chuyển về <b>Pending</b> và
+              cần duyệt lại. (Manager chỉ được sửa bài do mình tạo.)
             </p>
           </div>
           <button
@@ -223,13 +287,22 @@ export default function PostFormModal({
             <div className="space-y-4">
               <label className="space-y-1 block">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Title</div>
-                  <div className="text-xs text-on-surface-variant">Tối đa {MAX_TITLE_CHARS} ký tự</div>
+                  <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                    Title
+                  </div>
+                  <div className="text-xs text-on-surface-variant">
+                    Tối đa {MAX_TITLE_CHARS} ký tự
+                  </div>
                 </div>
                 <input
                   className="h-11 w-full rounded-lg bg-white px-4 text-sm border border-outline-variant text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  value={form?.title || ''}
-                  onChange={(e) => setForm((p) => ({ ...p, title: e.target.value.slice(0, MAX_TITLE_CHARS) }))}
+                  value={form?.title || ""}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      title: e.target.value.slice(0, MAX_TITLE_CHARS),
+                    }))
+                  }
                   placeholder="Post title"
                   disabled={formBusy}
                 />
@@ -237,13 +310,22 @@ export default function PostFormModal({
 
               <label className="space-y-1 block">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Content</div>
-                  <div className="text-xs text-on-surface-variant">Tối đa {MAX_CONTENT_CHARS} ký tự</div>
+                  <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                    Content
+                  </div>
+                  <div className="text-xs text-on-surface-variant">
+                    Tối đa {MAX_CONTENT_CHARS} ký tự
+                  </div>
                 </div>
                 <textarea
                   className="min-h-44 w-full rounded-lg bg-white px-4 py-3 text-sm border border-outline-variant text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  value={form?.content || ''}
-                  onChange={(e) => setForm((p) => ({ ...p, content: e.target.value.slice(0, MAX_CONTENT_CHARS) }))}
+                  value={form?.content || ""}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      content: e.target.value.slice(0, MAX_CONTENT_CHARS),
+                    }))
+                  }
                   placeholder="Write content..."
                   disabled={formBusy}
                 />
@@ -252,7 +334,9 @@ export default function PostFormModal({
               {/* Tags */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Tags</div>
+                  <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                    Tags
+                  </div>
                   <div className="text-xs text-on-surface-variant">
                     Chọn {MIN_TAGS_PER_POST}–{MAX_TAGS_PER_POST} tag
                   </div>
@@ -269,31 +353,41 @@ export default function PostFormModal({
                         disabled={formBusy}
                         className={
                           active
-                            ? 'h-9 rounded-full px-3 text-xs font-bold border border-primary bg-primary/15 text-primary'
-                            : 'h-9 rounded-full px-3 text-xs font-bold border border-outline-variant text-on-surface-variant hover:bg-surface'
+                            ? "h-9 rounded-full px-3 text-xs font-bold border border-primary bg-primary/15 text-primary"
+                            : "h-9 rounded-full px-3 text-xs font-bold border border-outline-variant text-on-surface-variant hover:bg-surface"
                         }
                         title={opt.value}
                       >
-                        {tagOptionsByValue.get(String(opt.value))?.label || opt.label}
+                        {tagOptionsByValue.get(String(opt.value))?.label ||
+                          opt.label}
                       </button>
                     );
                   })}
                 </div>
 
                 {selectedTags.length < MIN_TAGS_PER_POST ? (
-                  <div className="text-xs text-error">Vui lòng chọn tối thiểu {MIN_TAGS_PER_POST} tag.</div>
+                  <div className="text-xs text-error">
+                    Vui lòng chọn tối thiểu {MIN_TAGS_PER_POST} tag.
+                  </div>
                 ) : null}
               </div>
 
-              {formError ? <div className="rounded-lg border border-error/60 bg-error/10 p-3 text-sm text-error">{formError}</div> : null}
+              {formError ? (
+                <div className="rounded-lg border border-error/60 bg-error/10 p-3 text-sm text-error">
+                  {formError}
+                </div>
+              ) : null}
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Images</div>
+                  <div className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+                    Images
+                  </div>
                   <div className="text-xs text-on-surface-variant mt-1">
-                    Add multiple images (Max {MAX_IMAGES_PER_POST} images). You can remove any preview.
+                    Add multiple images (Max {MAX_IMAGES_PER_POST} images). You
+                    can remove any preview.
                   </div>
                 </div>
 
@@ -314,10 +408,20 @@ export default function PostFormModal({
                 {(form?.images || []).length ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3">
                     {(form?.images || []).map((img, idx) => {
-                      const src = typeof img === 'string' ? img : img?.previewUrl;
+                      const src =
+                        typeof img === "string" ? img : img?.previewUrl;
                       return (
-                        <div key={idx} className="relative rounded-lg overflow-hidden border border-outline-variant bg-surface">
-                          {src ? <img src={src} alt="Ảnh xem trước" className="h-28 w-full object-cover" /> : null}
+                        <div
+                          key={idx}
+                          className="relative rounded-lg overflow-hidden border border-outline-variant bg-surface"
+                        >
+                          {src ? (
+                            <img
+                              src={src}
+                              alt="Ảnh xem trước"
+                              className="h-28 w-full object-cover"
+                            />
+                          ) : null}
                           <button
                             type="button"
                             onClick={() => removeImageAt(idx)}
@@ -331,7 +435,9 @@ export default function PostFormModal({
                     })}
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-500">No images selected.</div>
+                  <div className="text-sm text-gray-500">
+                    No images selected.
+                  </div>
                 )}
               </div>
             </div>
@@ -347,7 +453,9 @@ export default function PostFormModal({
               Cancel
             </button>
 
-            {canSaveDraft ? (
+            {!hideDraftActions &&
+            canSaveDraft &&
+            typeof onSaveDraft === "function" ? (
               <button
                 type="button"
                 onClick={handleSaveDraft}
@@ -363,9 +471,13 @@ export default function PostFormModal({
               onClick={handlePublish}
               className="h-11 rounded-lg bg-primary px-5 text-sm font-bold text-white hover:brightness-95 disabled:opacity-50"
               disabled={formBusy || selectedTags.length < MIN_TAGS_PER_POST}
-              title={selectedTags.length < MIN_TAGS_PER_POST ? `Vui lòng chọn tối thiểu ${MIN_TAGS_PER_POST} tag.` : undefined}
+              title={
+                selectedTags.length < MIN_TAGS_PER_POST
+                  ? `Vui lòng chọn tối thiểu ${MIN_TAGS_PER_POST} tag.`
+                  : undefined
+              }
             >
-              Publish
+              {publishLabel}
             </button>
           </div>
         </div>
@@ -373,3 +485,27 @@ export default function PostFormModal({
     </div>
   );
 }
+
+// ── CHANGE [2026-04-21]: Add State Map/PropTypes/useEffect docs (no behavior change) ──
+
+PostFormModal.propTypes = {
+  open: PropTypes.bool.isRequired,
+  editing: PropTypes.object,
+  form: PropTypes.object.isRequired,
+  setForm: PropTypes.func.isRequired,
+  formBusy: PropTypes.bool.isRequired,
+  formError: PropTypes.string,
+  onClose: PropTypes.func.isRequired,
+  onSaveDraft: PropTypes.func,
+  onPublish: PropTypes.func.isRequired,
+  notify: PropTypes.object.isRequired,
+  hideDraftActions: PropTypes.bool,
+  publishLabel: PropTypes.string,
+};
+
+PostFormModal.defaultProps = {
+  editing: null,
+  formError: null,
+  hideDraftActions: false,
+  publishLabel: "Publish",
+};

@@ -681,15 +681,15 @@ export default function AuthPage() {
                 </>
               )}
             </div>
-
+{/* 
             <div className="bg-black/10 p-6 text-center">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">
                 Cần hỗ trợ? <span className="text-primary">Liên hệ hỗ trợ Sân Siêu Tốc</span>
               </p>
-            </div>
+            </div> */}
           </div>
 
-          <div className="text-center mt-8 text-[10px] uppercase tracking-widest text-white/40">© 2024 Sân Siêu Tốc</div>
+          <div className="text-center mt-8 text-[10px] uppercase tracking-widest text-white/40">© 2026 Sân Siêu Tốc</div>
         </div>
       </main>
     </div>

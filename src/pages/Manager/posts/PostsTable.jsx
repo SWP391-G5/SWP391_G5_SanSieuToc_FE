@@ -1,57 +1,85 @@
 /**
- * PostsTable.jsx
- * Fixed-layout table UI for the Manager Posts list.
- * Column widths are locked so that long titles do not break the grid.
- * Header cells include inline Status and Owner filter dropdowns.
+ * ============================================================
+ * FILE: src/pages/Manager/posts/PostsTable.jsx
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   Fixed-layout table for Manager Posts list (EXECUTOR).
+ *   Renders rows and header filters. Owns ONLY UI state needed
+ *   for header options (e.g., loading tag options).
+ *
+ * RESPONSIBILITIES:
+ *   - Render the table UI for posts + drafts
+ *   - Provide header filters (status/owner/tag/sort) via callbacks
+ *   - Provide row actions via callbacks (edit/preview/approve/...)
+ *
+ * DATA FLOW:
+ *   ManagerPostsPage.jsx state → props.items → [THIS FILE]
+ *   Tag options: GET /api/public/post-tags → publicApi.getPostTags()
+ *
+ * USED IN:
+ *   - src/pages/Manager/ManagerPostsPage.jsx
+ * ============================================================
  */
 
-// 2. Third-party
-import { useEffect, useMemo, useState } from 'react';
+/**
+ * ============================================================
+ * STATE MAP (PostsTable)
+ * ============================================================
+ * tagOptions      {Array}   Options for the Tag filter dropdown.
+ *                             Set by: useEffect fetchTags()
+ *                             Used by: header <select> for tag
+ * ============================================================
+ */
 
-// 3. Internal
-import publicApi from '../../../services/public/publicApi';
-import { formatDateTime, isLocalDraftPost, normalizeOwnerLabel } from './postFormatters';
+import { useEffect, useMemo, useState } from "react";
+import PropTypes from "prop-types";
+import publicApi from "../../../services/public/publicApi";
+import {
+  formatDateTime,
+  isLocalDraftPost,
+  normalizeOwnerLabel,
+} from "./postFormatters";
 
 // All server-side statuses (Draft is a local-only pseudo-status)
-const SERVER_STATUSES = ['Pending', 'Posted', 'Rejected', 'Deleted'];
+const SERVER_STATUSES = ["Pending", "Posted", "Rejected", "Deleted"];
 
 const STATUS_LABELS = {
-  Draft: 'Nháp',
-  Pending: 'Chờ duyệt',
-  Posted: 'Đã đăng',
-  Rejected: 'Từ chối',
-  Deleted: 'Đã xóa',
+  Draft: "Nháp",
+  Pending: "Chờ duyệt",
+  Posted: "Đã đăng",
+  Rejected: "Từ chối",
+  Deleted: "Đã xóa",
 };
 
 function toVietnameseStatus(status) {
-  return STATUS_LABELS[status] || status || '-';
+  return STATUS_LABELS[status] || status || "-";
 }
 
 const CREATED_SORT_OPTIONS = [
-  { value: '', label: 'Tất cả' },
-  { value: 'created_desc', label: 'Mới nhất' },
-  { value: 'created_asc', label: 'Cũ nhất' },
+  { value: "", label: "Tất cả" },
+  { value: "created_desc", label: "Mới nhất" },
+  { value: "created_asc", label: "Cũ nhất" },
 ];
 
 const UPDATED_SORT_OPTIONS = [
-  { value: '', label: 'Tất cả' },
-  { value: 'updated_desc', label: 'Mới nhất' },
-  { value: 'updated_asc', label: 'Cũ nhất' },
+  { value: "", label: "Tất cả" },
+  { value: "updated_desc", label: "Mới nhất" },
+  { value: "updated_asc", label: "Cũ nhất" },
 ];
 
 // Optional: tag options for header filter
 const FALLBACK_TAG_OPTIONS = [
-  { value: '', label: 'Tất cả' },
-  { value: 'ThongBao', label: 'Thông báo' },
-  { value: 'TimKeo', label: 'Tìm kèo' },
-  { value: 'Tips', label: 'Tips' },
-  { value: 'Review', label: 'Review' },
-  { value: 'HoiDap', label: 'Hỏi đáp' },
-  { value: 'GiaoLuu', label: 'Giao lưu' },
-  { value: 'SuKien', label: 'Sự kiện' },
-  { value: 'KhuyenMai', label: 'Khuyến mãi' },
-  { value: 'BaoLoi', label: 'Báo lỗi' },
-  { value: 'Khac', label: 'Khác' },
+  { value: "", label: "Tất cả" },
+  { value: "ThongBao", label: "Thông báo" },
+  { value: "TimKeo", label: "Tìm kèo" },
+  { value: "Tips", label: "Tips" },
+  { value: "Review", label: "Review" },
+  { value: "HoiDap", label: "Hỏi đáp" },
+  { value: "GiaoLuu", label: "Giao lưu" },
+  { value: "SuKien", label: "Sự kiện" },
+  { value: "KhuyenMai", label: "Khuyến mãi" },
+  { value: "BaoLoi", label: "Báo lỗi" },
+  { value: "Khac", label: "Khác" },
 ];
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -66,17 +94,20 @@ const FALLBACK_TAG_OPTIONS = [
 function StatusBadge({ status }) {
   // Map each status to a Tailwind color pair
   const colorMap = {
-    Draft: 'border-outline-variant text-on-surface-variant',
-    Pending: 'border-yellow-400  text-yellow-600',
-    Posted: 'border-green-500   text-green-600',
-    Rejected: 'border-red-400     text-red-500',
-    Deleted: 'border-gray-400    text-gray-400 line-through',
+    Draft: "border-outline-variant text-on-surface-variant",
+    Pending: "border-yellow-400  text-yellow-600",
+    Posted: "border-green-500   text-green-600",
+    Rejected: "border-red-400     text-red-500",
+    Deleted: "border-gray-400    text-gray-400 line-through",
   };
 
-  const classes = colorMap[status] || 'border-outline-variant text-on-surface-variant';
+  const classes =
+    colorMap[status] || "border-outline-variant text-on-surface-variant";
 
   return (
-    <span className={`inline-flex rounded-full border px-2 py-1 text-xs font-medium ${classes}`}>
+    <span
+      className={`inline-flex rounded-full border px-2 py-1 text-xs font-medium ${classes}`}
+    >
       {toVietnameseStatus(status)}
     </span>
   );
@@ -114,21 +145,34 @@ function ActionGroup({
   userId,
 }) {
   const id = post?._id || post?.id;
-  const isPending = String(post?.status) === 'Pending';
+  const isPending = String(post?.status) === "Pending";
 
-  const base = 'h-8 rounded-md px-2.5 text-xs font-semibold transition-colors whitespace-nowrap';
+  const base =
+    "h-8 rounded-md px-2.5 text-xs font-semibold transition-colors whitespace-nowrap";
   const ghost = `${base} border border-outline-variant text-on-surface-variant hover:bg-surface`;
   const primary = `${base} bg-primary text-on-primary hover:opacity-90`;
   const danger = `${base} border border-error text-error hover:bg-error hover:text-on-error`;
 
   const canEdit = !isDraft ? !!canEditPost?.(post) : false;
 
-  const postOwnerModel = String(post?.postOwnerModel || '').trim();
-  const isOwnerPost = postOwnerModel === 'UserAccount';
+  const postOwnerModel = String(post?.postOwnerModel || "").trim();
+  const isOwnerPost = postOwnerModel === "UserAccount";
 
-  const rawOwner = post?.postOwnerID || post?.postOwnerId || post?.ownerId || post?.postOwner || '';
-  const ownerId = typeof rawOwner === 'object' && rawOwner !== null ? String(rawOwner._id || rawOwner.id || '') : String(rawOwner || '');
-  const isMyManagerPost = postOwnerModel === 'AdminAccount' && ownerId && userId && String(ownerId) === String(userId);
+  const rawOwner =
+    post?.postOwnerID ||
+    post?.postOwnerId ||
+    post?.ownerId ||
+    post?.postOwner ||
+    "";
+  const ownerId =
+    typeof rawOwner === "object" && rawOwner !== null
+      ? String(rawOwner._id || rawOwner.id || "")
+      : String(rawOwner || "");
+  const isMyManagerPost =
+    postOwnerModel === "AdminAccount" &&
+    ownerId &&
+    userId &&
+    String(ownerId) === String(userId);
 
   // Pending posts: business rule → manager should Reject, not Delete
   const showReject = !isDraft && isPending;
@@ -138,22 +182,43 @@ function ActionGroup({
   // - Manager posts only if it is my own manager post
   const showDelete = !isDraft && !isPending && (isOwnerPost || isMyManagerPost);
 
+  const canApprove = isPending && typeof onApprove === "function";
+  const canReject = showReject && typeof onReject === "function";
+  const canDelete = showDelete && typeof onDelete === "function";
+
   return (
     <div className="flex flex-col gap-1.5 items-end">
-      <button type="button" onClick={() => onPreview?.(post)} className={ghost} title="Xem trước">
+      <button
+        type="button"
+        onClick={() => onPreview?.(post)}
+        className={ghost}
+        title="Xem trước"
+      >
         Xem
       </button>
 
       {isDraft ? (
         /* ── Draft row buttons ── */
         <div className="flex gap-1.5">
-          <button type="button" onClick={() => onEditDraft?.(id)} className={ghost}>
+          <button
+            type="button"
+            onClick={() => onEditDraft?.(id)}
+            className={ghost}
+          >
             Sửa
           </button>
-          <button type="button" onClick={() => onPublishDraft?.(id)} className={primary}>
+          <button
+            type="button"
+            onClick={() => onPublishDraft?.(id)}
+            className={primary}
+          >
             Đăng
           </button>
-          <button type="button" onClick={() => onDeleteDraft?.(id)} className={danger}>
+          <button
+            type="button"
+            onClick={() => onDeleteDraft?.(id)}
+            className={danger}
+          >
             Xóa
           </button>
         </div>
@@ -161,12 +226,16 @@ function ActionGroup({
         /* ── Server post row buttons ── */
         <div className="flex gap-1.5">
           {canEdit ? (
-            <button type="button" onClick={() => onEdit?.(post)} className={ghost}>
+            <button
+              type="button"
+              onClick={() => onEdit?.(post)}
+              className={ghost}
+            >
               Sửa
             </button>
           ) : null}
 
-          {isPending ? (
+          {canApprove ? (
             <button
               type="button"
               onClick={() => onApprove?.(post)}
@@ -177,14 +246,22 @@ function ActionGroup({
             </button>
           ) : null}
 
-          {showReject ? (
-            <button type="button" onClick={() => onReject?.(post)} className={danger}>
+          {canReject ? (
+            <button
+              type="button"
+              onClick={() => onReject?.(post)}
+              className={danger}
+            >
               Từ chối
             </button>
           ) : null}
 
-          {showDelete ? (
-            <button type="button" onClick={() => onDelete?.(post)} className={danger}>
+          {canDelete ? (
+            <button
+              type="button"
+              onClick={() => onDelete?.(post)}
+              className={danger}
+            >
               Xóa
             </button>
           ) : null}
@@ -242,6 +319,7 @@ export default function PostsTable({
   userId,
   tag,
   onChangeTag,
+  hideOwnerFilter,
 }) {
   const [tagOptions, setTagOptions] = useState(FALLBACK_TAG_OPTIONS);
 
@@ -255,9 +333,15 @@ export default function PostsTable({
 
         if (Array.isArray(items) && items.length > 0) {
           const cleaned = items
-            .map((x) => ({ value: String(x?.value || '').trim(), label: String(x?.label || '').trim() }))
+            .map((x) => ({
+              value: String(x?.value || "").trim(),
+              label: String(x?.label || "").trim(),
+            }))
             .filter((x) => x.value && x.label);
-          setTagOptions([{ value: '', label: 'Tất cả' }, ...(cleaned.length ? cleaned : FALLBACK_TAG_OPTIONS.slice(1))]);
+          setTagOptions([
+            { value: "", label: "Tất cả" },
+            ...(cleaned.length ? cleaned : FALLBACK_TAG_OPTIONS.slice(1)),
+          ]);
         }
       } catch {
         // keep fallback
@@ -278,10 +362,10 @@ export default function PostsTable({
   // Make ALL header filters uniform.
   // Use full width of the column and keep labels visible (stacked).
   const filterClass =
-    'h-8 w-full min-w-[120px] rounded-lg bg-surface px-2 text-xs border border-outline-variant text-on-surface-variant';
+    "h-8 w-full min-w-[120px] rounded-lg bg-surface px-2 text-xs border border-outline-variant text-on-surface-variant";
 
-  const createdSortValue = sortBy?.startsWith('created_') ? sortBy : '';
-  const updatedSortValue = sortBy?.startsWith('updated_') ? sortBy : '';
+  const createdSortValue = sortBy?.startsWith("created_") ? sortBy : "";
+  const updatedSortValue = sortBy?.startsWith("updated_") ? sortBy : "";
 
   return (
     <div className="overflow-x-auto">
@@ -292,14 +376,14 @@ export default function PostsTable({
       */}
       <table className="w-full table-fixed text-sm min-w-[1080px]">
         <colgroup>
-          <col style={{ width: '3rem' }} />
+          <col style={{ width: "3rem" }} />
           <col />
-          <col style={{ width: '11rem' }} />
-          <col style={{ width: '11rem' }} />
-          <col style={{ width: '14rem' }} />
-          <col style={{ width: '14rem' }} />
-          <col style={{ width: '12rem' }} />
-          <col style={{ width: '11rem' }} />
+          <col style={{ width: "11rem" }} />
+          <col style={{ width: "11rem" }} />
+          <col style={{ width: "14rem" }} />
+          <col style={{ width: "14rem" }} />
+          <col style={{ width: "12rem" }} />
+          <col style={{ width: "11rem" }} />
         </colgroup>
 
         <thead>
@@ -311,9 +395,13 @@ export default function PostsTable({
             <th className="py-3 pr-4">
               <div className="flex flex-col gap-1">
                 <span>Trạng thái</span>
-                <select className={filterClass} value={status} onChange={(e) => onChangeStatus?.(e.target.value)}>
+                <select
+                  className={filterClass}
+                  value={status}
+                  onChange={(e) => onChangeStatus?.(e.target.value)}
+                >
                   <option value="">Tất cả</option>
-                  <option value="Draft">{toVietnameseStatus('Draft')}</option>
+                  <option value="Draft">{toVietnameseStatus("Draft")}</option>
                   {SERVER_STATUSES.map((s) => (
                     <option key={s} value={s}>
                       {toVietnameseStatus(s)}
@@ -327,12 +415,22 @@ export default function PostsTable({
             <th className="py-3 pr-4">
               <div className="flex flex-col gap-1">
                 <span>Người sở hữu</span>
-                <select className={filterClass} value={tableOwner} onChange={(e) => onChangeOwner?.(e.target.value)}>
-                  <option value="">Tất cả</option>
-                  <option value="Draft">Nháp</option>
-                  <option value="AdminAccount">Quản lý</option>
-                  <option value="UserAccount">Người dùng</option>
-                </select>
+                {hideOwnerFilter ? (
+                  <span className="text-xs text-on-surface-variant">
+                    Chủ sân
+                  </span>
+                ) : (
+                  <select
+                    className={filterClass}
+                    value={tableOwner}
+                    onChange={(e) => onChangeOwner?.(e.target.value)}
+                  >
+                    <option value="">Tất cả</option>
+                    <option value="Draft">Nháp</option>
+                    <option value="AdminAccount">Quản lý</option>
+                    <option value="UserAccount">Người dùng</option>
+                  </select>
+                )}
               </div>
             </th>
 
@@ -345,12 +443,12 @@ export default function PostsTable({
                   value={createdSortValue}
                   onChange={(e) => {
                     const v = e.target.value;
-                    onChangeSort?.(v || '');
+                    onChangeSort?.(v || "");
                   }}
                   title="Sắp xếp theo ngày tạo"
                 >
                   {CREATED_SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value || 'all'} value={opt.value}>
+                    <option key={opt.value || "all"} value={opt.value}>
                       {opt.label}
                     </option>
                   ))}
@@ -367,12 +465,12 @@ export default function PostsTable({
                   value={updatedSortValue}
                   onChange={(e) => {
                     const v = e.target.value;
-                    onChangeSort?.(v || '');
+                    onChangeSort?.(v || "");
                   }}
                   title="Sắp xếp theo ngày cập nhật"
                 >
                   {UPDATED_SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value || 'all'} value={opt.value}>
+                    <option key={opt.value || "all"} value={opt.value}>
                       {opt.label}
                     </option>
                   ))}
@@ -384,9 +482,13 @@ export default function PostsTable({
             <th className="py-3 pr-4">
               <div className="flex flex-col gap-1">
                 <span>Tag</span>
-                <select className={filterClass} value={tag || ''} onChange={(e) => onChangeTag?.(e.target.value)}>
+                <select
+                  className={filterClass}
+                  value={tag || ""}
+                  onChange={(e) => onChangeTag?.(e.target.value)}
+                >
                   {tagOptions.map((opt) => (
-                    <option key={opt.value || 'all'} value={opt.value}>
+                    <option key={opt.value || "all"} value={opt.value}>
                       {opt.label}
                     </option>
                   ))}
@@ -417,18 +519,18 @@ export default function PostsTable({
                   {/* Title cell is a bordered white area → text-black is correct here */}
                   <div
                     className="font-semibold text-on-surface-variant truncate"
-                    title={post?.postName || post?.title || ''}
+                    title={post?.postName || post?.title || ""}
                   >
-                    {post?.postName || post?.title || '(không có tiêu đề)'}
+                    {post?.postName || post?.title || "(không có tiêu đề)"}
                   </div>
                   <div className="mt-0.5 text-xs text-on-surface-variant line-clamp-2 break-words">
-                    {post?.postContent || post?.content || ''}
+                    {post?.postContent || post?.content || ""}
                   </div>
                 </td>
 
                 {/* Status badge */}
                 <td className="py-3 pr-4">
-                  <StatusBadge status={isDraft ? 'Draft' : post?.status} />
+                  <StatusBadge status={isDraft ? "Draft" : post?.status} />
                 </td>
 
                 {/* Owner label */}
@@ -438,12 +540,12 @@ export default function PostsTable({
 
                 {/* Created date */}
                 <td className="py-3 pr-4 text-xs text-on-surface-variant">
-                  {post?.createdAt ? formatDateTime(post.createdAt) : '-'}
+                  {post?.createdAt ? formatDateTime(post.createdAt) : "-"}
                 </td>
 
                 {/* Updated date */}
                 <td className="py-3 pr-4 text-xs text-on-surface-variant">
-                  {post?.updatedAt ? formatDateTime(post.updatedAt) : '-'}
+                  {post?.updatedAt ? formatDateTime(post.updatedAt) : "-"}
                 </td>
 
                 {/* Tags */}
@@ -451,14 +553,21 @@ export default function PostsTable({
                   {tags.length ? (
                     <div className="flex flex-wrap gap-1">
                       {tags.slice(0, 3).map((t) => (
-                        <span key={t} className="inline-flex rounded-full border border-outline-variant px-2 py-0.5">
+                        <span
+                          key={t}
+                          className="inline-flex rounded-full border border-outline-variant px-2 py-0.5"
+                        >
                           {t}
                         </span>
                       ))}
-                      {tags.length > 3 ? <span className="text-gray-500">+{tags.length - 3}</span> : null}
+                      {tags.length > 3 ? (
+                        <span className="text-gray-500">
+                          +{tags.length - 3}
+                        </span>
+                      ) : null}
                     </div>
                   ) : (
-                    '-'
+                    "-"
                   )}
                 </td>
 
@@ -486,7 +595,10 @@ export default function PostsTable({
           {/* Empty state */}
           {!loading && items.length === 0 ? (
             <tr>
-              <td colSpan={8} className="py-8 text-center text-sm text-on-surface-variant">
+              <td
+                colSpan={8}
+                className="py-8 text-center text-sm text-on-surface-variant"
+              >
                 Không tìm thấy bài viết nào.
               </td>
             </tr>
@@ -496,3 +608,46 @@ export default function PostsTable({
     </div>
   );
 }
+
+// ─── CHANGE [2026-04-21]: Add PropTypes + State Map + effect docs (no logic change) ──
+
+PostsTable.propTypes = {
+  loading: PropTypes.bool.isRequired,
+  items: PropTypes.array.isRequired,
+  page: PropTypes.number.isRequired,
+  limit: PropTypes.number.isRequired,
+  status: PropTypes.string.isRequired,
+  onChangeStatus: PropTypes.func.isRequired,
+  tableOwner: PropTypes.string.isRequired,
+  onChangeOwner: PropTypes.func,
+  sortBy: PropTypes.string.isRequired,
+  onChangeSort: PropTypes.func.isRequired,
+  onPreview: PropTypes.func.isRequired,
+  onEditDraft: PropTypes.func,
+  onPublishDraft: PropTypes.func,
+  onDeleteDraft: PropTypes.func,
+  onEdit: PropTypes.func,
+  canEditPost: PropTypes.func,
+  onApprove: PropTypes.func,
+  onDelete: PropTypes.func,
+  onReject: PropTypes.func,
+  userId: PropTypes.string,
+  tag: PropTypes.string,
+  onChangeTag: PropTypes.func.isRequired,
+  hideOwnerFilter: PropTypes.bool,
+};
+
+PostsTable.defaultProps = {
+  tag: "",
+  onChangeOwner: undefined,
+  onEditDraft: undefined,
+  onPublishDraft: undefined,
+  onDeleteDraft: undefined,
+  onEdit: undefined,
+  canEditPost: undefined,
+  onApprove: undefined,
+  onDelete: undefined,
+  onReject: undefined,
+  userId: "",
+  hideOwnerFilter: false,
+};

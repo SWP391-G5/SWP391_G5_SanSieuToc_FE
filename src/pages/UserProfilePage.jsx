@@ -85,25 +85,6 @@ function formatVnd(amount) {
   }
 }
 
-async function _uploadToCloudinary({ file, cloudName, uploadPreset }) {
-  const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', uploadPreset);
-
-  const res = await fetch(url, { method: 'POST', body: formData });
-  const data = await res.json().catch(() => null);
-
-  if (!res.ok) {
-    const msg = data?.error?.message || 'Upload ảnh thất bại.';
-    throw new Error(msg);
-  }
-
-  const secureUrl = data?.secure_url;
-  if (!secureUrl) throw new Error('Upload ảnh thất bại.');
-  return secureUrl;
-}
-
 function BookingCard({ booking, onCancel, onFeedback }) {
   const [expanded, setExpanded] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -1091,9 +1072,11 @@ FIELD BOOKING
                       <div className="profile-terminal-wallet-label">AVAILABLE BALANCE</div>
                       <div className="profile-terminal-wallet-balance">{formatVnd(walletBalance)}đ</div>
                     </div>
-                    <button type="button" className="profile-terminal-btn" onClick={onTopUp}>
-                      TOP UP
-                    </button>
+                    {isCustomer ? (
+                      <button type="button" className="profile-terminal-btn" onClick={onTopUp}>
+                        TOP UP
+                      </button>
+                    ) : null}
                   </div>
                 </section>
               )}

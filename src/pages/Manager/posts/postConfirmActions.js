@@ -1,4 +1,25 @@
 /**
+ * ============================================================
+ * FILE: src/pages/Manager/posts/postConfirmActions.js
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   Small factory helpers to build a consistent confirmAction
+ *   object shape used by ManagerPostsPage.
+ *
+ * RESPONSIBILITIES:
+ *   - Create confirm modal config objects with consistent keys
+ *
+ * DATA FLOW:
+ *   ManagerPostsPage.jsx → createConfirmAction() → PostConfirmModal props
+ *
+ * USED IN:
+ *   - src/pages/Manager/ManagerPostsPage.jsx
+ * ============================================================
+ */
+
+// ── CHANGE [2026-04-21]: Structured header for reviewability (no behavior change) ──
+
+/**
  * postConfirmActions.js
  * Shared confirm-state helpers for Manager Posts page.
  */
@@ -25,3 +46,5 @@ export function createConfirmAction({ type, message, confirmText, variant, onCon
     onConfirm,
   };
 }
+
+// ── END CHANGE ─────────────────────────────────────────────

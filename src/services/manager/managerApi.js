@@ -204,6 +204,13 @@ const managerApi = {
     return { item: managerApi._unwrap(data) };
   },
 
+  async restoreFeedback(feedbackId) {
+    const id = String(feedbackId || '').trim();
+    if (!id) throw new Error('Missing feedbackId');
+    const { data } = await axiosInstance.patch(`${ENDPOINTS.MANAGER.FEEDBACK}/${id}/restore`);
+    return { item: managerApi._unwrap(data) };
+  },
+
   // =========================
   // Deferred modules (keep stubs)
   // =========================

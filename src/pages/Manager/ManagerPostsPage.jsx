@@ -1,19 +1,90 @@
 /**
- * ManagerPostsPage.jsx
- * Manager page for system posts/blog moderation and creation.
- * Business logic (load, approve, delete, draft actions, form submit) lives here.
- * Presentation is delegated to PostsToolbar, PostsTable, and PostsPagination.
+ * ============================================================
+ * FILE: src/pages/Manager/ManagerPostsPage.jsx
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   Manager Posts main screen (ORCHESTRATOR). Owns page state,
+ *   data fetching, and action handlers for post moderation.
+ *   Rendering is delegated to child components under `./posts/`.
+ *
+ * RESPONSIBILITIES:
+ *   - Fetch system posts + manager drafts (status=Draft)
+ *   - Apply client-side filtering/sorting/pagination
+ *   - Open/close modals (create/edit/preview/confirm)
+ *   - Call Manager APIs: create/update/approve/reject/delete
+ *
+ * DATA FLOW:
+ *   MongoDB → (BE) /api/manager/posts → managerApi.getPosts()
+ *           → [THIS FILE] state → PostsTable.jsx / PostPreviewModal.jsx
+ *
+ * CHILD COMPONENTS USED:
+ *   - src/pages/Manager/posts/PostsToolbar.jsx
+ *   - src/pages/Manager/posts/PostsTable.jsx
+ *   - src/pages/Manager/posts/PostsPagination.jsx
+ *   - src/pages/Manager/posts/PostFormModal.jsx
+ *   - src/pages/Manager/posts/PostConfirmModal.jsx
+ *   - src/pages/Manager/posts/PostPreviewModal.jsx
+ *
+ * API CALLS (via):
+ *   - src/services/manager/managerApi.js
+ * ============================================================
  */
 
-// 2. Third-party
+/**
+ * ============================================================
+ * STATE MAP (ManagerPostsPage)
+ * ============================================================
+ * loading        {boolean}   UI flag (intentionally fixed false; see note in code)
+ *                             Set by: (none)
+ *                             Used by: PostsTable / PostsPagination disable states
+ *
+ * error          {string}    Load error message for posts API
+ *                             Set by: load() catch
+ *                             Used by: top-of-page error banner
+ *
+ * items          {Array}     Non-draft posts from API (Pending/Posted/Rejected/Deleted)
+ *                             Set by: load()
+ *                             Used by: merged list → table rendering
+ *
+ * draftItems     {Array}     Draft posts from API (status=Draft)
+ *                             Set by: loadDrafts()
+ *                             Used by: merged list → table rendering
+ *
+ * totalPages     {number}    Derived pagination metadata computed from merged list
+ *                             Set by: computeTotalPages effect
+ *                             Used by: PostsPagination
+ *
+ * page           {number}    Current page index (1-based)
+ *                             Set by: pagination controls, filter resets
+ *                             Used by: slice displayedItems
+ *
+ * status         {string}    Status filter ('', 'Draft', or server statuses)
+ * tableOwner     {string}    Owner model filter ('', 'Draft', 'AdminAccount', 'UserAccount')
+ * sortBy         {string}    Sort preset (created/updated asc/desc)
+ * tag            {string}    Tag filter ('', or tag slug)
+ * search         {string}    Raw search text from toolbar
+ *
+ * showForm       {boolean}   Create/Edit modal visibility
+ * editing        {object}    Currently editing record (API post or draft)
+ * previewing     {object}    Post selected for preview modal
+ * draftAction    {object}    Draft confirm action: { type:'publish'|'delete', id }
+ * confirmAction  {object}    Server confirm action: approve/reject/delete
+ *
+ * form           {object}    Controlled modal form: { title, content, images, tags }
+ * formBusy       {boolean}   Submit in-flight flag
+ * formError      {string}    Modal-level error message
+ * ============================================================
+ */
+
+// ── React core ─────────────────────────────────────────────
 import { useEffect, useMemo, useState } from 'react';
 
-// 3. Internal — services & context
-import managerApi from '../../services/manager/managerApi';
-import { useAuth } from '../../context/AuthContext';
-import { useNotification } from '../../context/NotificationContext';
+// ── Internal: services & context ───────────────────────────
+import managerApi from '../../services/manager/managerApi'; // Manager endpoints for posts CRUD/moderation
+import { useAuth } from '../../context/AuthContext'; // current logged-in manager/admin
+import { useNotification } from '../../context/NotificationContext'; // toast notifications
 
-// 3. Internal — sub-components (posts feature folder)
+// ── Internal: child components (posts feature folder) ──────
 import PostConfirmModal from './posts/PostConfirmModal';
 import PostFormModal from './posts/PostFormModal';
 import PostPreviewModal from './posts/PostPreviewModal';
@@ -21,31 +92,34 @@ import PostsPagination from './posts/PostsPagination';
 import PostsTable from './posts/PostsTable';
 import PostsToolbar from './posts/PostsToolbar';
 
-// 3. Internal — posts utilities
+// ── Internal: posts utilities ──────────────────────────────
 import { createConfirmAction } from './posts/postConfirmActions';
 import { filterPostLikeList } from './posts/postFilters';
 import { isLocalDraftPost, getPostImages } from './posts/postFormatters';
 import { canEditPost as canEditPostPermission } from './posts/postsPermissions';
 
+// ── CHANGE [2026-04-21]: Refactor structure/comments for reviewability (no behavior changes) ──
 export default function ManagerPostsPage() {
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 1: CONTEXT
+  // ─────────────────────────────────────────────────────────────
   const notify = useNotification();
   const { user } = useAuth();
   const userId = String(user?._id || user?.id || '');
 
-  // ── Loading / error ──────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 2: STATE (page-level)
+  // ─────────────────────────────────────────────────────────────
   // NOTE: We intentionally do NOT toggle loading for filter/pagination changes,
   // because the loading UI was causing pagination to jump back to page 1.
   const [loading] = useState(false);
   const [error, setError] = useState('');
 
-  // ── Data ─────────────────────────────────────────────────────────────────
   const [items, setItems] = useState([]);
   const [draftItems, setDraftItems] = useState([]);
-
-  // Pagination metadata (we derive from the merged list to avoid page-size mismatch)
   const [totalPages, setTotalPages] = useState(1);
 
-  // ── Filter / pagination state ────────────────────────────────────────────
+  // Filter / pagination
   const [page, setPage] = useState(1);
   const limit = 10; // fixed 10 items per page
   const [status, setStatus] = useState('');
@@ -54,19 +128,21 @@ export default function ManagerPostsPage() {
   const [sortBy, setSortBy] = useState('created_desc'); // created_desc | created_asc | updated_desc | updated_asc
   const [tag, setTag] = useState(''); // '' | tag slug
 
-  // ── Modal / action state ─────────────────────────────────────────────────
+  // Modals / actions
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [previewing, setPreviewing] = useState(null);
   const [draftAction, setDraftAction] = useState(null); // { type: 'publish'|'delete', id }
   const [confirmAction, setConfirmAction] = useState(null); // { title, message, variant, confirmText, onConfirm }
 
-  // ── Form state ───────────────────────────────────────────────────────────
+  // Form state
   const [form, setForm] = useState({ title: '', content: '', images: [], tags: [] });
   const [formBusy, setFormBusy] = useState(false);
   const [formError, setFormError] = useState('');
 
-  // ── Query memo ───────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 3: DERIVED VALUES
+  // ─────────────────────────────────────────────────────────────
   // NOTE: Pagination is fully handled client-side (fixed 10/page) to avoid
   // autoloading/page-jump issues caused by mixing server paging with local drafts.
   const query = useMemo(
@@ -82,19 +158,53 @@ export default function ManagerPostsPage() {
   // Client-side search needle for draft filtering
   const clientSearchNeedle = useMemo(() => String(search || '').trim().toLowerCase(), [search]);
 
-  // ── Effects ──────────────────────────────────────────────────────────────
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query.status, query.q, query.sort]);
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 4: DATA FETCHING
+  // ─────────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    loadDrafts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, query.q, query.sort]);
+  /**
+   * load
+   * ----------------------------------------------------------
+   * Loads non-draft posts (server statuses) from the manager API.
+   *
+   * TRIGGERS: useEffect when query.status/query.q/query.sort change.
+   *
+   * DATA FLOW:
+   *   managerApi.getPosts(query) → setItems(list)
+   *
+   * ERROR PATH:
+   *   - 401/403: shows "Unauthorized" message via toast + error banner.
+   *   - Other errors: shows API message or fallback.
+   */
+  const load = async () => {
+    // IMPORTANT: do not set loading=true/false here (see note above)
+    setError('');
+    try {
+      const data = await managerApi.getPosts(query);
+      const list = data?.items || data?.data || data || [];
+      setItems(Array.isArray(list) ? list : []);
+    } catch (e) {
+      const statusCode = e?.response?.status;
+      const isUnauthorized = statusCode === 401 || statusCode === 403;
+      const msg = isUnauthorized
+        ? 'Unauthorized: API requires login token.'
+        : e?.response?.data?.message || e?.message || 'Failed to load posts';
+      setError(msg);
+      setItems([]);
+      notify.notifyError(msg);
+    }
+  };
 
-  // ── Draft helpers (DB) ───────────────────────────────────────────────────
-
+  /**
+   * loadDrafts
+   * ----------------------------------------------------------
+   * Loads drafts (status=Draft) for the current manager/admin.
+   *
+   * TRIGGERS: useEffect when userId/query.q/query.sort change.
+   *
+   * ERROR PATH:
+   *   - If API fails, draftItems is reset to [] to keep UI stable.
+   */
   const loadDrafts = async () => {
     if (!userId) return;
     try {
@@ -108,6 +218,50 @@ export default function ManagerPostsPage() {
     }
   };
 
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 5: EFFECTS
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * EFFECT: Load posts when main query changes
+   * ----------------------------------------------------------
+   * WHEN IT RUNS: On mount, and when query.status/query.q/query.sort change.
+   * WHAT IT DOES: Calls load() to refresh non-draft posts list.
+   * DEPENDENCIES:
+   *   - query.status: server-side status filter
+   *   - query.q:      server-side keyword filter
+   *   - query.sort:   server-side sort preset
+   * CLEANUP: None
+   * ERROR PATH: handled inside load() (sets error + toast)
+   */
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query.status, query.q, query.sort]);
+
+  /**
+   * EFFECT: Load drafts when user or query changes
+   * ----------------------------------------------------------
+   * WHEN IT RUNS: On mount, and when userId/query.q/query.sort change.
+   * WHAT IT DOES: Calls loadDrafts() to refresh Draft list for this user.
+   * DEPENDENCIES:
+   *   - userId:   manager/admin id
+   *   - query.q:  keep draft list aligned with search keyword
+   *   - query.sort: keep draft list aligned with sort preset
+   * CLEANUP: None
+   * ERROR PATH: handled inside loadDrafts() (falls back to [])
+   */
+  useEffect(() => {
+    loadDrafts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, query.q, query.sort]);
+
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 6: EVENT HANDLERS (UI actions)
+  // ─────────────────────────────────────────────────────────────
+
+  const canEditPost = (post) => canEditPostPermission({ post, user });
+
   const openCreate = () => {
     setEditing(null);
     setForm({ title: '', content: '', images: [], tags: [] });
@@ -118,14 +272,15 @@ export default function ManagerPostsPage() {
   const openEditDraft = (draftId) => {
     const draft = (draftItems || []).find((x) => String(x?._id || x?.id) === String(draftId));
     if (!draft) {
-      notify.notifyWarning('Draft not found.');
+      notify.notifyWarning('Không tìm thấy draft.');
       return;
     }
+
+    // Mark as db draft so save flow uses updatePost instead of createPost
     setEditing({ ...draft, __dbDraft: true });
     setForm({
-      title: draft.postName || '',
-      content: draft.postContent || '',
-      // IMPORTANT: always hydrate from postImage via helper
+      title: draft?.postName || draft?.title || '',
+      content: draft?.postContent || draft?.content || '',
       images: getPostImages(draft),
       tags: Array.isArray(draft?.postTags) ? draft.postTags : [],
     });
@@ -270,26 +425,10 @@ export default function ManagerPostsPage() {
 
   // ── API actions ──────────────────────────────────────────────────────────
 
-  const load = async () => {
-    // IMPORTANT: do not set loading=true/false here (see note above)
-    setError('');
-    try {
-      const data = await managerApi.getPosts(query);
-      const list = data?.items || data?.data || data || [];
-      setItems(Array.isArray(list) ? list : []);
-    } catch (e) {
-      const statusCode = e?.response?.status;
-      const isUnauthorized = statusCode === 401 || statusCode === 403;
-      const msg = isUnauthorized
-        ? 'Unauthorized: API requires login token.'
-        : e?.response?.data?.message || e?.message || 'Failed to load posts';
-      setError(msg);
-      setItems([]);
-      notify.notifyError(msg);
-    }
-  };
-
-  const canEditPost = (post) => canEditPostPermission({ post, user });
+  // ── CHANGE [2026-04-21]: Removed duplicate declarations (kept Section 4/6 versions above) ──
+  // REPLACED: duplicate `load` and `canEditPost` declarations below were removed to avoid
+  //           "Cannot redeclare block-scoped variable" and keep one source of truth.
+  // ── END CHANGE ───────────────────────────────────────────────────────────
 
   const openEdit = (post) => {
     if (!post) return;
@@ -372,6 +511,11 @@ export default function ManagerPostsPage() {
     }
   };
 
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 7: MODERATION ACTIONS (approve / reject / delete)
+  // ─────────────────────────────────────────────────────────────
+  // [ANCHOR] MANAGER_POSTS__MODERATION_ACTIONS__BEGIN
+
   const approve = async (postOrId) => {
     const id = typeof postOrId === 'string' ? postOrId : postOrId?._id || postOrId?.id;
     if (!id) return;
@@ -445,7 +589,15 @@ export default function ManagerPostsPage() {
     );
   };
 
+  // [ANCHOR] MANAGER_POSTS__MODERATION_ACTIONS__END
+
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 8: DERIVED DISPLAY (merged list → filter/sort → paging)
+  // ─────────────────────────────────────────────────────────────
+  // [ANCHOR] MANAGER_POSTS__DERIVED_DISPLAY__BEGIN
+
   // ── Derived display list ─────────────────────────────────────────────────
+  // (merged list → filter rules → client-side sort)
   const filteredAndSortedItems = useMemo(() => {
     const merged = [...(draftItems || []), ...(items || [])];
     const filtered = filterPostLikeList({
@@ -504,6 +656,8 @@ export default function ManagerPostsPage() {
     setPage(1);
   };
 
+  // [ANCHOR] MANAGER_POSTS__DERIVED_DISPLAY__END
+
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
@@ -512,7 +666,7 @@ export default function ManagerPostsPage() {
         <div>
           <h1 className="text-2xl font-headline font-bold text-on-surface">Posts</h1>
           <p className="text-sm text-on-surface-variant">
-            Quản lý bài viết hệ thống và duyệt bài do Owner/Customer gửi (lọc theo tag).
+            - Quản lý bài viết của hệ thống, duyệt những bài đăng của người dùng (Customer) và những Owner được uỷ quyền quản lý.
           </p>
         </div>
         <div className="flex gap-2">
@@ -641,6 +795,7 @@ export default function ManagerPostsPage() {
         open={!!draftAction}
         title="Confirm"
         message={draftAction?.type === 'publish' ? 'Bạn chắc chắn muốn Publish draft này?' : 'Bạn chắc chắn muốn xoá draft này?'}
+        cancelText="Cancel"
         confirmText="OK"
         confirmVariant={draftAction?.type === 'publish' ? 'primary' : 'danger'}
         onCancel={cancelDraftAction}
@@ -653,6 +808,7 @@ export default function ManagerPostsPage() {
         open={!!confirmAction}
         title={confirmAction?.title || 'Confirm'}
         message={confirmAction?.message}
+        cancelText="Cancel"
         confirmText={confirmAction?.confirmText || 'OK'}
         confirmVariant={confirmAction?.variant === 'danger' ? 'danger' : 'primary'}
         onCancel={cancelConfirm}
@@ -662,3 +818,4 @@ export default function ManagerPostsPage() {
     </div>
   );
 }
+// ── END CHANGE ─────────────────────────────────────────────

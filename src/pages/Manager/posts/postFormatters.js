@@ -1,7 +1,31 @@
 /**
- * postFormatters.js
- * Presentation helpers for Manager Posts.
+ * ============================================================
+ * FILE: src/pages/Manager/posts/postFormatters.js
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   Presentation helpers for Manager Posts module.
+ *   Pure functions: safe field access + normalization for UI.
+ *
+ * RESPONSIBILITIES:
+ *   - Normalize title/content/images/tags from post-like objects
+ *   - Format date strings for display
+ *   - Build readable owner labels
+ *
+ * DATA FLOW:
+ *   API post object → getPostImages/getPostTags/... → UI rendering
+ *
+ * USED IN:
+ *   - PostsTable.jsx
+ *   - PostPreviewModal.jsx
+ *   - ManagerPostsPage.jsx
+ * ============================================================
  */
+
+// ── CHANGE [2026-04-21]: Add sections + structured header (no behavior change) ──
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 1: FIELD NORMALIZERS
+// ─────────────────────────────────────────────────────────────
 
 /**
  * getPostTitle
@@ -98,6 +122,10 @@ export function getPostTags(post) {
   return [];
 }
 
+// ─────────────────────────────────────────────────────────────
+// SECTION 2: DISPLAY FORMATTERS
+// ─────────────────────────────────────────────────────────────
+
 /**
  * formatDateTime
  * Formats an ISO date string for table display.
@@ -111,6 +139,10 @@ export function formatDateTime(iso) {
   if (Number.isNaN(d.getTime())) return '-';
   return d.toLocaleString();
 }
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 3: POST TYPE HELPERS
+// ─────────────────────────────────────────────────────────────
 
 /**
  * normalizeOwnerLabel
@@ -156,3 +188,5 @@ export function normalizeOwnerLabel(post) {
 export function isLocalDraftPost(post) {
   return !!post?.__localDraft || String(post?.status) === 'Draft';
 }
+
+// ── END CHANGE ─────────────────────────────────────────────

@@ -1,7 +1,20 @@
 /**
- * postsDraftsAdapter.js
- * DEPRECATED: drafts are now persisted in DB (Post.status = 'Draft').
+ * ============================================================
+ * FILE: src/pages/Manager/posts/postsDraftsAdapter.js
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   DEPRECATED compatibility shim.
+ *   Drafts are now persisted in DB as Post.status = 'Draft'.
+ *
+ * RESPONSIBILITIES:
+ *   - Provide no-op/throwing functions so old imports don't crash silently
+ *
+ * USED IN:
+ *   (Should be none; safe to keep until fully removed.)
+ * ============================================================
  */
+
+// ── CHANGE [2026-04-21]: Add structured header for deprecated shim ──
 
 export function loadDraftItems() {
   return [];
@@ -18,3 +31,5 @@ export function deleteDraftById() {
 export function getDraftById() {
   return null;
 }
+
+// ── END CHANGE ─────────────────────────────────────────────

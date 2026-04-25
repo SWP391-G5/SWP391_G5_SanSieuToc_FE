@@ -1,103 +1,134 @@
 /**
- * BannersAdsTable.jsx
- * Table list for banners/ads.
+ * ============================================================
+ * FILE: src/pages/Manager/banners-ads/BannersAdsTable.jsx
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   "Executor" component that renders the banner/ad list table.
+ *
+ * RESPONSIBILITIES:
+ *   - Render rows and basic empty/loading states
+ *   - Provide user actions: Edit / Delete / Toggle Active
+ *   - Provide preview image / link affordances
+ *
+ * IMPORTANT:
+ *   - This component should be presentational.
+ *   - Network calls are owned by the orchestrator `BannersAdsPage.jsx`.
+ * ============================================================
  */
 
-import { PLACEMENTS } from './placementsMeta';
+// ── React core ─────────────────────────────────────────────
+import React from 'react';
 
-function openPreview(url) {
-  if (!url) return;
-  window.open(url, '_blank', 'noopener,noreferrer');
-}
+// ── Internal UI helpers / icons ────────────────────────────
+import { Eye, Pencil, Trash2 } from 'lucide-react';
 
-// Inline order editing has been removed; order is edited in the Edit modal.
-
+/**
+ * BannersAdsTable
+ * ------------------------------------------------------------
+ * Props:
+ *   - loading {boolean}
+ *   - items   {Array<{
+ *       id: string,
+ *       title: string,
+ *       placement: string,
+ *       order: number,
+ *       isActive: boolean,
+ *       imageUrl?: string
+ *     }>}}
+ *   - onEdit          {(item) => void}
+ *   - onDelete        {(item) => void}
+ *   - onToggleActive  {(item) => void}
+ */
 export default function BannersAdsTable({ loading, items, onEdit, onDelete, onToggleActive }) {
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 1: DERIVED DISPLAY VALUES
+  // ─────────────────────────────────────────────────────────────
+
+  const safeItems = Array.isArray(items) ? items : [];
+
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 2: RENDER GUARDS (loading / empty)
+  // ─────────────────────────────────────────────────────────────
+
+  if (loading) {
+    return <div className="text-sm text-on-surface-variant">Loading…</div>;
+  }
+
+  if (!safeItems.length) {
+    return <div className="text-sm text-on-surface-variant">Không có dữ liệu</div>;
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // SECTION 3: MAIN TABLE
+  // ─────────────────────────────────────────────────────────────
+
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full text-sm">
-        <thead>
-          <tr className="text-left text-xs uppercase tracking-widest text-on-surface-variant border-b border-outline-variant">
-            <th className="py-3 pr-4">No</th>
-            <th className="py-3 pr-4">Title</th>
-            <th className="py-3 pr-4">Placement</th>
-            <th className="py-3 pr-4">Order</th>
-            <th className="py-3 pr-4">Active</th>
-            <th className="py-3 pr-4">Preview</th>
-            <th className="py-3 pr-4 text-right">Actions</th>
+      <table className="min-w-full text-left text-sm">
+        <thead className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
+          <tr className="border-b border-outline-variant">
+            <th className="px-3 py-2">Ảnh</th>
+            <th className="px-3 py-2">Tiêu đề</th>
+            <th className="px-3 py-2">Placement</th>
+            <th className="px-3 py-2">Order</th>
+            <th className="px-3 py-2">Trạng thái</th>
+            <th className="px-3 py-2 text-right">Hành động</th>
           </tr>
         </thead>
+
         <tbody className="divide-y divide-outline-variant">
-          {items.map((b, idx) => (
-            <tr key={b?.id || b?._id}>
-              <td className="py-3 pr-4 text-on-surface-variant">{idx + 1}</td>
-              <td className="py-3 pr-4 text-on-surface-variant font-semibold">{b?.title || '-'}</td>
-              <td className="py-3 pr-4 text-on-surface-variant">{b?.placement || '-'}</td>
-              <td className="py-3 pr-4 text-on-surface-variant font-semibold">{Number(b?.order) || 0}</td>
-              <td className="py-3 pr-4">
+          {safeItems.map((b) => (
+            <tr key={b.id} className="hover:bg-surface/60">
+              <td className="px-3 py-3">
+                {b.imageUrl ? (
+                  <a href={b.imageUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2">
+                    <img src={b.imageUrl} alt={b.title || 'banner'} className="h-12 w-20 rounded object-cover" />
+                    <Eye size={16} className="opacity-70" />
+                  </a>
+                ) : (
+                  <div className="h-12 w-20 rounded bg-surface" />
+                )}
+              </td>
+
+              <td className="px-3 py-3 font-semibold text-on-surface-variant">{b.title || '-'}</td>
+              <td className="px-3 py-3 text-on-surface-variant">{b.placement || '-'}</td>
+              <td className="px-3 py-3 text-on-surface-variant">{Number.isFinite(Number(b.order)) ? b.order : '-'}</td>
+
+              <td className="px-3 py-3">
                 <button
                   type="button"
                   onClick={() => onToggleActive?.(b)}
-                  className={
-                    b?.isActive
-                      ? 'h-8 rounded-full bg-[#8eff71]/20 px-3 text-xs font-bold text-[#0d6100] hover:bg-[#8eff71]/30'
-                      : 'h-8 rounded-full bg-[#abaca5]/10 px-3 text-xs font-bold text-[#abaca5] hover:bg-[#abaca5]/20'
-                  }
+                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold border transition-colors $
+                    {b.isActive ? 'border-primary/40 bg-primary/10 text-primary' : 'border-outline-variant bg-surface text-on-surface-variant'}
+                  `}
                 >
-                  {b?.isActive ? 'Active' : 'Inactive'}
+                  {b.isActive ? 'Active' : 'Inactive'}
                 </button>
               </td>
-              <td className="py-3 pr-4">
-                <div className="flex items-center gap-3">
-                  {b?.imageUrl ? (
-                    <img
-                      src={b.imageUrl}
-                      alt="banner"
-                      className="h-12 w-24 object-cover rounded border border-outline-variant"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="h-12 w-24 rounded border border-outline-variant bg-surface" />
-                  )}
 
-                  <button
-                    type="button"
-                    onClick={() => openPreview(b?.imageUrl)}
-                    disabled={!b?.imageUrl}
-                    className="h-9 rounded-lg px-3 text-xs font-bold border border-outline-variant hover:bg-surface disabled:opacity-50"
-                  >
-                    Open
-                  </button>
-                </div>
-              </td>
-              <td className="py-3 text-right">
-                <div className="inline-flex gap-2 justify-end">
+              <td className="px-3 py-3">
+                <div className="flex justify-end gap-2">
                   <button
                     type="button"
                     onClick={() => onEdit?.(b)}
-                    className="h-9 rounded-lg px-3 text-xs font-bold border border-outline-variant hover:bg-surface"
+                    className="inline-flex h-9 items-center gap-2 rounded-lg border border-outline-variant px-3 text-xs font-bold hover:bg-surface"
                   >
+                    <Pencil size={16} />
                     Edit
                   </button>
+
                   <button
                     type="button"
                     onClick={() => onDelete?.(b)}
-                    className="h-9 rounded-lg px-3 text-xs font-bold border border-error text-error hover:bg-error hover:text-on-error"
+                    className="inline-flex h-9 items-center gap-2 rounded-lg border border-error/30 bg-error/10 px-3 text-xs font-bold text-error hover:bg-error/15"
                   >
+                    <Trash2 size={16} />
                     Delete
                   </button>
                 </div>
               </td>
             </tr>
           ))}
-
-          {!loading && items.length === 0 ? (
-            <tr>
-              <td colSpan={7} className="py-6 text-center text-sm text-on-surface-variant">
-                No items.
-              </td>
-            </tr>
-          ) : null}
         </tbody>
       </table>
     </div>

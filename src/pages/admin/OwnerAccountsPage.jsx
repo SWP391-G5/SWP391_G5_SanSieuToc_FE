@@ -31,6 +31,7 @@ const STATUS_LABELS = {
   InActive: 'Không hoạt động',
   Banned: 'Bị khóa',
   Deleted: 'Đã xóa',
+  PendingDeletion: 'Chờ xóa',
 };
 
 function toVietnameseStatus(status) {
@@ -38,7 +39,23 @@ function toVietnameseStatus(status) {
   return STATUS_LABELS[key] || key || '-';
 }
 
-function StatusBadge({ status }) {
+function getDaysUntil(dateStr) {
+  if (!dateStr) return null;
+  const diff = new Date(dateStr).getTime() - Date.now();
+  if (diff <= 0) return 0;
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+function StatusBadge({ status, pendingDeletion, scheduledAt }) {
+  if (pendingDeletion) {
+    const days = getDaysUntil(scheduledAt);
+    const label = days !== null && days > 0 ? `Chờ xóa (còn ${days} ngày)` : 'Chờ xóa';
+    return (
+      <span className="rounded-full bg-orange-500/15 px-2 py-0.5 text-xs font-semibold text-orange-300" title={scheduledAt ? `Sẽ bị xóa lúc: ${formatDate(scheduledAt)}` : undefined}>
+        {label}
+      </span>
+    );
+  }
   const s = String(status || '').trim();
   const cls =
     s === 'Active'
@@ -115,7 +132,7 @@ export default function OwnerAccountsPage() {
   }, [form]);
 
   const availableStatuses = useMemo(() => {
-    const set = new Set(['Active', 'InActive', 'Deleted']);
+    const set = new Set(['Active', 'InActive', 'Deleted', 'PendingDeletion']);
     for (const it of items || []) {
       const s = String(it.status || '').trim();
       if (s) set.add(s);
@@ -128,12 +145,19 @@ export default function OwnerAccountsPage() {
     const status = String(statusFilter || 'All').trim();
 
     return (items || []).filter((it) => {
-      if (status !== 'All' && String(it.status || '').trim() !== status) return false;
+      const isPending = Boolean(it.deletion?.scheduledAt) && it.status !== 'Deleted';
+      if (status === 'PendingDeletion') {
+        if (!isPending) return false;
+      } else if (status !== 'All') {
+        if (isPending) return false; // pending accounts are their own category
+        if (String(it.status || '').trim() !== status) return false;
+      }
       if (!q) return true;
       const hay = `${it.username} ${it.email} ${it.name}`.toLowerCase();
       return hay.includes(q);
     });
   }, [items, search, statusFilter]);
+
 
   const load = async () => {
     setLoading(true);
@@ -438,7 +462,11 @@ export default function OwnerAccountsPage() {
                         <RolePill>Chủ sân</RolePill>
                       </td>
                       <td className="px-5 py-4">
-                        <StatusBadge status={it.status} />
+                        <StatusBadge
+                          status={it.status}
+                          pendingDeletion={Boolean(it.deletion?.scheduledAt) && it.status !== 'Deleted'}
+                          scheduledAt={it.deletion?.scheduledAt}
+                        />
                       </td>
                       <td className="px-5 py-4 text-[#fdfdf6]/70">{formatDate(it.deletion?.requestedAt || it.createdAt)}</td>
                       <td className="px-5 py-4 text-right">
@@ -515,6 +543,12 @@ export default function OwnerAccountsPage() {
               <div className="text-[#fdfdf6]/50">Đã xóa</div>
               <div className="mt-1 text-lg font-black text-[#fdfdf6]/60">
                 {items.filter((x) => x.status === 'Deleted').length}
+              </div>
+            </div>
+            <div className="col-span-2 rounded-lg bg-[#0d0f0b] p-3">
+              <div className="text-[#fdfdf6]/50">Chờ xóa</div>
+              <div className="mt-1 text-lg font-black text-orange-300">
+                {items.filter((x) => x.deletion?.scheduledAt && x.status !== 'Deleted').length}
               </div>
             </div>
           </div>

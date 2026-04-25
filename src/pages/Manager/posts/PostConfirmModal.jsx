@@ -1,21 +1,49 @@
 /**
- * PostConfirmModal.jsx
- * Reusable confirmation modal for Manager Posts actions.
+ * ============================================================
+ * FILE: src/pages/Manager/posts/PostConfirmModal.jsx
+ * ============================================================
+ * WHAT IS THIS FILE?
+ *   A small reusable confirmation modal (EXECUTOR) used by
+ *   Manager screens to confirm destructive/important actions.
+ *
+ * RESPONSIBILITIES:
+ *   - Render a modal with title/message and Cancel/Confirm buttons
+ *   - Close on overlay click or Escape
+ *
+ * DATA FLOW:
+ *   Parent state (ManagerPostsPage) → props → [THIS COMPONENT]
+ *   → calls props.onCancel / props.onConfirm
+ *
+ * USED IN:
+ *   - src/pages/Manager/ManagerPostsPage.jsx
+ *   - src/pages/Manager/banners-ads/BannersAdsPage.jsx
+ * ============================================================
  */
 
+// ── Third-party ────────────────────────────────────────────
+import PropTypes from 'prop-types';
+
+// ── CHANGE [2026-04-21]: Add PropTypes + structured docs for reviewability ──
 export default function PostConfirmModal({
   open,
-  title = 'Confirm',
+  title,
   message,
-  cancelText = 'Cancel',
-  confirmText = 'OK',
-  confirmVariant = 'primary', // 'primary' | 'danger'
+  cancelText,
+  confirmText,
+  confirmVariant,
   onCancel,
   onConfirm,
-  zIndexClassName = 'z-[61]',
+  zIndexClassName,
 }) {
   if (!open) return null;
 
+  /**
+   * handleCancel
+   * ----------------------------------------------------------
+   * Closes the modal via the provided callback.
+   *
+   * TRIGGERS: overlay click / Escape / Cancel button
+   */
   const handleCancel = () => onCancel?.();
 
   const confirmClassName =
@@ -58,3 +86,27 @@ export default function PostConfirmModal({
     </div>
   );
 }
+
+PostConfirmModal.propTypes = {
+  open: PropTypes.bool.isRequired, // Whether modal is visible
+  title: PropTypes.string, // Modal title text
+  message: PropTypes.string, // Optional message/body
+  cancelText: PropTypes.string, // Cancel button label
+  confirmText: PropTypes.string, // Confirm button label
+  confirmVariant: PropTypes.oneOf(['primary', 'danger']), // Controls confirm button styling
+  onCancel: PropTypes.func, // Called when user cancels/closes
+  onConfirm: PropTypes.func, // Called when user confirms
+  zIndexClassName: PropTypes.string, // Allows parent to stack multiple modals safely
+};
+
+PostConfirmModal.defaultProps = {
+  title: 'Confirm',
+  message: '',
+  cancelText: 'Cancel',
+  confirmText: 'OK',
+  confirmVariant: 'primary',
+  onCancel: undefined,
+  onConfirm: undefined,
+  zIndexClassName: 'z-[61]',
+};
+// ── END CHANGE ─────────────────────────────────────────────
