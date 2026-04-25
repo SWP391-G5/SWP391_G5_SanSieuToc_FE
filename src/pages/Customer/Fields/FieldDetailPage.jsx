@@ -13,6 +13,8 @@ import { FIELD_DETAIL_VERTICAL_POOL } from "../../../data/ads/fieldDetailAdsCopy
 import { FIELD_DETAIL_HORIZONTAL_POOL } from "../../../data/ads/fieldDetailHorizontalCopy";
 import { getRandomAdsFromPool } from "../../../utils/adUtils";
 
+import PostConfirmModal from "../../Manager/posts/PostConfirmModal";
+
 const UTILITY_LABELS = {
   parking: "Parking",
   lighting: "Lighting",
@@ -318,6 +320,8 @@ export default function FieldDetailPage() {
   const feedbackSectionRef = useRef(null);
   const feedbackFormRef = useRef(null);
 
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, feedbackId: "" });
+
   const now = new Date();
   const todayStr = now.toISOString().split("T")[0];
 
@@ -449,6 +453,30 @@ export default function FieldDetailPage() {
     return reviewableSlots.some(slot => !slot.hasFeedback);
   }, [reviewableSlots]);
 
+  const canShowFeedbackSection = useMemo(() => {
+    return Boolean(
+      authUser &&
+      (feedbackLoading ||
+        feedbackError ||
+        isFeedbackFormOpen ||
+        canShowAddFeedback ||
+        reviewableSlots.length > 0 ||
+        feedbackEligibility?.isPaid === false ||
+        feedbackEligibility?.hasPendingSlots ||
+        feedbackEligibility?.hasAnySlots)
+    );
+  }, [
+    authUser,
+    feedbackLoading,
+    feedbackError,
+    isFeedbackFormOpen,
+    canShowAddFeedback,
+    reviewableSlots.length,
+    feedbackEligibility?.isPaid,
+    feedbackEligibility?.hasPendingSlots,
+    feedbackEligibility?.hasAnySlots,
+  ]);
+
   const selectedFeedbackSlot = useMemo(() => {
     return reviewableSlots.find(
       (slot) => String(slot.id) === String(selectedFeedbackSlotId),
@@ -534,8 +562,6 @@ export default function FieldDetailPage() {
   };
 
   const handleDeleteFeedback = async (feedbackId) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa đánh giá này?")) return;
-
     try {
       await bookingService.deleteFeedback(feedbackId);
       notifySuccess("Đã xóa đánh giá.");
@@ -545,6 +571,12 @@ export default function FieldDetailPage() {
     } catch (err) {
       notifyError(err?.response?.data?.message || "Không thể xóa đánh giá.");
     }
+  };
+
+  const requestDeleteFeedback = (feedbackId) => {
+    const idStr = String(feedbackId || "").trim();
+    if (!idStr) return;
+    setDeleteConfirm({ open: true, feedbackId: idStr });
   };
 
   const handleEditFromList = (fb) => {
@@ -824,12 +856,9 @@ export default function FieldDetailPage() {
               </div>
             )}
 
-            {authUser && (
+            {canShowFeedbackSection && (
               <div ref={feedbackSectionRef} className="border-t border-[#474944]/30 pt-4 mt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-headline text-sm font-bold text-[#8eff71]">
-                    Đánh giá booking của bạn
-                  </h3>
+                <div className="flex items-center justify-end mb-3">
                   {canShowAddFeedback && !isFeedbackFormOpen && (
                     <button
                       onClick={() => setIsFeedbackFormOpen(true)}
@@ -851,14 +880,20 @@ export default function FieldDetailPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {!feedbackEligibility?.isPaid ? (
+                    {feedbackEligibility?.isPaid === false ? (
                       <div className="rounded-lg border border-[#7a5f26]/40 bg-[#2a2414] p-4 text-sm text-[#ffd88a]">
                         Booking chưa thanh toán, chưa thể đánh giá.
                       </div>
                     ) : reviewableSlots.length === 0 ? (
-                      <div className="rounded-lg border border-[#474944]/30 bg-[#121410] p-4 text-sm text-[#abaca5]">
-                        Chưa có ca sân nào đủ điều kiện để đánh giá.
-                      </div>
+                      feedbackEligibility?.hasPendingSlots ? (
+                        <div className="rounded-lg border border-[#7a5f26]/40 bg-[#2a2414] p-4 text-sm text-[#ffd88a]">
+                          Bạn chỉ có thể đánh giá sau khi ca sân kết thúc.
+                        </div>
+                      ) : feedbackEligibility?.hasAnySlots ? (
+                        <div className="rounded-lg border border-[#474944]/30 bg-[#121410] p-4 text-sm text-[#abaca5]">
+                          Chưa có ca sân nào đủ điều kiện để đánh giá.
+                        </div>
+                      ) : null
                     ) : isFeedbackFormOpen && (
                       <form
                         ref={feedbackFormRef}
@@ -1028,7 +1063,7 @@ export default function FieldDetailPage() {
                                   <span className="material-symbols-outlined text-base">edit</span>
                                 </button>
                                 <button
-                                  onClick={() => handleDeleteFeedback(fb.id)}
+                                  onClick={() => requestDeleteFeedback(fb.id)}
                                   className="text-[#abaca5] hover:text-[#ff4d6d] transition-colors"
                                   title="Xóa đánh giá"
                                 >
@@ -1194,6 +1229,22 @@ export default function FieldDetailPage() {
           </div>
         </div>
       </div>
+
+      <PostConfirmModal
+        open={deleteConfirm.open}
+        title="Xác nhận"
+        message="Bạn có chắc chắn muốn xóa đánh giá này?"
+        cancelText="Hủy"
+        confirmText="Xóa"
+        confirmVariant="danger"
+        zIndexClassName="z-[80]"
+        onCancel={() => setDeleteConfirm({ open: false, feedbackId: "" })}
+        onConfirm={async () => {
+          const idToDelete = deleteConfirm.feedbackId;
+          setDeleteConfirm({ open: false, feedbackId: "" });
+          await handleDeleteFeedback(idToDelete);
+        }}
+      />
     </div>
   );
 }
