@@ -23,6 +23,16 @@ export default function FieldFormModal({
 
   const [previewImages, setPreviewImages] = useState([]);
   const [errors, setErrors] = useState({});
+  const [addressParts, setAddressParts] = useState({
+    street: "",
+    ward: "",
+    city: "",
+  });
+
+  const handleAddressChange = (e) => {
+    const { name, value } = e.target;
+    setAddressParts((prev) => ({ ...prev, [name]: value }));
+  };
 
   useEffect(() => {
     if (initialData) {
@@ -35,6 +45,13 @@ export default function FieldFormModal({
         hourlyPrice: initialData.hourlyPrice ?? initialData.price ?? "",
       });
       setPreviewImages(initialData.image || []);
+      
+      const parts = (initialData.address || "").split(",").map((p) => p.trim());
+      setAddressParts({
+        street: parts[0] || "",
+        ward: parts[1] || "",
+        city: parts.slice(2).join(", ") || "",
+      });
     } else {
       setFormData({
         fieldName: "",
@@ -50,6 +67,7 @@ export default function FieldFormModal({
         image: [],
       });
       setPreviewImages([]);
+      setAddressParts({ street: "", ward: "", city: "" });
     }
     setErrors({});
   }, [initialData, isOpen]);
@@ -64,6 +82,15 @@ export default function FieldFormModal({
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
+
+    if (formData.image.length + files.length > 5) {
+      setErrors((prev) => ({
+        ...prev,
+        image: `Chỉ được tải lên tối đa 5 hình ảnh. Bạn đang cố tải lên tổng cộng ${formData.image.length + files.length} ảnh.`,
+      }));
+      return;
+    }
+    setErrors((prev) => ({ ...prev, image: undefined }));
 
     const promises = files.map((file) => {
       return new Promise((resolve, reject) => {
@@ -101,7 +128,14 @@ export default function FieldFormModal({
     const nextErrors = {};
     const nameTrimmed = String(formData.fieldName || "").trim();
     const typeTrimmed = String(formData.fieldType || "").trim();
-    const addressTrimmed = String(formData.address || "").trim();
+    
+    const streetTrimmed = addressParts.street.trim();
+    const wardTrimmed = addressParts.ward.trim();
+    const cityTrimmed = addressParts.city.trim();
+    const fullAddress = [streetTrimmed, wardTrimmed, cityTrimmed]
+      .filter(Boolean)
+      .join(", ");
+
     const openingTrimmed = String(formData.openingTime || "").trim();
     const closingTrimmed = String(formData.closingTime || "").trim();
     const hourlyPriceNumber = Number(formData.hourlyPrice);
@@ -119,7 +153,9 @@ export default function FieldFormModal({
 
     if (!nameTrimmed) nextErrors.fieldName = "Vui lòng nhập tên sân.";
     if (!typeTrimmed) nextErrors.fieldType = "Vui lòng chọn loại sân.";
-    if (!addressTrimmed) nextErrors.address = "Vui lòng nhập địa chỉ.";
+    if (!streetTrimmed || !wardTrimmed || !cityTrimmed) {
+      nextErrors.address = "Vui lòng nhập đầy đủ 3 thành phần của địa chỉ.";
+    }
     if (!openingTrimmed) nextErrors.openingTime = "Vui lòng chọn giờ mở cửa.";
     if (!closingTrimmed) nextErrors.closingTime = "Vui lòng chọn giờ đóng cửa.";
 
@@ -128,7 +164,7 @@ export default function FieldFormModal({
       Number.isNaN(hourlyPriceNumber) ||
       hourlyPriceNumber < 0
     ) {
-      nextErrors.hourlyPrice = "Giá/giờ không hợp lệ.";
+      nextErrors.hourlyPrice = "Giá/slot không hợp lệ.";
     }
     if (Number.isNaN(slotDurationNumber) || slotDurationNumber <= 0) {
       nextErrors.slotDuration = "Thời lượng slot không hợp lệ.";
@@ -147,6 +183,8 @@ export default function FieldFormModal({
 
     if (!formData.image || formData.image.length === 0) {
       nextErrors.image = "Vui lòng tải lên ít nhất 1 hình ảnh cho sân.";
+    } else if (formData.image.length > 5) {
+      nextErrors.image = "Chỉ được tải lên tối đa 5 hình ảnh.";
     }
 
     setErrors(nextErrors);
@@ -156,6 +194,7 @@ export default function FieldFormModal({
       formData.hourlyPrice === "" ? undefined : Number(formData.hourlyPrice);
     const payload = {
       ...formData,
+      address: fullAddress,
       hourlyPrice,
       utilities: formData.utilities
         .split(",")
@@ -258,14 +297,32 @@ export default function FieldFormModal({
               <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
                 Địa chỉ cụ thể
               </label>
-              <input
-                type="text"
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-on-surface focus:border-primary focus:outline-none placeholder:text-on-surface-variant/30"
-                placeholder="VD: 123 Đường ABC, Quận X..."
-              />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input
+                  type="text"
+                  name="street"
+                  value={addressParts.street}
+                  onChange={handleAddressChange}
+                  className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-on-surface focus:border-primary focus:outline-none placeholder:text-on-surface-variant/30"
+                  placeholder="Đường / Thôn / Xóm"
+                />
+                <input
+                  type="text"
+                  name="ward"
+                  value={addressParts.ward}
+                  onChange={handleAddressChange}
+                  className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-on-surface focus:border-primary focus:outline-none placeholder:text-on-surface-variant/30"
+                  placeholder="Xã / Phường / Thị Trấn"
+                />
+                <input
+                  type="text"
+                  name="city"
+                  value={addressParts.city}
+                  onChange={handleAddressChange}
+                  className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-on-surface focus:border-primary focus:outline-none placeholder:text-on-surface-variant/30"
+                  placeholder="Tỉnh / Thành Phố"
+                />
+              </div>
               {errors.address ? (
                 <div className="text-xs text-error">{errors.address}</div>
               ) : null}
@@ -292,7 +349,7 @@ export default function FieldFormModal({
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
-                Giá/giờ (VND)
+                Giá/slot (VND)
               </label>
               <input
                 type="number"
@@ -400,7 +457,7 @@ export default function FieldFormModal({
                 </label>
               </div>
               {errors.image ? (
-                <div className="text-xs text-error mt-2">{errors.image}</div>
+                <div className="text-xs text-error mt-2 bg-error/10 p-2 rounded border border-error/30">{errors.image}</div>
               ) : null}
 
               {/* Image Previews */}
