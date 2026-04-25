@@ -1072,9 +1072,11 @@ FIELD BOOKING
                       <div className="profile-terminal-wallet-label">AVAILABLE BALANCE</div>
                       <div className="profile-terminal-wallet-balance">{formatVnd(walletBalance)}đ</div>
                     </div>
-                    <button type="button" className="profile-terminal-btn" onClick={onTopUp}>
-                      TOP UP
-                    </button>
+                    {isCustomer ? (
+                      <button type="button" className="profile-terminal-btn" onClick={onTopUp}>
+                        TOP UP
+                      </button>
+                    ) : null}
                   </div>
                 </section>
               )}
