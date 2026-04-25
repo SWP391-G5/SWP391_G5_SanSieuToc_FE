@@ -940,7 +940,7 @@ export default function ManagerStatisticsPage() {
               </div>
             </div>
 
-            <div className="bg-surface-container p-6 rounded-xl">
+            <div className="bg-su face-container p-6 rounded-xl">
               {trendViewMode === 'chart' ? (
                 revenueTrend.length ? (
                   <div className="w-full" style={{ height: 320 }}>
