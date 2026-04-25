@@ -164,7 +164,7 @@ export default function FieldFormModal({
       Number.isNaN(hourlyPriceNumber) ||
       hourlyPriceNumber < 0
     ) {
-      nextErrors.hourlyPrice = "Giá/slot không hợp lệ.";
+      nextErrors.hourlyPrice = "Giá/giờ không hợp lệ.";
     }
     if (Number.isNaN(slotDurationNumber) || slotDurationNumber <= 0) {
       nextErrors.slotDuration = "Thời lượng slot không hợp lệ.";
@@ -349,7 +349,7 @@ export default function FieldFormModal({
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-label uppercase tracking-widest text-on-surface-variant">
-                Giá/slot (VND)
+                Giá/giờ (VND)
               </label>
               <input
                 type="number"
