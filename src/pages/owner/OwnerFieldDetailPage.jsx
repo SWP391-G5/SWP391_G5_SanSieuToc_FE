@@ -170,7 +170,7 @@ export default function OwnerFieldDetailPage() {
 
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
-                <p className="text-on-surface-variant text-xs">Giá/slot</p>
+                <p className="text-on-surface-variant text-xs">Giá/giờ</p>
                 <p className="text-2xl font-bold text-primary">
                   {(field.hourlyPrice ?? field.price ?? 0).toLocaleString("vi-VN")}đ
                 </p>

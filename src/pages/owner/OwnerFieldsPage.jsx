@@ -173,7 +173,7 @@ export default function OwnerFieldsPage() {
                     </div>
                   </div>
                   <div className="mt-2 text-on-surface-variant text-sm">
-                    Giá/slot:{" "}
+                    Giá/giờ:{" "}
                     <span className="font-semibold text-on-surface">
                       {(field.hourlyPrice ?? field.price ?? 0).toLocaleString(
                         "vi-VN",
