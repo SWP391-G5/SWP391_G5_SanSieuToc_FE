@@ -25,7 +25,7 @@ export default function FieldListPage() {
   const ADS_SLIDE_COUNT = 6;
 
   const { banners: fetchedBanners } = useCustomerBanners('fields_list_ads');
-  
+
   const adsSlides = useMemo(() => {
     return fetchedBanners.map((b) => b?.imageUrl).filter(Boolean).slice(0, ADS_SLIDE_COUNT);
   }, [fetchedBanners]);
@@ -175,12 +175,11 @@ export default function FieldListPage() {
     <div className="mx-auto w-full max-w-7xl px-6 py-8 md:px-8">
       <div className="flex gap-8">
         {/* SideNavBar / Filters */}
-        <aside className="sticky top-28 hidden h-[calc(100vh-7rem)] w-64 flex-col gap-6 overflow-auto rounded-xl bg-[#121410] p-6 lg:flex">
+        <aside className="sticky top-28 hidden h-[calc(100vh-7rem)] w-64 flex-col gap-6 overflow-y-auto no-scrollbar rounded-xl bg-[#121410] p-6 lg:flex">
           <div className="flex flex-col gap-1">
             <h2 className="font-headline text-xl font-bold text-[#8eff71]">Filters</h2>
             <p className="text-xs font-medium text-[#abaca5]">Refine your pitch</p>
           </div>
-
           <div className="space-y-6">
             {/* Location */}
             <div className="space-y-2">

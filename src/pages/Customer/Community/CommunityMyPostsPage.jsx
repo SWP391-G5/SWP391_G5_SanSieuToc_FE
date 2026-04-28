@@ -45,7 +45,6 @@ export default function CommunityMyPostsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
 
-  const [expandedPostId, setExpandedPostId] = useState('');
   const [deletingPostId, setDeletingPostId] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -99,7 +98,6 @@ export default function CommunityMyPostsPage() {
     try {
       await communityService.deleteMyPost(postId);
       notifySuccess('Đã xóa bài viết.');
-      setExpandedPostId((prev) => (prev === postId ? '' : prev));
       requestReload();
     } catch (e) {
       notifyError(e?.response?.data?.message || e?.message || 'Không thể xóa bài viết.');
@@ -181,7 +179,6 @@ export default function CommunityMyPostsPage() {
         <div className="space-y-3">
           {items.map((post) => {
             const postId = String(post?.id || '');
-            const expanded = expandedPostId === postId;
             const tags = Array.isArray(post?.tags) ? post.tags : [];
 
             return (
@@ -214,10 +211,13 @@ export default function CommunityMyPostsPage() {
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={() => setExpandedPostId((prev) => (prev === postId ? '' : postId))}
+                      onClick={() => {
+                        if (!postId) return;
+                        navigate(`/community/${postId}`, { state: { item: post } });
+                      }}
                       className="rounded-lg border border-[#474944]/30 px-3 py-1.5 text-xs font-bold text-[#abaca5] transition-colors hover:bg-[#242721] hover:text-[#fdfdf6]"
                     >
-                      {expanded ? 'Thu gọn' : 'Xem nội dung'}
+                      Xem nội dung
                     </button>
 
                     <button
@@ -257,7 +257,7 @@ export default function CommunityMyPostsPage() {
                     />
                   </div>
 
-                  <div className={expanded ? 'whitespace-pre-line text-sm leading-6 text-[#abaca5]' : 'line-clamp-2 text-sm leading-6 text-[#abaca5]'}>
+                  <div className="line-clamp-2 text-sm leading-6 text-[#abaca5]">
                     {post?.content || '(Không có nội dung)'}
                   </div>
                 </div>
