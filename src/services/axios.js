@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:9999';
+const baseURL = import.meta.env.VITE_API_URL || 'https://swp391-g5-sansieutoc-be.onrender.com';
 
 const axiosInstance = axios.create({
   baseURL,
